@@ -7,5 +7,6 @@
     "description": "Provides modding utilities for unity il2cpp games",
     "modloader": "Scotland2",
     "dependencies": [],
-    "libraryFiles": ["${binary}"]
+    "libraryFiles": ["${binary}"],
+    "isLibrary": true
   }
