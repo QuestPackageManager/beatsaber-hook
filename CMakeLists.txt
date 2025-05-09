@@ -19,7 +19,7 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 # compile options used
 add_compile_options(-frtti -fPIE -fPIC -fexceptions -flto)
 add_link_options(-Wl,--exclude-libs,ALL)
-add_compile_options(-Wall -Wextra -Werror -Wno-unused-function)
+add_compile_options(-Wall -Wextra -Werror -Wno-unused-function -Wno-extra-qualification)
 # clangd bug https://github.com/clangd/clangd/issues/1167
 add_compile_options(-Wno-pragma-pack)
 add_compile_options(-Wno-vla-cxx-extension)

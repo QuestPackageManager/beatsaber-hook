@@ -12,7 +12,10 @@
       "debugSoLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.0.0/debug_libbeatsaber-hook.so",
       "overrideSoName": "libbeatsaber-hook.so",
       "branchName": "master",
-      "cmake": true
+      "cmake": true,
+      "compileOptions": {
+        "cppFlags": ["-Wno-extra-qualification"]
+      }
     }
   },
   "workspace": {
