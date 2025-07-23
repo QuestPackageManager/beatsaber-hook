@@ -59,6 +59,11 @@
       "id": "paper2_scotland2",
       "versionRange": "^4.4.0",
       "additionalData": {}
+    },
+    {
+      "id": "flamingo",
+      "versionRange": "^1.0.0",
+      "additionalData": {}
     }
   ]
 }
