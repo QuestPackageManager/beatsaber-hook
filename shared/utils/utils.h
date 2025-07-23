@@ -19,7 +19,6 @@ namespace std {
 #endif
 #include <thread>
 #include <optional>
-#include "hook-tracker.hpp"
 
 // For use in SAFE_ABORT/CRASH_UNLESS (& RET_UNLESS if possible)
 // And also logging

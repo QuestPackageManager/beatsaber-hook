@@ -2,7 +2,11 @@
 #include "../../shared/utils/utils.h"
 #include "capstone/shared/capstone/capstone.h"
 #include "capstone/shared/platform.h"
+#include "flamingo/shared/installer.hpp"
+#include "flamingo/shared/target-data.hpp"
+#include <algorithm>
 #include <array>
+#include <cstdint>
 #include <tuple>
 #include <optional>
 
@@ -29,12 +33,15 @@ auto find_through_hooks(void const* hook, uint32_t initialSearchSize, auto&& fun
     // First, check to see if we are hooked.
     auto const& logger = il2cpp_utils::Logger;
     logger.debug("Finding through potential hook: {} and size: {}", fmt::ptr(hook), initialSearchSize);
-    auto hooks = HookTracker::GetHooks(hook);
-    if (!hooks.empty()) {
-        uint32_t const* addr = hooks.front().original_data.data();
-        uint32_t size = hooks.front().original_data.size() * sizeof(uint32_t);
-        logger.debug("Hook found ({})! Original data: {} with size: {}", hooks.front().name, fmt::ptr(addr), size);
-        return func(cs::AddrSearchPair(addr, size), cs::AddrSearchPair(reinterpret_cast<uint32_t const*>(hook), initialSearchSize));
+    auto original_insts = flamingo::OriginalInstsFor(flamingo::TargetDescriptor{const_cast<void*>(hook)});
+    // If flamingo reported there was a hook here, it'll give us a span over the original instructions.
+    if (original_insts.size() > 0) {
+        logger.debug("Found original instructions of length: {}", original_insts.size());
+        if (initialSearchSize < original_insts.size() * sizeof(uint32_t)) {
+            return func(cs::AddrSearchPair(original_insts.data(), initialSearchSize));
+        }
+        return func(cs::AddrSearchPair(original_insts.data(), original_insts.size() * sizeof(uint32_t)),
+                    cs::AddrSearchPair(reinterpret_cast<uint32_t const*>(hook) + original_insts.size(), initialSearchSize - original_insts.size() * sizeof(uint32_t)));
     }
     logger.debug("No hook found! Searching: {}, {}", fmt::ptr(hook), initialSearchSize);
     return func(cs::AddrSearchPair(reinterpret_cast<uint32_t const*>(hook), initialSearchSize));

@@ -1,13 +1,14 @@
 #pragma once
 
-#include "../inline-hook/And64InlineHook.hpp"
-#include "hook-tracker.hpp"
+#include "flamingo/shared/hook-data.hpp"
+#include "flamingo/shared/hook-metadata.hpp"
 #include <type_traits>
 #include <utility>
 #include "utils.h"
 #include "typedefs.h"
 #include "logging.hpp"
 #include "il2cpp-utils.hpp"
+#include "utils/capstone-utils.hpp"
 
 namespace Hooking {
 // For use in MAKE_HOOK_AUTO bodies.
@@ -611,13 +612,16 @@ inline void __InstallHook(L& logger, void* addr) {
     logger.info("Installing hook: {} to offset: {}", T::name(), fmt::ptr(addr));
     #endif
     #ifdef __aarch64__
-    if constexpr (track) {
-        HookInfo info(T::name(), addr, (void*) T::hook());
-        A64HookFunction(addr, (void*) T::hook(), (void**) T::trampoline());
-        info.orig = (void*) *T::trampoline();
-        HookTracker::AddHook(info);
+    auto install_result = flamingo::Install(flamingo::HookInfo{T::hook(), addr, T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}});
+    if (install_result.has_value()) {
+        // TODO: Attach the returned handle to a member on T.
+        #ifndef SUPPRESS_MACRO_LOGS
+        logger.info("Hook: {} installed with flamingo!", T::name());
+        #endif
     } else {
-        A64HookFunction(addr, (void*) T::hook(), (void**) T::trampoline());
+        #ifndef SUPPRESS_MACRO_LOGS
+        logger.critical("Failed to install hook: {} with flamingo: {}", T::name(), install_result.error());
+        #endif
     }
     #else
     registerInlineHook((uint32_t) addr, (uint32_t) T::hook(), (uint32_t **) T::trampoline());
@@ -649,24 +653,10 @@ void InstallHook(L& logger) {
 template<typename T, typename L>
 requires (is_findCall_hook<T> && !is_addr_hook<T> && is_logger<L>)
 void InstallOrigHook(L& logger) {
-    // Install T assuming it is a hook that should call FindMethod.
-    auto info = T::getInfo();
-    if (!info) {
-        #ifndef SUPPRESS_MACRO_LOGS
-        logger.critical("Attempting to install hook: {}, but method could not be found!", T::name());
-        #endif
-        SAFE_ABORT();
-    }
-    auto addr = (void*) info->methodPointer;
-    auto* origAddr = const_cast<void*>(HookTracker::GetOrig(addr));
-    if (origAddr != addr) { \
-        auto* hooks = const_cast<std::unordered_map<const void*, std::list<HookInfo>>*>(HookTracker::GetHooks());
-        auto itr = hooks->find(addr);
-        if (itr != hooks->end() && itr->second.size() > 0) {
-            itr->second.front().orig = (void*) *T::trampoline();
-        }
-    }
-    __InstallHook<T, L, false>(logger, origAddr);
+    #ifndef SUPPRESS_MACRO_LOGS
+    logger.critical("Attempting to install orig hook: {}, but this no longer does anything!", T::name());
+    #endif
+    SAFE_ABORT();
 }
 template<typename T, typename L>
 requires (is_hook<T> && is_logger<L>)
@@ -691,7 +681,6 @@ void InstallHookDirect(L& logger, void* dst) {
 
 // Installs the provided hook using the logger provided to the 'orig' point of the hook.
 // This is only valid if the name is from a MAKE_HOOK macro that does not use a fixed offset.
-// This also ensures HookTracker validity after the hooking process.
 #define INSTALL_HOOK_ORIG(logger, name) ::Hooking::InstallOrigHook<Hook_##name>(logger);
 
 // TODO: Not yet implemented
