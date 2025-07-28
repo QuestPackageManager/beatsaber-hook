@@ -284,7 +284,7 @@ struct SafePtr {
         // Otherwise, some other SafePtr is currently holding a reference to this instance, so keep it around.
         if (internalHandle.count() <= 1) {
             il2cpp_functions::Init();
-            #ifdef UNITY_2021
+            #if defined(UNITY_2021) || defined(UNITY_6)
             il2cpp_functions::gc_free_fixed(internalHandle.__internal_get());
             #else
             if (!il2cpp_functions::hasGCFuncs) {
@@ -446,7 +446,7 @@ struct SafePtr {
             // It should be safe to assume that gc_alloc_fixed returns a non-null pointer. If it does return null, we have a pretty big issue.
             static constexpr auto sz = sizeof(SafePointerWrapper);
 
-            #ifdef UNITY_2021
+            #if defined(UNITY_2021) || defined(UNITY_6)
             auto* wrapper = reinterpret_cast<SafePointerWrapper*>(il2cpp_functions::gc_alloc_fixed(sz));
 
             #else

@@ -5,7 +5,7 @@
   "info": {
     "name": "beatsaber-hook",
     "id": "beatsaber-hook",
-    "version": "6.0.0",
+    "version": "7.0.0",
     "url": "https://github.com/QuestPackageManager/beatsaber-hook",
     "additionalData": {
       "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.0.0/libbeatsaber-hook.so",

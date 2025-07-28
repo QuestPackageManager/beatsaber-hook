@@ -157,7 +157,7 @@ namespace il2cpp_utils {
         };
 
         static inline Il2CppClass* GetGenericTemplateClass(Il2CppGenericClass* generic_class) {
-            #ifdef UNITY_2021
+            #if defined(UNITY_2021) || defined(UNITY_6)
             return CRASH_UNLESS(il2cpp_functions::type_get_class_or_element_class(generic_class->type));
             #else
             return CRASH_UNLESS(il2cpp_functions::MetadataCache_GetTypeInfoFromTypeDefinitionIndex(generic_class->typeDefinitionIndex));

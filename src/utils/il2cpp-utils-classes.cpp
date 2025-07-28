@@ -55,7 +55,7 @@ namespace il2cpp_utils {
         void* myIter = nullptr;
         if (!methodInit) {
             // log results of Class::Init
-            #ifdef UNITY_2021
+            #if defined(UNITY_2021) || defined(UNITY_6)
             logger.warn("klass->initialized: {}, init_pending: {}, initialized_and_no_error: {}, initializationExceptionGCHandle: {:X}",
                     (bool)klass->initialized, (bool)klass->init_pending, (bool)klass->initialized_and_no_error, klass->initializationExceptionGCHandle);
             #else
@@ -75,7 +75,7 @@ namespace il2cpp_utils {
         auto typeDefIdx = il2cpp_functions::MetadataCache_GetIndexForTypeDefinition(klass->generic_class ? klass->generic_class->cached_class : klass);
         logger.debug("TypeDefinitionIndex: {}", typeDefIdx);
         // Repair the typeDefinition value if it was null but we found one
-        #ifndef UNITY_2021
+        #if !defined(UNITY_2021) && !defined(UNITY_6)
         if (!klass->typeDefinition && typeDefIdx > 0) klass->typeDefinition = il2cpp_functions::MetadataCache_GetTypeDefinitionFromIndex(typeDefIdx);
         logger.debug("Type definition: {}", fmt::ptr(klass->typeDefinition));
         #endif
@@ -103,7 +103,7 @@ namespace il2cpp_utils {
         // Therefore, this code makes only the following assumptions:
         // 1. If is_generic is set, then genericContainerIndex was also intentionally set (even if it's 0) and is not -1 (invalid)
         // 2. Even if is_generic wasn't set, a positive genericContainerIndex was intentionally set that way and is a valid index.
-        #ifdef UNITY_2021
+        #if defined(UNITY_2021) || defined(UNITY_6)
             auto klassGenericContainerIndex = il2cpp_functions::MetadataCache_GetGenericContainerIndex(klass);
         #else
             auto klassGenericContainerIndex = klass->genericContainerIndex;

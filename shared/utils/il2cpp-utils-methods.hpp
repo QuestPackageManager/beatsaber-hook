@@ -134,7 +134,7 @@ void* ExtractValue(T&& arg) {
         if constexpr (::std::is_base_of_v<Il2CppObject, ::std::remove_pointer_t<Dt>>) {
             if (arg) {
                 auto* klass = il2cpp_functions::object_get_class(reinterpret_cast<Il2CppObject*>(arg));
-#ifdef UNITY_2021
+#if defined(UNITY_2021) || defined(UNITY_6)
                 if (klass && il2cpp_functions::class_is_valuetype(klass)) {
 #else
                 if (klass && klass->valuetype) {
@@ -273,13 +273,13 @@ inline const Il2CppGenericContainer* GetGenericContainer(MethodInfo const* metho
 
     if (method->is_inflated) {
         auto genMethodInfo = method->genericMethod;
-#ifdef UNITY_2021
+#if defined(UNITY_2021) || defined(UNITY_6)
         return reinterpret_cast<const Il2CppGenericContainer*>(genMethodInfo->methodDefinition->genericContainerHandle);
 #else
         return genMethodInfo->methodDefinition->genericContainerHandle;
 #endif
     } else {
-#ifdef UNITY_2021
+#if defined(UNITY_2021) || defined(UNITY_6)
         return reinterpret_cast<const Il2CppGenericContainer*>(method->genericContainerHandle);
 #else
         return = method->genericContainer;

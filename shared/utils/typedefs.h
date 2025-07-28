@@ -112,7 +112,7 @@ NEED_NO_BOX(Il2CppStackFrame);
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionAssemblyName*, assembly_name);
 NEED_NO_BOX(Il2CppReflectionAssemblyName);
 // DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionAssembly*, assembly);
-#ifndef UNITY_2021
+#if !defined(UNITY_2021) && !defined(UNITY_6)
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionAssembly*, mono_assembly);
 NEED_NO_BOX(Il2CppReflectionAssembly);
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionField*, mono_field);
@@ -123,7 +123,7 @@ NEED_NO_BOX(Il2CppReflectionParameter);
 #endif
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionModule*, module);
 NEED_NO_BOX(Il2CppReflectionModule);
-#ifndef UNITY_2021
+#if !defined(UNITY_2021) && !defined(UNITY_6)
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionPointer*, pointer);
 NEED_NO_BOX(Il2CppReflectionPointer);
 #endif
@@ -152,7 +152,7 @@ DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppThread*, thread);
 NEED_NO_BOX(Il2CppThread);
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionRuntimeType*, runtimetype);
 NEED_NO_BOX(Il2CppReflectionRuntimeType);
-#ifndef UNITY_2021
+#if !defined(UNITY_2021) && !defined(UNITY_6)
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionMonoEventInfo*, mono_event_info);
 NEED_NO_BOX(Il2CppReflectionMonoEventInfo);
 DEFINE_IL2CPP_DEFAULT_TYPE(Il2CppReflectionMethod*, mono_method);

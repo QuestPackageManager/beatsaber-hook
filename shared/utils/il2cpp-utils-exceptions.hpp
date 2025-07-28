@@ -62,7 +62,7 @@ namespace il2cpp_utils {
     // Returns a legible string from an Il2CppException*
     ::std::string ExceptionToString(const Il2CppException* exp) noexcept;
 
-    #if defined(UNITY_2019) || defined(UNITY_2021)
+    #if defined(UNITY_2019) || defined(UNITY_2021) || defined(UNITY_6)
     /// @brief Raises the provided Il2CppException to be used within il2cpp.
     /// @param exp The exception instance to throw
     [[noreturn]] void raise(const Il2CppException* exp);
@@ -108,7 +108,7 @@ namespace il2cpp_utils {
         // Logs the backtrace with the Logging::ERROR level, using the global logger instance.
         void log_backtrace() const;
         [[noreturn]] void rethrow() const {
-            #if defined(UNITY_2019) || defined(UNITY_2021)
+            #if defined(UNITY_2019) || defined(UNITY_2021) || defined(UNITY_6)
             il2cpp_utils::raise(ex);
             #else
             #warning "The exception being rethrown like this is unlikely to behave correctly!"

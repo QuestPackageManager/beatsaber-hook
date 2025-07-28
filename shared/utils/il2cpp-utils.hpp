@@ -165,7 +165,7 @@ namespace il2cpp_utils {
         if constexpr (what_able<T>) {
             allocEx->message = newcsstr(arg.what());
         }
-        #if defined(UNITY_2019) || defined(UNITY_2021)
+        #if defined(UNITY_2019) || defined(UNITY_2021) || defined(UNITY_6)
         raise(allocEx);
         #else
         #warning "Raising C++ exceptions without il2cpp_functions::raise is undefined behavior!"

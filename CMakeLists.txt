@@ -27,8 +27,7 @@ add_compile_options(-Wno-vla-cxx-extension)
 add_compile_definitions(VERSION=\"${MOD_VERSION}\")
 add_compile_definitions(MOD_ID=\"${MOD_ID}\")
 add_compile_definitions(VERSION_NUMBER=300150000)
-add_compile_definitions(UNITY_2019)
-add_compile_definitions(UNITY_2021)
+add_compile_definitions(UNITY_6)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
