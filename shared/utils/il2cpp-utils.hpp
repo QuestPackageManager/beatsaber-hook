@@ -433,20 +433,22 @@ namespace il2cpp_utils {
             return id.str();
         }
 
+        // TODO: Custom reimplementation (Removed in Unity 2023)
+        // ref https://github.com/vfsfitvnm/frida-il2cpp-bridge/issues/618#issuecomment-2835645754
         /// @brief gets whether the current thread is attached to il2cpp
         /// @return true for attached, false for not attached
-        static inline bool is_thread_attached() {
-            il2cpp_functions::Init();
-            auto currentThread = il2cpp_functions::thread_current();
-            // if there is no current thread might as well just return false since we didn't get a thread
-            if (!currentThread) return false;
+        // static inline bool is_thread_attached() {
+        //     il2cpp_functions::Init();
+        //     auto currentThread = il2cpp_functions::thread_current();
+        //     // if there is no current thread might as well just return false since we didn't get a thread
+        //     if (!currentThread) return false;
 
-            size_t threadCount = 0;
-            auto threads_begin = il2cpp_functions::thread_get_all_attached_threads(&threadCount);
-            auto threads_end = threads_begin + threadCount;
+        //     size_t threadCount = 0;
+        //     auto threads_begin = il2cpp_functions::thread_get_all_attached_threads(&threadCount);
+        //     auto threads_end = threads_begin + threadCount;
 
-            return std::find(threads_begin, threads_end, currentThread) != threads_end;
-        }
+        //     return std::find(threads_begin, threads_end, currentThread) != threads_end;
+        // }
 
         static inline Il2CppThread* attach_thread() {
             static auto logger = il2cpp_utils::Logger;
@@ -525,11 +527,15 @@ namespace il2cpp_utils {
         template<typename Func, typename... TArgs>
         requires(std::is_invocable_v<Func, TArgs...>)
         static inline std::invoke_result_t<Func, TArgs...> il2cpp_async_internal(Func&& func, TArgs&&... args) {
+            #if defined(UNITY_2019) || defined(UNITY_2021)
             if (is_thread_attached()) {
                 return il2cpp_catch_invoke(std::forward<Func>(func), std::forward<TArgs>(args)...);
             } else {
                 return il2cpp_attached_thread(std::forward<Func>(func), std::forward<TArgs>(args)...);
             }
+            #else
+            return il2cpp_attached_thread(std::forward<Func>(func), std::forward<TArgs>(args)...);
+            #endif
         }
     }
     struct il2cpp_aware_thread : public std::thread {
