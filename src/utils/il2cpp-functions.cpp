@@ -915,8 +915,8 @@ void il2cpp_functions::Init() {
 
     {
         // Class::GetPtrClass(Il2CppClass*)
-        // instead of evaluating the switch, we look for the 4th b
-        auto Class_GetPtrClass_addr = cs::findNthB<4, false>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
+        // The b.xx instructions also count as b, it is not the 17th literal b
+        auto Class_GetPtrClass_addr = cs::findNthB<17, false>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
         if (!Class_GetPtrClass_addr) SAFE_ABORT_MSG("Failed to find Class_GetPtrClass!");
         il2cpp_Class_GetPtrClass = reinterpret_cast<decltype(il2cpp_Class_GetPtrClass)>(*Class_GetPtrClass_addr);
         logger.debug("Class::GetPtrClass(Il2CppClass*) found? offset: {:X}", ((uintptr_t)il2cpp_Class_GetPtrClass) - getRealOffset(0));
