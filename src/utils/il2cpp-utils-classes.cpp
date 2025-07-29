@@ -56,7 +56,7 @@ namespace il2cpp_utils {
         if (!methodInit) {
             // log results of Class::Init
             #if defined(UNITY_2021) || defined(UNITY_6)
-            logger.warn("klass->initialized: {}, init_pending: {}, initialized_and_no_error: {}, initializationExceptionGCHandle: {:X}",
+            logger.warn("klass->initialized: {}, init_pending: {}, initialized_and_no_error: {}, initializationExceptionGCHandle: {}",
                     (bool)klass->initialized, (bool)klass->init_pending, (bool)klass->initialized_and_no_error, klass->initializationExceptionGCHandle);
             #else
             logger.warning("klass->initialized: {}, init_pending: {}, has_initialization_error: {}, initializationExceptionGCHandle: {:X}",
