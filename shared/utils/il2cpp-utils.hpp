@@ -429,8 +429,9 @@ namespace il2cpp_utils {
         }
 
         static inline std::string current_thread_id() {
-            std::stringstream id; id << std::this_thread::get_id();
-            return id.str();
+            std::hash<std::thread::id> threadHash;
+            auto threadId = std::this_thread::get_id();
+            return std::to_string(threadHash(threadId));
         }
 
         /// @brief gets whether the current thread is attached to il2cpp
@@ -537,8 +538,9 @@ namespace il2cpp_utils {
             static inline thread_local JNIEnv* env;
         public:
             static std::string current_thread_id() {
-                std::stringstream id; id << std::this_thread::get_id();
-                return id.str();
+                std::hash<std::thread::id> threadHash;
+                auto threadId = std::this_thread::get_id();
+                return std::to_string(threadHash(threadId));
             }
 
             static inline JNIEnv* get_current_env() noexcept { return env; }
