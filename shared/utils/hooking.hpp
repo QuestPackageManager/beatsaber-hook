@@ -606,7 +606,7 @@ retval Hook_##name_::hook_##name_(__VA_ARGS__)
 //     static_assert(!std::is_same_v<R, R>, "Attempting to MAKE_HOOK_INSTANCE_AUTO with a static method! See MAKE_HOOK_STATIC_AUTO instead!"); \
 // };
 
-template<typename T, typename L, bool track = true>
+template<typename T, typename L, bool track = true, bool isFinal = false>
 inline void __InstallHook(L& logger, void* addr) {
     #ifndef SUPPRESS_MACRO_LOGS
     logger.info("Installing hook: {} to offset: {}", T::name(), fmt::ptr(addr));
@@ -621,6 +621,32 @@ inline void __InstallHook(L& logger, void* addr) {
     } else {
         #ifndef SUPPRESS_MACRO_LOGS
         logger.critical("Failed to install hook: {} with flamingo: {}", T::name(), install_result.error());
+        #endif
+    }
+    #else
+    registerInlineHook((uint32_t) addr, (uint32_t) T::hook(), (uint32_t **) T::trampoline());
+    inlineHook((uint32_t) addr);
+    #endif
+}
+
+template<typename T, typename L>
+void __InstallFinalHook(L& logger, void* addr) {
+    #ifndef SUPPRESS_MACRO_LOGS
+    logger.info("Installing final priority hook: {} to offset: {}", T::name(), fmt::ptr(addr));
+    #endif
+    #ifdef __aarch64__
+    // TODO: We force the 
+    auto install_result = flamingo::Install(
+        flamingo::HookInfo{T::hook(), addr, T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}, flamingo::HookPriority{.is_final = true}
+    });
+    if (install_result.has_value()) {
+        // TODO: Attach the returned handle to a member on T.
+        #ifndef SUPPRESS_MACRO_LOGS
+        logger.info("Final hook: {} installed with flamingo!", T::name());
+        #endif
+    } else {
+        #ifndef SUPPRESS_MACRO_LOGS
+        logger.critical("Failed to install final hook: {} with flamingo: {}", T::name(), install_result.error());
         #endif
     }
     #else
@@ -653,10 +679,16 @@ void InstallHook(L& logger) {
 template<typename T, typename L>
 requires (is_findCall_hook<T> && !is_addr_hook<T> && is_logger<L>)
 void InstallOrigHook(L& logger) {
-    #ifndef SUPPRESS_MACRO_LOGS
-    logger.critical("Attempting to install orig hook: {}, but this no longer does anything!", T::name());
-    #endif
-    SAFE_ABORT();
+    // Install T assuming it is a hook that should call FindMethod.
+    auto info = T::getInfo();
+    if (!info) {
+        #ifndef SUPPRESS_MACRO_LOGS
+        logger.critical("Attempting to install final (orig) hook: {}, but method could not be found!", T::name());
+        #endif
+        SAFE_ABORT();
+    }
+    auto addr = (void*) info->methodPointer;
+    __InstallFinalHook<T>(logger, addr);
 }
 template<typename T, typename L>
 requires (is_hook<T> && is_logger<L>)
