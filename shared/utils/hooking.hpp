@@ -635,7 +635,7 @@ void __InstallFinalHook(L& logger, void* addr) {
     logger.info("Installing final priority hook: {} to offset: {}", T::name(), fmt::ptr(addr));
     #endif
     #ifdef __aarch64__
-    // TODO: We force the 
+    // TODO: We force the hook priority here to final, but ideally we should allow arbitrary priorities via some call.
     auto install_result = flamingo::Install(
         flamingo::HookInfo{T::hook(), addr, T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}, flamingo::HookPriority{.is_final = true}
     });
