@@ -899,7 +899,7 @@ void il2cpp_functions::Init() {
         logger.debug("il2cpp_image_get_class offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_image_get_class) - getRealOffset(0));
         auto GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_image_get_class));
         if (!GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr) SAFE_ABORT_MSG("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
-        logger.debug("GlobalMetadata::FromTypeDefinitionIndex found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_MetadataCache_GetTypeInfoFromHandle) - getRealOffset(0));
+        logger.debug("GlobalMetadata::FromTypeDefinitionIndex found? offset: {:X}", reinterpret_cast<uintptr_t>(*GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr) - getRealOffset(0));
         il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex = reinterpret_cast<decltype(il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)>(*GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr);
 #endif
 #if defined(UNITY_2019) || defined(UNITY_2021)
