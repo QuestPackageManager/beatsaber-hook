@@ -8,7 +8,8 @@
 #include "typedefs.h"
 #include "logging.hpp"
 #include "il2cpp-utils.hpp"
-#include "utils/capstone-utils.hpp"
+// FIX: change in qpm setup might be why capstone-utils is not propery working here?
+#include "beatsaber-hook/shared/utils/capstone-utils.hpp"
 
 namespace Hooking {
 // For use in MAKE_HOOK_AUTO bodies.
@@ -612,15 +613,16 @@ inline void __InstallHook(L& logger, void* addr) {
     logger.info("Installing hook: {} to offset: {}", T::name(), fmt::ptr(addr));
     #endif
     #ifdef __aarch64__
-    auto install_result = flamingo::Install(flamingo::HookInfo{T::hook(), addr, T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}});
+    auto install_result = flamingo::Install(flamingo::HookInfo{(void*)T::hook(), addr, (void**)T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}});
     if (install_result.has_value()) {
         // TODO: Attach the returned handle to a member on T.
         #ifndef SUPPRESS_MACRO_LOGS
-        logger.info("Hook: {} installed with flamingo!", T::name());
+        logger.info("Hook: {} installed with flamingo!", (const char*)T::name());
         #endif
     } else {
         #ifndef SUPPRESS_MACRO_LOGS
-        logger.critical("Failed to install hook: {} with flamingo: {}", T::name(), install_result.error());
+        // FIX: Error is removed as it causes formatting errors
+        logger.critical("Failed to install hook: {} with flamingo: ", (const char*)T::name());
         #endif
     }
     #else
@@ -659,7 +661,7 @@ template<typename T, typename L>
 requires (is_addr_hook<T> && !is_findCall_hook<T> && is_logger<L>)
 void InstallHook(L& logger) {
     // Install T assuming it is an address hook.
-    auto addr = (void*) getRealOffset(T::addr());
+    auto addr = static_cast<void*>(getRealOffset(T::addr()));
     __InstallHook<T>(logger, addr);
 }
 template<typename T, typename L>
@@ -687,7 +689,7 @@ void InstallOrigHook(L& logger) {
         #endif
         SAFE_ABORT();
     }
-    auto addr = (void*) info->methodPointer;
+    auto addr = static_cast<void*>(info->methodPointer);
     __InstallFinalHook<T>(logger, addr);
 }
 template<typename T, typename L>
