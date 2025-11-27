@@ -7,7 +7,7 @@
     "info": {
       "name": "beatsaber-hook",
       "id": "beatsaber-hook",
-      "version": "7.0.0",
+      "version": "7.1.0",
       "url": "https://github.com/QuestPackageManager/beatsaber-hook",
       "additionalData": {
         "soLink": "https://github.com/QuestPackageManager/beatsaber-hook/releases/download/v5.0.0/libbeatsaber-hook.so",
@@ -31,7 +31,7 @@
           "qpm qmod zip"
         ]
       },
-      "ndk": "^27.1.12297006",
+      "ndk": "^27.3.13750724",
       "qmodIncludeDirs": [
         "./build",
         "./extern/libs"
