@@ -802,6 +802,7 @@ void il2cpp_functions::Init() {
     // TODO: Consider making all of these optional and having only those that are truly used crash on fail
     // Alternatively, have none of them crash on fail, but on usage
     {
+        // UNITY 6: No changes
         auto Array_NewSpecific_addr = cs::readb(reinterpret_cast<const uint32_t*>(il2cpp_array_new_specific));
         logger.debug("Array::NewSpecific offset: {:X}", reinterpret_cast<uintptr_t>(Array_NewSpecific_addr) - getRealOffset(0));
         auto match = cs::findNthBl<1>(Array_NewSpecific_addr);
@@ -812,12 +813,15 @@ void il2cpp_functions::Init() {
     }
 
     {
+
+
         /*
-            Path to method:
-            il2cpp_image_get_class
-                Image::GetType
-                    MetadataCache::GetTypeInfoFromHandle
-        */
+             Path to method:
+             il2cpp_image_get_class
+                 Image::GetType // Optimized away
+                     MetadataCache::GetTypeInfoFromHandle
+         */
+#if defined(UNITY_2019) || defined(UNITY_2021)
         logger.debug("il2cpp_image_get_class offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_image_get_class) - getRealOffset(0));
         auto Image_GetType_addr = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_image_get_class));
         if (!Image_GetType_addr) SAFE_ABORT_MSG("Failed to find Image::GetType!");
@@ -825,8 +829,9 @@ void il2cpp_functions::Init() {
         auto MetadataCache_GetTypeInfoFromHandle_addr = cs::findNthB<1, false, -1, 1024>(*Image_GetType_addr);
         if (!MetadataCache_GetTypeInfoFromHandle_addr) SAFE_ABORT_MSG("Failed to find MetadataCache::GetTypeInfoFromHandle!");
         il2cpp_MetadataCache_GetTypeInfoFromHandle = reinterpret_cast<decltype(il2cpp_MetadataCache_GetTypeInfoFromHandle)>(*MetadataCache_GetTypeInfoFromHandle_addr);
-        // MetadataCache::GetTypeInfoFromHandle. offset 0x84F764 in 1.5, 0x9F5250 in 1.7.0, 0xA7A79C in 1.8.0b1
         logger.debug("MetadataCache::GetTypeInfoFromHandle found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_MetadataCache_GetTypeInfoFromHandle) - getRealOffset(0));
+#endif
+        // MetadataCache::GetTypeInfoFromHandle. offset 0x84F764 in 1.5, 0x9F5250 in 1.7.0, 0xA7A79C in 1.8.0b1
     }
 
     {
@@ -834,7 +839,6 @@ void il2cpp_functions::Init() {
             Path to method:
             il2cpp_field_get_value_object
                 Field::GetValueObject
-                    Field::GetValueObjectForThread
                         Field::GetDefaultFieldValue
                             BlobReader::GetConstantValueFromBlob
                                 MetadataCache::GetTypeInfoFromTypeIndex
@@ -852,19 +856,27 @@ void il2cpp_functions::Init() {
         if (!BlobReader_GetConstantValueFromBlob_addr) SAFE_ABORT_MSG("Failed to find BlobReader::GetConstantValueFromBlob!");
         logger.debug("Image::GetConstantValueFromBlob found? offset: {:X}", reinterpret_cast<uintptr_t>(*BlobReader_GetConstantValueFromBlob_addr) - getRealOffset(0));
 
+#if defined(UNITY_6)
+        auto MetadataCache_GetTypeInfoFromTypeIndex_addr = cs::findNthBl<2, 1>(*BlobReader_GetConstantValueFromBlob_addr);
+        if (!MetadataCache_GetTypeInfoFromTypeIndex_addr) SAFE_ABORT_MSG("Failed to find MetadataCache::GetTypeInfoFromTypeIndex!");
+#endif
+
+#if defined(UNITY_2019) || defined(UNITY_2021)
         auto BlobReader_GetConstantValueFromBlob2_addr = cs::findNthBl<1, 1>(*BlobReader_GetConstantValueFromBlob_addr);
         if (!BlobReader_GetConstantValueFromBlob2_addr) SAFE_ABORT_MSG("Failed to find BlobReader::GetConstantValueFromBlob!");
         logger.debug("Image::GetConstantValueFromBlob2 found? offset: {:X}", reinterpret_cast<uintptr_t>(*BlobReader_GetConstantValueFromBlob2_addr) - getRealOffset(0));
-
         auto MetadataCache_GetTypeInfoFromTypeIndex_addr = cs::findNthBl<2, 1>(*BlobReader_GetConstantValueFromBlob2_addr);
         if (!MetadataCache_GetTypeInfoFromTypeIndex_addr) SAFE_ABORT_MSG("Failed to find MetadataCache::GetTypeInfoFromTypeIndex!");
+#endif
         il2cpp_MetadataCache_GetTypeInfoFromTypeIndex = reinterpret_cast<decltype(il2cpp_MetadataCache_GetTypeInfoFromTypeIndex)>(*MetadataCache_GetTypeInfoFromTypeIndex_addr);
         // MetadataCache::GetTypeInfoFromTypeIndex. offset 0x84F764 in 1.5, 0x9F5250 in 1.7.0, 0xA7A79C in 1.8.0b1
         logger.debug("MetadataCache::GetTypeInfoFromTypeIndex found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_MetadataCache_GetTypeInfoFromTypeIndex) - getRealOffset(0));
     }
 
     {
+#if defined(UNITY_2019) || defined(UNITY_2021)
         /*
+            UNITY 6 Optimizes this, so no need
             Path to method:
             MetadataCache::GetTypeInfoFromHandle
                 GlobalMetadata::GetTypeInfoFromHandle
@@ -874,6 +886,7 @@ void il2cpp_functions::Init() {
         if (!GlobalMetadata_GetTypeInfoFromHandle_addr) SAFE_ABORT_MSG("Failed to find GlobalMetadata::GetTypeInfoFromHandle!");
         il2cpp_GlobalMetadata_GetTypeInfoFromHandle = reinterpret_cast<decltype(il2cpp_GlobalMetadata_GetTypeInfoFromHandle)>(*GlobalMetadata_GetTypeInfoFromHandle_addr);
         logger.debug("GlobalMetadata::GetTypeInfoFromHandle found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_GlobalMetadata_GetTypeInfoFromHandle) - getRealOffset(0));
+#endif
     }
 
     {
@@ -882,11 +895,20 @@ void il2cpp_functions::Init() {
             GlobalMetadata::GetTypeInfoFromHandle
                 GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex
         */
+#if defined(UNITY_6)
+        logger.debug("il2cpp_image_get_class offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_image_get_class) - getRealOffset(0));
+        auto GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_image_get_class));
+        if (!GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr) SAFE_ABORT_MSG("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
+        logger.debug("GlobalMetadata::FromTypeDefinitionIndex found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_MetadataCache_GetTypeInfoFromHandle) - getRealOffset(0));
+        il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex = reinterpret_cast<decltype(il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)>(*GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr);
+#endif
+#if defined(UNITY_2019) || defined(UNITY_2021)
         logger.debug("GlobalMetadata::GetTypeInfoFromHandle offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_GlobalMetadata_GetTypeInfoFromHandle) - getRealOffset(0));
         auto GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_GlobalMetadata_GetTypeInfoFromHandle));
         if (!GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr) SAFE_ABORT_MSG("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
         il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex = reinterpret_cast<decltype(il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)>(*GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex_addr);
         logger.debug("GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex) - getRealOffset(0));
+#endif
     }
 
     {
@@ -959,8 +981,14 @@ void il2cpp_functions::Init() {
         if (!runtimeInit) SAFE_ABORT_MSG("Failed to find Runtime::Init!");
         // alternatively, could just get the 1st ADRP in Runtime::Init with dest reg x20 (or the 9th ADRP)
         // We DO need to skip at least one ret, though.
+#if defined(UNITY_2019) || defined(UNITY_2021)
         auto ldr = cs::findNth<8, &loadFind, &cs::insnMatch<>, 1>(*runtimeInit);
         if (!ldr) SAFE_ABORT_MSG("Failed to find 8th load in Runtime::Init!");
+#endif
+#if defined(UNITY_6)
+        auto ldr = cs::findNth<6, &loadFind, &cs::insnMatch<>, 1>(*runtimeInit);
+        if (!ldr) SAFE_ABORT_MSG("Failed to find 6th load in Runtime::Init!");
+#endif
         auto defaults_addr = cs::getpcaddr<1, 1>(*ldr);
         if (!defaults_addr) SAFE_ABORT_MSG("Failed to find pcaddr around 8th load in Runtime::Init!");
         defaults = reinterpret_cast<decltype(defaults)>(std::get<2>(*defaults_addr));
