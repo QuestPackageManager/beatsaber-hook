@@ -8,7 +8,6 @@
 #include "typedefs.h"
 #include "logging.hpp"
 #include "il2cpp-utils.hpp"
-// FIX: change in qpm setup might be why capstone-utils is not propery working here?
 #include "./capstone-utils.hpp"
 
 namespace Hooking {

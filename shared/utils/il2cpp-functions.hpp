@@ -85,6 +85,22 @@ typedef std::vector<const Il2CppAssembly*> AssemblyVector;
 #define IL2CPP_FUNC_VISIBILITY private
 #endif
 
+#define API_FUNC_MONO(rt, name, ...) \
+IL2CPP_FUNC_VISIBILITY: \
+static rt (*mono_##name)__VA_ARGS__; \
+public: \
+template<class... TArgs> \
+static rt name(TArgs&&... args) { \
+if (!mono_##name) { \
+SAFE_ABORT(); \
+} \
+if constexpr (std::is_same_v<rt, void>) { \
+mono_##name(args...); \
+} else { \
+return mono_##name(args...); \
+} \
+}
+
 #define API_FUNC(rt, name, ...) \
 IL2CPP_FUNC_VISIBILITY: \
 static rt (*il2cpp_##name)__VA_ARGS__; \
@@ -399,6 +415,7 @@ class il2cpp_functions {
     // MANUALLY DEFINED CONST DEFINITIONS
     API_FUNC(const Il2CppType*, class_get_type_const, (const Il2CppClass * klass));
     API_FUNC(const char*, class_get_name_const, (const Il2CppClass * klass));
+    API_FUNC_MONO(Il2CppClass*, type_get_class, (Il2CppType* type))
 
     // SELECT NON-API LIBIL2CPP FUNCTIONS:
     API_FUNC_VISIBLE(bool, Class_Init, (Il2CppClass* klass));
@@ -407,7 +424,7 @@ class il2cpp_functions {
     API_FUNC_VISIBLE(Il2CppClass*, MetadataCache_GetTypeInfoFromTypeIndex, (TypeIndex index));
 
     API_FUNC_VISIBLE(Il2CppClass*, GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex, (TypeDefinitionIndex index));
-    API_FUNC_VISIBLE(Il2CppClass*, GlobalMetadata_GetTypeInfoFromHandle, (TypeDefinitionIndex index));
+    API_FUNC_VISIBLE(Il2CppClass*, GlobalMetadata_GetTypeInfoFromHandle, (Il2CppMetadataTypeHandle index));
 
 
 #if defined(UNITY_2019) || defined(UNITY_2021) || defined(UNITY_6)
@@ -423,13 +440,24 @@ class il2cpp_functions {
     API_FUNC_VISIBLE(Il2CppClass*, Class_FromIl2CppType, (Il2CppType* typ));
     API_FUNC_VISIBLE(Il2CppClass*, Class_GetPtrClass, (Il2CppClass* elementClass));
     API_FUNC_VISIBLE(Il2CppClass*, GenericClass_GetClass, (Il2CppGenericClass* gclass));
+    API_FUNC_VISIBLE(Il2CppClass*, GenericClass_CreateClass, (Il2CppGenericClass * gclass, bool throwOnError));
     API_FUNC_VISIBLE(AssemblyVector*, Assembly_GetAllAssemblies, ());
 
     private:
-    static bool find_GC_free();
+    static void find_GC_free(Paper::LoggerContext const& logger);
     static bool find_GC_SetWriteBarrier(const uint32_t* set_wbarrier_field);
     static bool trace_GC_AllocFixed(const uint32_t* DomainGetCurrent);
-    static bool find_GC_AllocFixed(const uint32_t* DomainGetCurrent);
+    static bool find_GC_AllocFixed();
+    static void init_api(Paper::LoggerContext const& logger, void* imagehandle);
+    static void find_class_init(Paper::LoggerContext const& logger);
+    static void find__type_get_name_(Paper::LoggerContext const& logger);
+    static void find_get_type_info_from_type_definition_index();
+    static void find_class_from_il2cpp_type(Paper::LoggerContext const& logger);
+    static Il2CppClass* type_info_from_handle(Il2CppMetadataTypeHandle handle);
+    static void find_generic_class_create_class(Paper::LoggerContext const& logger);
+    static Il2CppClass* generic_class_get_class(Il2CppGenericClass* gclass);
+    static void find_class_get_ptr_class(Paper::LoggerContext const& logger);
+    static void find_il2cpp_defaults(Paper::LoggerContext const& logger);
 
     static const Il2CppMetadataRegistration** s_Il2CppMetadataRegistrationPtr;
     static const void** s_GlobalMetadataPtr;
