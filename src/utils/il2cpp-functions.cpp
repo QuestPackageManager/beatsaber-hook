@@ -499,10 +499,14 @@ bool il2cpp_functions::find_GC_AllocFixed() {
  *   - 2nd bl instruction -> Class::Init
  */
 void il2cpp_functions::find_class_init(Paper::LoggerContext const& logger) {
+    #ifdef UNITY_6
     const auto class_init = cs::findNthBl<2>(reinterpret_cast<const uint32_t*>(il2cpp_class_from_system_type));
     if (!class_init) SAFE_ABORT_MSG("Failed to find Class::Init!");
     il2cpp_Class_Init = reinterpret_cast<decltype(il2cpp_Class_Init)>(*class_init);
     logger.debug("Class::Init found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Class_Init) - getRealOffset(0));
+#else
+#error "XREF for Class::Init needs to be updated for this Unity version!"
+#endif
 }
 
 /*
@@ -511,10 +515,14 @@ void il2cpp_functions::find_class_init(Paper::LoggerContext const& logger) {
  *   - 1st Bl instruction -> Type::GetName
  */
 void il2cpp_functions::find__type_get_name_(Paper::LoggerContext const& logger) {
+#ifdef UNITY_6
     auto type_getName = cs::findNthBl<1>(reinterpret_cast<uint32_t*>(il2cpp_type_get_assembly_qualified_name));
     if (!type_getName) SAFE_ABORT_MSG("Failed to find Type::GetName!");
     il2cpp__Type_GetName_ = reinterpret_cast<decltype(il2cpp__Type_GetName_)>(*type_getName);
     logger.debug("Type::GetName found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp__Type_GetName_) - getRealOffset(0));
+#else
+    #error "XREF for Type::GetName needs to be updated for this Unity version!"
+#endif
 }
 
 /*
@@ -523,9 +531,13 @@ void il2cpp_functions::find__type_get_name_(Paper::LoggerContext const& logger) 
  *   - 1st B instruction -> GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex
  */
 void il2cpp_functions::find_get_type_info_from_type_definition_index() {
+#ifdef UNITY_6
     auto get_type_info_from_type_definition_index = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(mono_type_get_class));
     if (!get_type_info_from_type_definition_index) SAFE_ABORT_MSG("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
     il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex = reinterpret_cast<decltype(il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)>(*get_type_info_from_type_definition_index);
+#else
+    #error "XREF for GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex needs to be updated for this Unity version!"
+#endif
 }
 
 /*
@@ -534,34 +546,50 @@ void il2cpp_functions::find_get_type_info_from_type_definition_index() {
  *   - 1st B instruction -> Class::FromIl2CppType
  */
 void il2cpp_functions::find_class_from_il2cpp_type(Paper::LoggerContext const& logger) {
+#ifdef UNITY_6
     const auto result = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_class_from_il2cpp_type));
     if (!result) SAFE_ABORT_MSG("Failed to find Class::FromIl2CppType!");
     il2cpp_Class_FromIl2CppType = reinterpret_cast<decltype(il2cpp_Class_FromIl2CppType)>(*result);
     logger.debug("Class::FromIl2CppType found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Class_FromIl2CppType) - getRealOffset(0));
+#else
+    #error "XREF for Class::FromIl2CppType needs to be updated for this Unity version!"
+#endif
 }
 
 Il2CppClass* il2cpp_functions::type_info_from_handle(Il2CppMetadataTypeHandle handle) {
+#if defined(UNITY_6)
     Il2CppType _type = {};
     _type.data.typeHandle = handle;
     Il2CppType* type = &_type;
     return mono_type_get_class(type);
+#else
+    #error "XREF for type_info_from_handle needs to be updated for this Unity version!"
+#endif
 }
 
 
 void il2cpp_functions::find_generic_class_create_class(Paper::LoggerContext const& logger) {
+#ifdef UNITY_6
     const auto GenericClass_CreateClass = cs::findNthB<6, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
     if (!GenericClass_CreateClass) SAFE_ABORT_MSG("Failed to find GenericClass::CreateClass!");
     il2cpp_GenericClass_CreateClass = reinterpret_cast<decltype(il2cpp_GenericClass_CreateClass)>(*GenericClass_CreateClass);
     logger.debug("GenericClass::CreateClass found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Class_FromIl2CppType) - getRealOffset(0));
+#else
+    #error "XREF for GenericClass::CreateClass needs to be updated for this Unity version!"
+#endif
 }
 
 /*
  * Original Function has become inlined, so recreate from decomp
  */
 Il2CppClass* il2cpp_functions::generic_class_get_class(Il2CppGenericClass* gclass) {
+#ifdef UNITY_6
     if (Il2CppClass* cachedClass = gclass->cached_class)
         return cachedClass;
     return il2cpp_GenericClass_CreateClass(gclass, true);
+#else
+    #error "XREF for GenericClass::GetClass needs to be updated for this Unity version!"
+#endif
 }
 
 /*
@@ -570,10 +598,14 @@ Il2CppClass* il2cpp_functions::generic_class_get_class(Il2CppGenericClass* gclas
  *   - 6th B instruction -> GenericClass::GetClass
  */
 void il2cpp_functions::find_class_get_ptr_class(Paper::LoggerContext const& logger) {
+#ifdef UNITY_6
     const auto Class_GetPtrClass_addr = cs::findNthB<6, false>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
     if (!Class_GetPtrClass_addr) SAFE_ABORT_MSG("Failed to find Class::GetPtrClass!");
     il2cpp_Class_GetPtrClass = reinterpret_cast<decltype(il2cpp_Class_GetPtrClass)>(*Class_GetPtrClass_addr);
     logger.debug("Class::GetPtrClass(Il2CppClass*) found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Class_GetPtrClass) - getRealOffset(0));
+#else
+    #error "XREF for Class::GetPtrClass needs to be updated for this Unity version!"
+#endif
 }
 
 /*
@@ -585,6 +617,7 @@ void il2cpp_functions::find_class_get_ptr_class(Paper::LoggerContext const& logg
  *     - PC Address<1,1> -> defaults
  */
 void il2cpp_functions::find_il2cpp_defaults(Paper::LoggerContext const& logger) {
+#ifdef UNITY_6
     auto runtimeInit = cs::findNthBl<2>(reinterpret_cast<const uint32_t*>(il2cpp_init));
     if (!runtimeInit) SAFE_ABORT_MSG("Failed to find Runtime::Init!");
 
@@ -597,6 +630,9 @@ void il2cpp_functions::find_il2cpp_defaults(Paper::LoggerContext const& logger) 
     defaults = reinterpret_cast<decltype(defaults)>(std::get<2>(*defaults_addr));
 
     logger.debug("il2cpp_defaults found: {} (offset: {:X})", fmt::ptr(defaults), reinterpret_cast<uintptr_t>(defaults) - getRealOffset(0));
+#else
+    #error "XREF for il2cpp_defaults needs to be updated for this Unity version!"
+#endif
 }
 
 
