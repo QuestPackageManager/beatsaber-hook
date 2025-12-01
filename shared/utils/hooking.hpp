@@ -638,7 +638,7 @@ void __InstallFinalHook(L& logger, void* addr) {
     #ifdef __aarch64__
     // TODO: We force the hook priority here to final, but ideally we should allow arbitrary priorities via some call.
     auto install_result = flamingo::Install(
-        flamingo::HookInfo{T::hook(), addr, T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}, flamingo::HookPriority{.is_final = true}
+        flamingo::HookInfo{(void*) T::hook(), addr, (void**) T::trampoline(), flamingo::HookNameMetadata{.name = T::name()}, flamingo::HookPriority{.is_final = true}
     });
     if (install_result.has_value()) {
         // TODO: Attach the returned handle to a member on T.
@@ -688,7 +688,7 @@ void InstallOrigHook(L& logger) {
         #endif
         SAFE_ABORT();
     }
-    auto addr = static_cast<void*>(info->methodPointer);
+    auto addr = (void*) info->methodPointer;
     __InstallFinalHook<T>(logger, addr);
 }
 template<typename T, typename L>
