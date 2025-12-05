@@ -671,6 +671,7 @@ extern "C" void load() {
     test_property_get_set();
     test_runmethodrethrow_on_throwing_method();
     test_delegates();
+    type_check_tests();
 }
 
 extern "C" void late_load() {}
