@@ -1,5 +1,6 @@
 #pragma once
 
+#include "flamingo/shared/installer.hpp"
 #include "flamingo/shared/hook-data.hpp"
 #include "flamingo/shared/hook-metadata.hpp"
 #include <type_traits>
@@ -8,7 +9,6 @@
 #include "typedefs.h"
 #include "logging.hpp"
 #include "il2cpp-utils.hpp"
-#include "./capstone-utils.hpp"
 
 namespace Hooking {
 // For use in MAKE_HOOK_AUTO bodies.
