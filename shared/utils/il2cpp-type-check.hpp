@@ -256,7 +256,17 @@ namespace il2cpp_utils {
         template <typename T>
         struct BS_HOOKS_HIDDEN il2cpp_arg_class {
             static inline Il2CppClass* get([[maybe_unused]] T arg) {
-                if constexpr (has_get<il2cpp_no_arg_class<T>>) {
+                using element_arg_class = il2cpp_no_arg_class<T>;
+
+                if constexpr (has_get<element_arg_class>) {
+                    // if the type is a reference type, get the pointer class of the element type
+                    // this is for wrapper types like StringW
+                    if constexpr (il2cpp_reference_type<T>) {
+                        Il2CppClass* elementClass = element_arg_class::get();
+                        il2cpp_functions::Init();
+                        return il2cpp_functions::Class_GetPtrClass(elementClass);
+                    }
+
                     return il2cpp_no_arg_class<T>::get();
                 }
                 return nullptr;

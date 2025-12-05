@@ -585,6 +585,12 @@ namespace il2cpp_utils {
         logger.debug("{}{} {}({});", flagStr, retTypeStr, methodName, paramStr);
     }
 
+    /// Returns if 'from' type can be converted to 'to' type
+    /// If 'asArgs' is true, considers byref-ness for conversion (for method argument matching)
+    ///
+    /// Note: does NOT consider implicit conversions (e.g. int to float)
+    /// Note: does NOT consider user-defined conversions
+    /// Note: does NOT consider boxing/unboxing conversions
     bool IsConvertibleFrom(const Il2CppType* to, const Il2CppType* from, bool asArgs) {
         auto const& logger = il2cpp_utils::Logger;
         RET_0_UNLESS(logger, to);
@@ -601,7 +607,7 @@ namespace il2cpp_utils {
         il2cpp_functions::Init();
         auto classTo = il2cpp_functions::class_from_il2cpp_type(to);
         auto classFrom = il2cpp_functions::class_from_il2cpp_type(from);
-        bool ret = (to->type == IL2CPP_TYPE_MVAR) || il2cpp_functions::class_is_assignable_from(classTo, classFrom);
+        bool ret = from == to || (to->type == IL2CPP_TYPE_MVAR) || il2cpp_functions::class_is_assignable_from(classTo, classFrom);
         if (!ret) {
             if (il2cpp_functions::class_is_enum(classTo)) {
                 ret = IsConvertibleFrom(il2cpp_functions::class_enum_basetype(classTo), from, asArgs);
