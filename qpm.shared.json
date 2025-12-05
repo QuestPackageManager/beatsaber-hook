@@ -43,7 +43,9 @@
       {
         "id": "scotland2",
         "versionRange": "^0.1.2",
-        "additionalData": {}
+        "additionalData": {
+          "includeQmod": false
+        }
       },
       {
         "id": "libil2cpp",

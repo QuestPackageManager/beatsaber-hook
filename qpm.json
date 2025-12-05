@@ -43,6 +43,7 @@
       "id": "scotland2",
       "versionRange": "^0.1.2",
       "additionalData": {
+        "includeQmod": false
        }
     },
     {
