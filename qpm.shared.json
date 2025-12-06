@@ -29,6 +29,9 @@
         ],
         "qmod": [
           "qpm qmod zip"
+        ],
+        "tests": [
+          "pwsh ./make-tests.ps1"
         ]
       },
       "ndk": "^27.3.13750724",

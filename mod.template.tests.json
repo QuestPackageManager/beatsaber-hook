@@ -1,0 +1,11 @@
+{
+    "_QPVersion": "0.1.1",
+    "name": "${mod_name} (Tests)",
+    "id": "${mod_id}",
+    "author": "sc2ad",
+    "version": "${version}",
+    "description": "Tests modding utilities for unity il2cpp games",
+    "modloader": "Scotland2",
+    "dependencies": [],
+    "modFiles":["libtest-beatsaber-hook.so"]
+  }
