@@ -319,7 +319,11 @@ API_INIT(Il2CppClass*, Class_GetPtrClass, (Il2CppClass * elementClass));
 API_INIT(Il2CppClass*, GenericClass_GetClass, (Il2CppGenericClass * gclass));
 API_INIT(Il2CppClass*, GenericClass_CreateClass, (Il2CppGenericClass * gclass, bool throwOnError));
 
+#if defined(UNITY_2019) || defined(UNITY_2021)
 API_INIT(AssemblyVector*, Assembly_GetAllAssemblies, ());
+#else
+AssemblyVector* il2cpp_functions::s_Assemblies;
+#endif
 
 const Il2CppMetadataRegistration** il2cpp_functions::s_Il2CppMetadataRegistrationPtr;
 const void** il2cpp_functions::s_GlobalMetadataPtr;
@@ -623,6 +627,25 @@ void il2cpp_functions::find_il2cpp_defaults(Paper::LoggerContext const& logger) 
     #error "XREF for il2cpp_defaults needs to be updated for this Unity version!"
 #endif
 }
+
+#if !defined(UNITY_2019) && !defined(UNITY_2021)
+
+void il2cpp_functions::find_s_Assemblies(Paper::LoggerContext const& logger) {
+#ifdef UNITY_6
+    auto Assembly_GetImage = cs::findNthB<1>(reinterpret_cast<const uint32_t*>(il2cpp_domain_assembly_open));
+    auto pcAddr = cs::getpcaddr<1, 1>(*Assembly_GetImage);
+    s_Assemblies = reinterpret_cast<decltype(s_Assemblies)>(std::get<2>(*pcAddr));
+    
+    logger.debug("s_Assemblies found: {} (offset: {:X})", fmt::ptr(s_Assemblies), reinterpret_cast<uintptr_t>(s_Assemblies) - getRealOffset(0));
+#else
+    #error "XREF for s_Assemblies needs to be updated for this Unity version!"
+#endif
+}
+
+AssemblyVector* il2cpp_functions::Assembly_GetAllAssemblies() {
+    return s_Assemblies;
+}
+#endif
 
 
 #define API_SYM(name)                                                \
@@ -953,11 +976,13 @@ void il2cpp_functions::Init() {
     find_generic_class_create_class(logger);
     il2cpp_GenericClass_GetClass = generic_class_get_class;
     find_class_get_ptr_class(logger);
+    find_s_Assemblies(logger);
 
     auto get_type_info_from_type_definition_index = cs::findNthB<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(mono_type_get_class));
     if (!get_type_info_from_type_definition_index) SAFE_ABORT_MSG("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
     il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex = reinterpret_cast<decltype(il2cpp_GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)>(*get_type_info_from_type_definition_index);
 
+#if defined(UNITY_2019) || defined(UNITY_2021)
     {
         // Assembly::GetAllAssemblies
         auto result = cs::findNthBl<1>(reinterpret_cast<const uint32_t*>(il2cpp_domain_get_assemblies));
@@ -965,6 +990,7 @@ void il2cpp_functions::Init() {
         il2cpp_Assembly_GetAllAssemblies = reinterpret_cast<decltype(il2cpp_Assembly_GetAllAssemblies)>(*result);
         logger.debug("Assembly::GetAllAssemblies found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Assembly_GetAllAssemblies) - getRealOffset(0));
     }
+#endif
 
 
     CRASH_UNLESS(il2cpp_shutdown);

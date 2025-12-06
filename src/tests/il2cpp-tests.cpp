@@ -5,6 +5,7 @@
 #include "utils/il2cpp-functions.hpp"
 #include "utils/il2cpp-type-check.hpp"
 #include "utils/il2cpp-utils-classes.hpp"
+#include "utils/il2cpp-utils-methods.hpp"
 #include "utils/logging.hpp"
 
 #include <span>
@@ -263,119 +264,7 @@ static void test_runmethodrethrow_on_throwing_method() {
 
 static void test_delegates() {
     using namespace il2cpp_utils;
-    auto const& logger = il2cpp_utils::Logger;
-    logger.info("[il2cpp-tests] Starting delegate/action tests");
 
-    // Get System.Action type as a reflection Type
-    auto* actionClass = GetClassFromName("System", "Action");
-    if (!actionClass) {
-        logger.warn("[il2cpp-tests] System.Action class not found, skipping delegate tests");
-        return;
-    }
-    auto* actionType = GetSystemType(actionClass);
-    if (!actionType) {
-        logger.warn("[il2cpp-tests] Could not get reflection type for System.Action");
-        return;
-    }
-
-    // Attempt to create a delegate that wraps System.GC.Collect (static void Collect())
-    auto* gcClass = GetClassFromName("System", "GC");
-    if (!gcClass) {
-        logger.warn("[il2cpp-tests] System.GC class not found, skipping delegate CreateDelegate test");
-    } else {
-        auto* gcType = GetSystemType(gcClass);
-        if (!gcType) {
-            logger.warn("[il2cpp-tests] Could not get reflection type for System.GC");
-        } else {
-            // Try CreateDelegate(Type, Type, String) -> delegate for static method
-            auto* delegateKlass = GetClassFromName("System", "Delegate");
-            if (!delegateKlass) {
-                logger.warn("[il2cpp-tests] System.Delegate class not found, cannot Find CreateDelegate");
-            } else {
-                auto createStatic = FindMethod(
-                    delegateKlass, "CreateDelegate",
-                    std::array<const Il2CppType*, 3>{ ExtractIndependentType<Il2CppReflectionType*>(), ExtractIndependentType<Il2CppReflectionType*>(), ExtractIndependentType<Il2CppString*>() });
-                if (!createStatic) {
-                    logger.warn("[il2cpp-tests] Could not find Delegate.CreateDelegate(Type,Type,String) overload");
-                } else {
-                    if (auto del = RunMethodOpt<Il2CppObject*, true>(nullptr, createStatic, actionType, gcType, std::string("Collect"))) {
-                        logger.info("[il2cpp-tests] Successfully created delegate for GC.Collect -> {}", fmt::ptr(*del));
-                        // Invoke the delegate's Invoke() method (Action.Invoke)
-                        try {
-                            RunMethodRethrow<void>(*del, "Invoke");
-                            logger.info("[il2cpp-tests] Invoked delegate Invoke() successfully (should have called GC.Collect)");
-                        } catch (const il2cpp_utils::RunMethodException& e) {
-                            logger.warn("[il2cpp-tests] Running delegate Invoke threw RunMethodException: {}", e.what());
-                        }
-                    } else {
-                        logger.warn("[il2cpp-tests] Delegate.CreateDelegate returned nullopt or failed");
-                    }
-                }
-            }
-        }
-    }
-
-    // Test creating a delegate instance from a managed method on an object (instance delegate)
-    // We'll create a System.Object and use its ToString method as a Func<string>
-    if (auto obj = New<Il2CppObject*>("System", "Object")) {
-        // auto* objClass = GetClassFromName("System", "Object");
-        auto* funcClass = GetClassFromName("System", "Func`1");
-        if (!funcClass) {
-            logger.warn("[il2cpp-tests] System.Func`1 not found, skipping instance delegate test");
-            return;
-        }
-        // Make Func<String> generic
-        auto* stringClass = GetClassFromName("System", "String");
-        if (!stringClass) {
-            logger.warn("[il2cpp-tests] System.String not found, skipping instance delegate test");
-            return;
-        }
-        const Il2CppClass* const genArgs[] = { stringClass };
-        auto* funcGeneric = il2cpp_utils::MakeGeneric(funcClass, genArgs);
-        if (!funcGeneric) {
-            logger.warn("[il2cpp-tests] Could not make generic List for Func<String>");
-            return;
-        }
-
-        // Get reflection type for the delegate type
-        auto* funcType = GetSystemType(funcGeneric);
-        if (!funcType) {
-            logger.warn("[il2cpp-tests] Could not get reflection type for Func<String>");
-            return;
-        }
-
-        // Create delegate bound to the object's ToString method: Delegate.CreateDelegate(Type, Object, String)
-        {
-            auto* delegateKlass = GetClassFromName("System", "Delegate");
-            if (!delegateKlass) {
-                logger.warn("[il2cpp-tests] System.Delegate class not found, cannot Find CreateDelegate for instance overload");
-            } else {
-                auto createInstance =
-                    FindMethod(delegateKlass, "CreateDelegate",
-                               std::array<const Il2CppType*, 3>{ ExtractIndependentType<Il2CppReflectionType*>(), ExtractIndependentType<Il2CppObject*>(), ExtractIndependentType<Il2CppString*>() });
-                if (!createInstance) {
-                    logger.warn("[il2cpp-tests] Could not find Delegate.CreateDelegate(Type,Object,String) overload");
-                } else {
-                    if (auto delObj = RunMethodOpt<Il2CppObject*, true>(nullptr, createInstance, funcType, (Il2CppObject*)*obj, std::string("ToString"))) {
-                        logger.info("[il2cpp-tests] Created instance delegate for Object.ToString -> {}", fmt::ptr(*delObj));
-                        // Invoke the delegate's Invoke() method and get string result
-                        try {
-                            auto res = RunMethodRethrow<Il2CppObject*>(*delObj, "Invoke");
-                            if (res) {
-                                logger.info("[il2cpp-tests] Delegate.Invoke() returned -> {}", fmt::ptr(res));
-                            }
-                        } catch (const il2cpp_utils::RunMethodException& e) {
-                            logger.warn("[il2cpp-tests] Running instance delegate Invoke threw: {}", e.what());
-                        }
-                    } else {
-                        logger.warn("[il2cpp-tests] Could not create instance delegate for Object.ToString");
-                    }
-                }
-            }
-        }
-    } else {
-        logger.warn("[il2cpp-tests] Could not create System.Object instance for delegate test");
-    }
 }
 
 static void test_arrays_and_generics() {
@@ -386,16 +275,16 @@ static void test_arrays_and_generics() {
     // Try creating an array of System.Object
     if (auto objKlass = GetClassFromName("System", "Object")) {
         auto* arr = il2cpp_functions::array_new(objKlass, 3);
-        logger.info("[il2cpp-tests] Created System.Object[]: {}", fmt::ptr(arr));
+        LOG_OK("[il2cpp-tests] Created System.Object[]: {}", fmt::ptr(arr));
     } else {
-        logger.warn("[il2cpp-tests] System.Object klass not found, skipping array creation");
+        LOG_FAIL("[il2cpp-tests] System.Object klass not found, skipping array creation");
     }
 
     // Check for generic List<T> class presence (without instantiation)
     if (auto listKlass = GetClassFromName("System.Collections.Generic", "List`1")) {
-        logger.info("[il2cpp-tests] Found generic type List`1: {}", fmt::ptr(listKlass));
+        LOG_OK("[il2cpp-tests] Found generic type List`1: {}", fmt::ptr(listKlass));
     } else {
-        logger.warn("[il2cpp-tests] Generic List`1 not found in assemblies");
+        LOG_FAIL("[il2cpp-tests] Generic List`1 not found in assemblies");
     }
 
     // call a generic method - List<int>.Add
@@ -403,52 +292,52 @@ static void test_arrays_and_generics() {
         // Make List<int>
         auto* intKlass = GetClassFromName("System", "Int32");
         if (!intKlass) {
-            logger.warn("[il2cpp-tests] System.Int32 klass not found, skipping List<int> test");
+            LOG_FAIL("[il2cpp-tests] System.Int32 klass not found, skipping List<int> test");
             return;
         }
         const Il2CppClass* const typeArgs[] = { intKlass };
         auto* genericListKlass = il2cpp_utils::MakeGeneric(listKlass, typeArgs);
         if (!genericListKlass) {
-            logger.warn("[il2cpp-tests] Could not make List<int> generic class");
+            LOG_FAIL("[il2cpp-tests] Could not make List<int> generic class");
             return;
         }
 
         // Create instance of List<int>
         auto listInstance = New<Il2CppObject*>(genericListKlass);
         if (!listInstance) {
-            logger.warn("[il2cpp-tests] Could not create List<int> instance");
+            LOG_FAIL("[il2cpp-tests] Could not create List<int> instance");
             return;
         }
         // Find Add method
         auto addMethod = FindMethod(genericListKlass, "Add", std::array<const Il2CppType*, 1>{ ExtractIndependentType<int>() });
         if (!addMethod) {
-            logger.warn("[il2cpp-tests] Could not find List<int>.Add method");
+            LOG_FAIL("[il2cpp-tests] Could not find List<int>.Add method");
             return;
         }
         // Call Add(42)
         if (auto result = RunMethodOpt<void, true>(listInstance.value(), addMethod, 42)) {
-            logger.info("[il2cpp-tests] Successfully called List<int>.Add(42)");
+            LOG_OK("[il2cpp-tests] Successfully called List<int>.Add(42)");
         } else {
-            logger.warn("[il2cpp-tests] Failed to call List<int>.Add(42)");
+            LOG_FAIL("[il2cpp-tests] Failed to call List<int>.Add(42)");
         }
         // Read backing field (int) usually named "_size" on many List<T> implementations
         if (auto sizeOpt = GetFieldValue<int>(listInstance.value(), "_size")) {
-            logger.info("[il2cpp-tests] List<int> _size before set -> {}", *sizeOpt);
+            LOG_OK("[il2cpp-tests] List<int> _size before set -> {}", *sizeOpt);
         } else {
-            logger.warn("[il2cpp-tests] Could not read List<int>._size (field may be named differently)");
+            LOG_FAIL("[il2cpp-tests] Could not read List<int>._size (field may be named differently)");
         }
 
         // Try setting the _size field to 1 and read back
         if (SetFieldValue(listInstance.value(), "_size", 1)) {
-            logger.info("[il2cpp-tests] Set List<int>._size = 1 (success)");
+            LOG_OK("[il2cpp-tests] Set List<int>._size = 1 (success)");
             if (auto newSize = GetFieldValue<int>(listInstance.value(), "_size")) {
-                logger.info("[il2cpp-tests] List<int> _size after set -> {}", *newSize);
+                LOG_OK("[il2cpp-tests] List<int> _size after set -> {}", *newSize);
             }
         } else {
-            logger.warn("[il2cpp-tests] Failed to set List<int>._size (field may be readonly or not present)");
+            LOG_FAIL("[il2cpp-tests] Failed to set List<int>._size (field may be readonly or not present)");
         }
     } else {
-        logger.warn("[il2cpp-tests] Generic List`1 not found, skipping List<int>.Add test");
+        LOG_FAIL("[il2cpp-tests] Generic List`1 not found, skipping List<int>.Add test");
     }
 }
 
@@ -459,9 +348,9 @@ static void test_interfaces_and_fields() {
 
     // Interface check: IComparable
     if (auto ic = GetClassFromName("System", "IComparable")) {
-        logger.info("[il2cpp-tests] System.IComparable present, IsInterface: {}", IsInterface(ic));
+        LOG_OK("[il2cpp-tests] System.IComparable present, IsInterface: {}", IsInterface(ic));
     } else {
-        logger.warn("[il2cpp-tests] System.IComparable not found");
+        LOG_FAIL("[il2cpp-tests] System.IComparable not found");
     }
 
     // Try a basic property: get_Length on a string instance
@@ -469,17 +358,17 @@ static void test_interfaces_and_fields() {
     {
         auto* stringKlass = GetClassFromName("System", "String");
         if (!stringKlass) {
-            logger.warn("[il2cpp-tests] Could not find System.String class for get_Length test");
+            LOG_FAIL("[il2cpp-tests] Could not find System.String class for get_Length test");
         } else {
             auto getLenMethod = FindMethod(stringKlass, "get_Length", std::array<const Il2CppType*, 0>{});
             if (getLenMethod) {
                 if (auto len = RunMethodOpt<int>(str, getLenMethod)) {
-                    logger.info("[il2cpp-tests] Il2CppString.get_Length -> {}", *len);
+                    LOG_OK("[il2cpp-tests] Il2CppString.get_Length -> {}", *len);
                 } else {
-                    logger.warn("[il2cpp-tests] Could not call get_Length on string (method failed)");
+                    LOG_FAIL("[il2cpp-tests] Could not call get_Length on string (method failed)");
                 }
             } else {
-                logger.warn("[il2cpp-tests] Could not find get_Length on System.String");
+                LOG_FAIL("[il2cpp-tests] Could not find get_Length on System.String");
             }
         }
     }
@@ -493,13 +382,13 @@ static void test_get_set_field_on_non_generic() {
     // We'll try System.Text.StringBuilder as a common non-generic runtime type with int fields
     auto* klass = GetClassFromName("System.Text", "StringBuilder");
     if (!klass) {
-        logger.warn("[il2cpp-tests] System.Text.StringBuilder not found, skipping non-generic field test");
+        LOG_FAIL("[il2cpp-tests] System.Text.StringBuilder not found, skipping non-generic field test");
         return;
     }
 
     auto instanceOpt = New<Il2CppObject*>(klass);
     if (!instanceOpt) {
-        logger.warn("[il2cpp-tests] Could not construct StringBuilder instance");
+        LOG_FAIL("[il2cpp-tests] Could not construct StringBuilder instance");
         return;
     }
     Il2CppObject* instance = instanceOpt.value();
@@ -509,21 +398,21 @@ static void test_get_set_field_on_non_generic() {
 
     for (auto const& fname : fieldCandidates) {
         if (auto val = GetFieldValue<int>(instance, fname)) {
-            logger.info("[il2cpp-tests] Read field '{}' -> {}", fname, *val);
+            LOG_OK("[il2cpp-tests] Read field '{}' -> {}", fname, *val);
             // Try setting it to val+1 (defensive)
             if (SetFieldValue(instance, fname, *val + 1)) {
-                logger.info("[il2cpp-tests] Successfully set field '{}' -> {}", fname, *val + 1);
+                LOG_OK("[il2cpp-tests] Successfully set field '{}' -> {}", fname, *val + 1);
                 if (auto newVal = GetFieldValue<int>(instance, fname)) {
-                    logger.info("[il2cpp-tests] Read back field '{}' -> {}", fname, *newVal);
+                    LOG_OK("[il2cpp-tests] Read back field '{}' -> {}", fname, *newVal);
                 }
             } else {
-                logger.warn("[il2cpp-tests] Failed to set field '{}' (may be readonly)", fname);
+                LOG_FAIL("[il2cpp-tests] Failed to set field '{}' (may be readonly)", fname);
             }
             return;  // done with first successful candidate
         }
     }
 
-    logger.warn("[il2cpp-tests] No suitable int field found on StringBuilder from candidates");
+    LOG_FAIL("[il2cpp-tests] No suitable int field found on StringBuilder from candidates");
 }
 
 // Property getter/setter tests
@@ -535,7 +424,7 @@ static void test_property_get_set() {
     // Test System.Text.StringBuilder.Length getter/setter
     auto* sbClass = GetClassFromName("System.Text", "StringBuilder");
     if (!sbClass) {
-        logger.warn("[il2cpp-tests] System.Text.StringBuilder not found, skipping property tests");
+        LOG_FAIL("[il2cpp-tests] System.Text.StringBuilder not found, skipping property tests");
     } else {
         if (auto sbOpt = New<Il2CppObject*>(sbClass)) {
             Il2CppObject* sb = sbOpt.value();
@@ -543,26 +432,26 @@ static void test_property_get_set() {
             {
                 auto lenRes = GetPropertyValue<int>(sb, "Length");
                 if (lenRes.has_result()) {
-                    logger.info("[il2cpp-tests] StringBuilder.Length initial -> {}", lenRes.get_result());
+                    LOG_OK("[il2cpp-tests] StringBuilder.Length initial -> {}", lenRes.get_result());
                 } else {
-                    logger.warn("[il2cpp-tests] Failed to get StringBuilder.Length");
+                    LOG_FAIL("[il2cpp-tests] Failed to get StringBuilder.Length");
                 }
             }
 
             {
                 auto setRes = SetPropertyValue(sb, "Length", 5);
                 if (setRes.has_result()) {
-                    logger.info("[il2cpp-tests] Called set_Length(5) on StringBuilder");
+                    LOG_OK("[il2cpp-tests] Called set_Length(5) on StringBuilder");
                     auto newLen = GetPropertyValue<int>(sb, "Length");
                     if (newLen.has_result()) {
-                        logger.info("[il2cpp-tests] StringBuilder.Length after set -> {}", newLen.get_result());
+                        LOG_OK("[il2cpp-tests] StringBuilder.Length after set -> {}", newLen.get_result());
                     }
                 } else {
-                    logger.warn("[il2cpp-tests] Failed to set StringBuilder.Length (setter missing or failed)");
+                    LOG_FAIL("[il2cpp-tests] Failed to set StringBuilder.Length (setter missing or failed)");
                 }
             }
         } else {
-            logger.warn("[il2cpp-tests] Could not create StringBuilder instance for property tests");
+            LOG_FAIL("[il2cpp-tests] Could not create StringBuilder instance for property tests");
         }
     }
 
@@ -570,36 +459,83 @@ static void test_property_get_set() {
     if (auto listKlass = GetClassFromName("System.Collections.Generic", "List`1")) {
         auto* intKlass = GetClassFromName("System", "Int32");
         if (!intKlass) {
-            logger.warn("[il2cpp-tests] System.Int32 not found, skipping List<int>.Count test");
+            LOG_FAIL("[il2cpp-tests] System.Int32 not found, skipping List<int>.Count test");
         } else {
             const Il2CppClass* const typeArgs[] = { intKlass };
             auto* genericListKlass = il2cpp_utils::MakeGeneric(listKlass, typeArgs);
             if (!genericListKlass) {
-                logger.warn("[il2cpp-tests] Could not make List<int> generic class for property test");
+                LOG_FAIL("[il2cpp-tests] Could not make List<int> generic class for property test");
             } else if (auto listInstance = New<Il2CppObject*>(genericListKlass)) {
                 // Find Add and get_Count
                 auto addMethod = FindMethod(genericListKlass, "Add", std::array<const Il2CppType*, 1>{ ExtractIndependentType<int>() });
                 if (!addMethod) {
-                    logger.warn("[il2cpp-tests] List<int>.Add not found for property test");
+                    LOG_FAIL("[il2cpp-tests] List<int>.Add not found for property test");
                 } else {
                     if (auto r = RunMethodOpt<void, true>(listInstance.value(), addMethod, 10)) {
-                        logger.info("[il2cpp-tests] Called List<int>.Add(10)");
+                        LOG_OK("[il2cpp-tests] Called List<int>.Add(10)");
                         auto cnt = GetPropertyValue<int>(listInstance.value(), "Count");
                         if (cnt.has_result()) {
-                            logger.info("[il2cpp-tests] List<int>.Count -> {}", cnt.get_result());
+                            LOG_OK("[il2cpp-tests] List<int>.Count -> {}", cnt.get_result());
                         } else {
-                            logger.warn("[il2cpp-tests] Failed to get List<int>.Count");
+                            LOG_FAIL("[il2cpp-tests] Failed to get List<int>.Count");
                         }
                     } else {
-                        logger.warn("[il2cpp-tests] Failed to call List<int>.Add for property test");
+                        LOG_FAIL("[il2cpp-tests] Failed to call List<int>.Add for property test");
                     }
                 }
             } else {
-                logger.warn("[il2cpp-tests] Could not create List<int> instance for property test");
+                LOG_FAIL("[il2cpp-tests] Could not create List<int> instance for property test");
             }
         }
     } else {
-        logger.warn("[il2cpp-tests] List`1 not found, skipping List<int>.Count test");
+        LOG_FAIL("[il2cpp-tests] List`1 not found, skipping List<int>.Count test");
+    }
+}
+
+static void type_check_tests() {
+    using namespace il2cpp_utils;
+    auto const& logger = il2cpp_utils::Logger;
+    logger.info("[il2cpp-tests] Starting type check tests");
+
+    auto str = StringW("foo");
+    auto strType = il2cpp_utils::ExtractType<StringW const&>(str);
+    il2cpp_type_check::il2cpp_arg_type<StringW&>::get(str);
+
+    // now use literal StringW
+    il2cpp_utils::il2cpp_type_check::il2cpp_arg_class<StringW>::get(str);
+    il2cpp_utils::il2cpp_type_check::il2cpp_no_arg_class<StringW>::get();
+
+    logger.info("[il2cpp-tests] Extracted type for StringW 'foo' -> {}", fmt::ptr(strType));
+    logger.info("[il2cpp-tests] Type name: {:x}", (int)strType->type);
+    if (strType->type == IL2CPP_TYPE_STRING) {
+        LOG_OK("[il2cpp-tests] Extracted type is IL2CPP_TYPE_STRING as expected");
+    } else {
+        LOG_FAIL("[il2cpp-tests] Extracted type is not IL2CPP_TYPE_STRING (unexpected)");
+    }
+
+    auto ptrType = (Il2CppString*)str;
+    auto ptrTypeExtracted = il2cpp_utils::ExtractType<Il2CppString*&>(ptrType);
+
+    il2cpp_type_check::il2cpp_arg_type<Il2CppString*>::get(ptrType);
+    il2cpp_utils::il2cpp_type_check::il2cpp_arg_class<Il2CppString*>::get(str);
+    il2cpp_utils::il2cpp_type_check::il2cpp_no_arg_class<Il2CppString*>::get();
+
+    logger.info("[il2cpp-tests] Extracted type for Il2CppString* ptr -> {}", fmt::ptr(ptrTypeExtracted));
+    logger.info("[il2cpp-tests] Type name: {:x}", (int)ptrTypeExtracted->type);
+    if (ptrTypeExtracted->type == IL2CPP_TYPE_STRING) {
+        LOG_OK("[il2cpp-tests] Extracted type is IL2CPP_TYPE_STRING as expected for Il2CppString*");
+    } else {
+        LOG_FAIL("[il2cpp-tests] Extracted type is not IL2CPP_TYPE_STRING (unexpected) for Il2CppString*");
+    }
+
+    // Example: check that System.String is assignable from System.Object
+    auto* stringKlass = GetClassFromName("System", "String");
+    auto* objectKlass = GetClassFromName("System", "Object");
+    if (stringKlass && objectKlass) {
+        bool assignable = il2cpp_utils::IsConvertibleFrom(&objectKlass->byval_arg, &stringKlass->byval_arg);
+        LOG_OK("[il2cpp-tests] System.String is assignable from System.Object -> {}", assignable);
+    } else {
+        LOG_FAIL("[il2cpp-tests] Could not find System.String or System.Object for type check test");
     }
 }
 
@@ -610,6 +546,8 @@ extern "C" void load() {
     LOG_OK("il2cpp_init complete!");
     // Run builtin il2cpp tests that exercise common utilities.
     // Execute tests (they are defensive and will log failures rather than crash)
+
+    type_check_tests();
     test_basic_creation_and_methods();
     test_arrays_and_generics();
     test_interfaces_and_fields();

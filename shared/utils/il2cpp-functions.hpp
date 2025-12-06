@@ -441,7 +441,9 @@ class il2cpp_functions {
     API_FUNC_VISIBLE(Il2CppClass*, Class_GetPtrClass, (Il2CppClass* elementClass));
     API_FUNC_VISIBLE(Il2CppClass*, GenericClass_GetClass, (Il2CppGenericClass* gclass));
     API_FUNC_VISIBLE(Il2CppClass*, GenericClass_CreateClass, (Il2CppGenericClass * gclass, bool throwOnError));
-    API_FUNC_VISIBLE(AssemblyVector*, Assembly_GetAllAssemblies, ());
+#if defined(UNITY_2019) || defined(UNITY_2021)
+    API_FUNC_VISIBLE(AssemblyVector*, Assembly_GetAllAssemblies, ());    
+#endif
 
     private:
     static void find_GC_free(Paper::LoggerContext const& logger);
@@ -458,11 +460,14 @@ class il2cpp_functions {
     static Il2CppClass* generic_class_get_class(Il2CppGenericClass* gclass);
     static void find_class_get_ptr_class(Paper::LoggerContext const& logger);
     static void find_il2cpp_defaults(Paper::LoggerContext const& logger);
+#if !defined(UNITY_2019) && !defined(UNITY_2021)
+    static void find_s_Assemblies(Paper::LoggerContext const& logger);
+#endif
 
     static const Il2CppMetadataRegistration** s_Il2CppMetadataRegistrationPtr;
     static const void** s_GlobalMetadataPtr;
     static const Il2CppGlobalMetadataHeader** s_GlobalMetadataHeaderPtr;
-
+    
     public:
     static bool hasGCFuncs;
     // You must il2cpp_functions::free the char* when you are done with it
@@ -470,8 +475,11 @@ class il2cpp_functions {
     static std::remove_pointer_t<decltype(s_GlobalMetadataPtr)> s_GlobalMetadata;
     static std::remove_pointer_t<decltype(s_GlobalMetadataHeaderPtr)> s_GlobalMetadataHeader;
     static std::remove_pointer_t<decltype(s_Il2CppMetadataRegistrationPtr)> s_Il2CppMetadataRegistration;
-
+    
     static const Il2CppDefaults* defaults;
+#if !defined(UNITY_2019) && !defined(UNITY_2021)
+    static AssemblyVector* s_Assemblies;
+#endif
 
     // must be done on-demand because the pointers aren't necessarily correct at the time of il2cpp_functions::Init
     static void CheckS_GlobalMetadata() {
@@ -502,6 +510,10 @@ class il2cpp_functions {
     static GenericParameterIndex MetadataCache_GetGenericParameterIndexFromParameter(Il2CppMetadataGenericParameterHandle handle);
     static const Il2CppTypeDefinition* MetadataCache_GetTypeDefinition(Il2CppClass* klass);
     static GenericParameterIndex MetadataCache_GetGenericContainerIndex(Il2CppClass* klass);
+
+#if !defined(UNITY_2019) && !defined(UNITY_2021)
+    static AssemblyVector* Assembly_GetAllAssemblies();
+#endif
 
     // Whether all of the il2cpp functions have been initialized or not
     static bool initialized;
