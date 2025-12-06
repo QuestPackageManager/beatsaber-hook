@@ -323,7 +323,7 @@ struct ListWrapper {
 
         if (it == end) return std::nullopt;
 
-        return find(func);
+        return *it;
     }
 
     template <typename F>
