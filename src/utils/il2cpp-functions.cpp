@@ -610,24 +610,13 @@ void il2cpp_functions::find_class_get_ptr_class(Paper::LoggerContext const& logg
 
 /*
  * XREF for il2cpp_defaults
- * - il2cpp_init (XREF_FOUND)
- *   - 2nd Bl instruction -> Runtime::Init
- *   - Runtime::Init
- *     - 13th ADRP -> ???
- *     - PC Address<1,1> -> defaults
+ * - il2cpp_get_corlib (XREF_FOUND)
+ *   - PC Address<1,1> -> defaults
  */
 void il2cpp_functions::find_il2cpp_defaults(Paper::LoggerContext const& logger) {
 #ifdef UNITY_6
-    auto runtimeInit = cs::findNthBl<2>(reinterpret_cast<const uint32_t*>(il2cpp_init));
-    if (!runtimeInit) SAFE_ABORT_MSG("Failed to find Runtime::Init!");
-
-    auto ldr = cs::findNth<13, &findADRP, &cs::insnMatch<>, 1>(*runtimeInit);
-    if (!ldr) SAFE_ABORT_MSG("Failed to find 13th ADRP in Runtime::Init!");
-
-    auto defaults_addr = cs::getpcaddr<1, 1>(*ldr);
-    if (!defaults_addr) SAFE_ABORT_MSG("Failed to find pcaddr around 13th ADRP in Runtime::Init!");
-
-    defaults = reinterpret_cast<decltype(defaults)>(std::get<2>(*defaults_addr));
+    auto pcAddr = cs::getpcaddr<1, 1>(reinterpret_cast<uint32_t*>(il2cpp_get_corlib));
+    defaults = reinterpret_cast<decltype(defaults)>(std::get<2>(*pcAddr));
 
     logger.debug("il2cpp_defaults found: {} (offset: {:X})", fmt::ptr(defaults), reinterpret_cast<uintptr_t>(defaults) - getRealOffset(0));
 #else
