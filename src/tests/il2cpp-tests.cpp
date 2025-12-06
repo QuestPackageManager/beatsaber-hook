@@ -262,120 +262,101 @@ static void test_runmethodrethrow_on_throwing_method() {
     }
 }
 
+// Delegate test callbacks and state (file-scope to avoid lambdas)
+static bool __il2cpp_test_action_called = false;
+static bool __il2cpp_test_makedelegate_called = false;
+static int __il2cpp_test_func_value = 0;
+
+static void __il2cpp_test_action_callback() {
+    __il2cpp_test_action_called = true;
+    LOG_OK("[il2cpp-tests] MakeAction callback executed");
+}
+
+static void __il2cpp_test_makedelegate_callback() {
+    __il2cpp_test_makedelegate_called = true;
+    LOG_OK("[il2cpp-tests] MakeDelegate callback executed");
+}
+
+static int __il2cpp_test_func_callback() {
+    __il2cpp_test_func_value = 2025;
+    LOG_OK("[il2cpp-tests] MakeFunc callback executed");
+    return __il2cpp_test_func_value;
+}
+
 static void test_delegates() {
     using namespace il2cpp_utils;
     auto const& logger = il2cpp_utils::Logger;
     logger.info("[il2cpp-tests] Starting delegate/action tests");
 
-    // Get System.Action type as a reflection Type
-    auto* actionClass = GetClassFromName("System", "Action");
-    if (!actionClass) {
-        LOG_FAIL("[il2cpp-tests] System.Action class not found, skipping delegate tests");
-        return;
-    }
-    auto* actionType = GetSystemType(actionClass);
-    if (!actionType) {
-        LOG_FAIL("[il2cpp-tests] Could not get reflection type for System.Action");
-        return;
-    }
 
-    // Attempt to create a delegate that wraps System.GC.Collect (static void Collect())
-    auto* gcClass = GetClassFromName("System", "GC");
-    if (!gcClass) {
-        LOG_FAIL("[il2cpp-tests] System.GC class not found, skipping delegate CreateDelegate test");
-    } else {
-        auto* gcType = GetSystemType(gcClass);
-        if (!gcType) {
-            LOG_FAIL("[il2cpp-tests] Could not get reflection type for System.GC");
+    
+    // Using file-scope callbacks defined above: __il2cpp_test_action_callback,
+    // __il2cpp_test_makedelegate_callback, __il2cpp_test_func_callback
+
+    // MakeAction (no-arg void)
+    {
+        auto act = il2cpp_utils::MakeAction<>(reinterpret_cast<function_ptr_t<void>>(__il2cpp_test_action_callback));
+        if (act) {
+            LOG_OK("[il2cpp-tests] MakeAction created -> {}", fmt::ptr(act));
+            try {
+                RunMethodRethrow<void>((Il2CppObject*)act, "Invoke");
+                if (__il2cpp_test_action_called) {
+                    LOG_OK("[il2cpp-tests] MakeAction Invoke executed callback");
+                } else {
+                    LOG_FAIL("[il2cpp-tests] MakeAction Invoke did not run callback");
+                }
+            } catch (const il2cpp_utils::RunMethodException& e) {
+                LOG_FAIL("[il2cpp-tests] MakeAction Invoke threw: {}", e.what());
+            }
         } else {
-            // Try CreateDelegate(Type, Type, String) -> delegate for static method
-            auto* delegateKlass = GetClassFromName("System", "Delegate");
-            if (!delegateKlass) {
-                LOG_FAIL("[il2cpp-tests] System.Delegate class not found, cannot Find CreateDelegate");
-            } else {
-                auto createStatic = FindMethod(
-                    delegateKlass, "CreateDelegate",
-                    std::array<const Il2CppType*, 3>{ ExtractIndependentType<Il2CppReflectionType*>(), ExtractIndependentType<Il2CppReflectionType*>(), ExtractIndependentType<Il2CppString*>() });
-                if (!createStatic) {
-                    LOG_FAIL("[il2cpp-tests] Could not find Delegate.CreateDelegate(Type,Type,String) overload");
-                } else {
-                    if (auto del = RunMethodOpt<Il2CppObject*, true>(nullptr, createStatic, actionType, gcType, std::string("Collect"))) {
-                        LOG_OK("[il2cpp-tests] Successfully created delegate for GC.Collect -> {}", fmt::ptr(*del));
-                        // Invoke the delegate's Invoke() method (Action.Invoke)
-                        try {
-                            RunMethodRethrow<void>(*del, "Invoke");
-                            LOG_OK("[il2cpp-tests] Invoked delegate Invoke() successfully (should have called GC.Collect)");
-                        } catch (const il2cpp_utils::RunMethodException& e) {
-                            LOG_FAIL("[il2cpp-tests] Running delegate Invoke threw RunMethodException: {}", e.what());
-                        }
-                    } else {
-                        LOG_FAIL("[il2cpp-tests] Delegate.CreateDelegate returned nullopt or failed");
-                    }
-                }
-            }
+            LOG_FAIL("[il2cpp-tests] MakeAction failed to create");
         }
     }
 
-    // Test creating a delegate instance from a managed method on an object (instance delegate)
-    // We'll create a System.Object and use its ToString method as a Func<string>
-    if (auto obj = New<Il2CppObject*>("System", "Object")) {
-        // auto* objClass = GetClassFromName("System", "Object");
-        auto* funcClass = GetClassFromName("System", "Func`1");
-        if (!funcClass) {
-            LOG_FAIL("[il2cpp-tests] System.Func`1 not found, skipping instance delegate test");
-            return;
-        }
-        // Make Func<String> generic
-        auto* stringClass = GetClassFromName("System", "String");
-        if (!stringClass) {
-            LOG_FAIL("[il2cpp-tests] System.String not found, skipping instance delegate test");
-            return;
-        }
-        const Il2CppClass* const genArgs[] = { stringClass };
-        auto* funcGeneric = il2cpp_utils::MakeGeneric(funcClass, genArgs);
-        if (!funcGeneric) {
-            LOG_FAIL("[il2cpp-tests] Could not make generic List for Func<String>");
-            return;
-        }
-
-        // Get reflection type for the delegate type
-        auto* funcType = GetSystemType(funcGeneric);
-        if (!funcType) {
-            LOG_FAIL("[il2cpp-tests] Could not get reflection type for Func<String>");
-            return;
-        }
-
-        // Create delegate bound to the object's ToString method: Delegate.CreateDelegate(Type, Object, String)
-        {
-            auto* delegateKlass = GetClassFromName("System", "Delegate");
-            if (!delegateKlass) {
-                LOG_FAIL("[il2cpp-tests] System.Delegate class not found, cannot Find CreateDelegate for instance overload");
-            } else {
-                auto createInstance =
-                    FindMethod(delegateKlass, "CreateDelegate",
-                               std::array<const Il2CppType*, 3>{ ExtractIndependentType<Il2CppReflectionType*>(), ExtractIndependentType<Il2CppObject*>(), ExtractIndependentType<Il2CppString*>() });
-                if (!createInstance) {
-                    LOG_FAIL("[il2cpp-tests] Could not find Delegate.CreateDelegate(Type,Object,String) overload");
+    // MakeFunc (no-arg non-void)
+    {
+        auto f = il2cpp_utils::MakeFunc<>(reinterpret_cast<function_ptr_t<int>>(__il2cpp_test_func_callback));
+        if (f) {
+            LOG_OK("[il2cpp-tests] MakeFunc created -> {}", fmt::ptr(f));
+            try {
+                auto res = RunMethodRethrow<int>((Il2CppObject*)f, "Invoke");
+                LOG_OK("[il2cpp-tests] MakeFunc Invoke returned -> {}", res);
+                if (res == __il2cpp_test_func_value) {
+                    LOG_OK("[il2cpp-tests] MakeFunc result matches callback value");
                 } else {
-                    if (auto delObj = RunMethodOpt<Il2CppObject*, true>(nullptr, createInstance, funcType, (Il2CppObject*)*obj, std::string("ToString"))) {
-                        LOG_OK("[il2cpp-tests] Created instance delegate for Object.ToString -> {}", fmt::ptr(*delObj));
-                        // Invoke the delegate's Invoke() method and get string result
-                        try {
-                            auto res = RunMethodRethrow<Il2CppObject*>(*delObj, "Invoke");
-                            if (res) {
-                                LOG_OK("[il2cpp-tests] Delegate.Invoke() returned -> {}", fmt::ptr(res));
-                            }
-                        } catch (const il2cpp_utils::RunMethodException& e) {
-                            LOG_FAIL("[il2cpp-tests] Running instance delegate Invoke threw: {}", e.what());
-                        }
-                    } else {
-                        LOG_FAIL("[il2cpp-tests] Could not create instance delegate for Object.ToString");
-                    }
+                    LOG_FAIL("[il2cpp-tests] MakeFunc result {} != expected {}", res, __il2cpp_test_func_value);
                 }
+            } catch (const il2cpp_utils::RunMethodException& e) {
+                LOG_FAIL("[il2cpp-tests] MakeFunc Invoke threw: {}", e.what());
+            }
+        } else {
+            LOG_FAIL("[il2cpp-tests] MakeFunc failed to create");
+        }
+    }
+
+    // MakeDelegate using explicit Action class
+    {
+        auto* actionKlass = GetClassFromName("System", "Action");
+        if (!actionKlass) {
+            LOG_FAIL("[il2cpp-tests] System.Action class not found, skipping MakeDelegate test");
+        } else {
+            auto del = il2cpp_utils::MakeDelegate<MulticastDelegate*>(actionKlass, static_cast<Il2CppObject*>(nullptr), reinterpret_cast<function_ptr_t<void>>(__il2cpp_test_makedelegate_callback));
+            if (del) {
+                LOG_OK("[il2cpp-tests] MakeDelegate(Action) created -> {}", fmt::ptr(del));
+                try {
+                    RunMethodRethrow<void>((Il2CppObject*)del, "Invoke");
+                    if (__il2cpp_test_makedelegate_called) {
+                        LOG_OK("[il2cpp-tests] MakeDelegate Invoke executed callback");
+                    } else {
+                        LOG_FAIL("[il2cpp-tests] MakeDelegate Invoke did not run callback");
+                    }
+                } catch (const il2cpp_utils::RunMethodException& e) {
+                    LOG_FAIL("[il2cpp-tests] MakeDelegate Invoke threw: {}", e.what());
+                }
+            } else {
+                LOG_FAIL("[il2cpp-tests] MakeDelegate(Action) failed to create");
             }
         }
-    } else {
-        LOG_FAIL("[il2cpp-tests] Could not create System.Object instance for delegate test");
     }
 }
 
