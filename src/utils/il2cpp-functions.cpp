@@ -424,7 +424,9 @@ const Il2CppTypeDefinition* il2cpp_functions::MetadataCache_GetTypeDefinition(Il
 
 GenericParameterIndex il2cpp_functions::MetadataCache_GetGenericContainerIndex(Il2CppClass* klass) {
     CheckS_GlobalMetadata();
-    return MetadataCache_GetTypeDefinition(klass)->genericContainerIndex;
+    auto td = MetadataCache_GetTypeDefinition(klass);
+    if(td) return td->genericContainerIndex;
+    return 0;
 }
 
 char* il2cpp_functions::Type_GetName(const Il2CppType* type, Il2CppTypeNameFormat format) {
