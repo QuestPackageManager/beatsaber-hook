@@ -574,10 +574,10 @@ Il2CppClass* il2cpp_functions::type_info_from_handle(Il2CppMetadataTypeHandle ha
 
 void il2cpp_functions::find_generic_class_create_class(Paper::LoggerContext const& logger) {
 #ifdef UNITY_6
-    const auto GenericClass_CreateClass = cs::findNthB<6, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
+    const auto GenericClass_CreateClass = cs::findNthB<18, false, -1, 1024>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
     if (!GenericClass_CreateClass) SAFE_ABORT_MSG("Failed to find GenericClass::CreateClass!");
     il2cpp_GenericClass_CreateClass = reinterpret_cast<decltype(il2cpp_GenericClass_CreateClass)>(*GenericClass_CreateClass);
-    logger.debug("GenericClass::CreateClass found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Class_FromIl2CppType) - getRealOffset(0));
+    logger.debug("GenericClass::CreateClass found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_GenericClass_CreateClass) - getRealOffset(0));
 #else
     #error "XREF for GenericClass::CreateClass needs to be updated for this Unity version!"
 #endif
@@ -603,7 +603,7 @@ Il2CppClass* il2cpp_functions::generic_class_get_class(Il2CppGenericClass* gclas
  */
 void il2cpp_functions::find_class_get_ptr_class(Paper::LoggerContext const& logger) {
 #ifdef UNITY_6
-    const auto Class_GetPtrClass_addr = cs::findNthB<6, false>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
+    const auto Class_GetPtrClass_addr = cs::findNthB<17, false>(reinterpret_cast<uint32_t*>(il2cpp_Class_FromIl2CppType));
     if (!Class_GetPtrClass_addr) SAFE_ABORT_MSG("Failed to find Class::GetPtrClass!");
     il2cpp_Class_GetPtrClass = reinterpret_cast<decltype(il2cpp_Class_GetPtrClass)>(*Class_GetPtrClass_addr);
     logger.debug("Class::GetPtrClass(Il2CppClass*) found? offset: {:X}", reinterpret_cast<uintptr_t>(il2cpp_Class_GetPtrClass) - getRealOffset(0));
