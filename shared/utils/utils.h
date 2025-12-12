@@ -291,8 +291,14 @@ uintptr_t findPattern(uintptr_t dwAddress, const char* pattern, uintptr_t dwSear
 // Returns the first match, if any.
 uintptr_t findUniquePattern(bool& multiple, uintptr_t dwAddress, const char* pattern, const char* label = 0, uintptr_t dwSearchRangeLen = 0x1000000);
 
+/// @brief Attempts to match the pattern provided with all regions of mapped read memory with the file provided
+uintptr_t findUniquePatternInMappedFile(bool& multiple, const char* pattern, const char* file, const char* label = 0);
+
 /// @brief Attempts to match the pattern provided with all regions of mapped read memory with the libil2cpp.so
 uintptr_t findUniquePatternInLibil2cpp(bool& multiple, const char* pattern, const char* label = 0);
+
+/// @brief Attempts to match the pattern provided with all regions of mapped read memory with the libunity.so
+uintptr_t findUniquePatternInLibunity(bool& multiple, const char* pattern, const char* label = 0);
 
 #ifdef __cplusplus
 }
