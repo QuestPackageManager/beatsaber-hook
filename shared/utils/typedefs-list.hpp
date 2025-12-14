@@ -485,7 +485,7 @@ struct ListWrapper {
             // Array.Copy(this._items, index + 1, this._items, index, this._size - index);
         }
         if constexpr (il2cpp_utils::il2cpp_reference_type<T>) {
-            this->_items[this->size()] = T();
+            this->get_items()[this->size()] = T();
         }
         this->ptr->_version++;
     }
@@ -511,12 +511,12 @@ struct ListWrapper {
             return;
         }
         // int size = this->size();
-        this->_size -= count;
+        this->ptr->_size -= count;
         if (index < this->size()) {
             std::copy(this->begin() + index + count, this->end() - index, this->begin() + index);
             // Array.Copy(this._items, index + count, this._items, index, this._size - index);
         }
-        this->_version++;
+        this->ptr->_version++;
         if constexpr (il2cpp_utils::il2cpp_reference_type<T>) {
             std::fill(this->end(), this->end() + count, T());
             // Array.Clear(this._items, this._size, count);

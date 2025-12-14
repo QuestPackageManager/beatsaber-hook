@@ -16,8 +16,8 @@
 #include "il2cpp-utils-boxing.hpp"
 #include "il2cpp-utils-classes.hpp"
 #include "il2cpp-utils-exceptions.hpp"
-#include "result.hpp"
 #include "logging.hpp"
+#include "result.hpp"
 #include "utils.h"
 
 #include "il2cpp-object-internals.h"
@@ -28,7 +28,6 @@
 #define BS_HOOK_USE_CONCEPTS
 #endif
 #endif
-
 
 namespace il2cpp_utils {
 
@@ -65,8 +64,8 @@ Il2CppObject* createManualThrow(Il2CppClass* const klass);
 struct FindMethodInfo {
     Il2CppClass* klass = nullptr;
     ::std::string name;
-    ::std::vector<const Il2CppClass* const> genTypes;
-    ::std::vector<const Il2CppType* const> argTypes;
+    ::std::vector<const Il2CppClass*> genTypes;
+    ::std::vector<const Il2CppType*> argTypes;
 
     constexpr FindMethodInfo() = delete;
     constexpr FindMethodInfo(FindMethodInfo&&) = default;
@@ -674,8 +673,6 @@ MethodResult<TOut> Il2CppInvoker(Il2CppObject* obj, const MethodInfo* method, TA
 }  // namespace invokers
 #pragma endregion
 
-
-
 template <class TOut = Il2CppObject*, bool checkTypes = true, class T, class... TArgs>
     requires(!::std::is_convertible_v<T, std::string_view> || std::is_same_v<T, nullptr_t>)
 // Runs a MethodInfo with the specified parameters and instance, with return type TOut.
@@ -819,8 +816,7 @@ inline TOut RunMethodRethrow(TArgs&&... params) {
 
     if constexpr (!std::is_same_v<TOut, void>) {
         return result.get_or_rethrow();
-    }
-    else if constexpr (std::is_same_v<TOut, void>) {
+    } else if constexpr (std::is_same_v<TOut, void>) {
         result.rethrow();
     }
 }
@@ -847,7 +843,6 @@ inline std::optional<TypeOrMonostate<TOut>> RunMethodOpt(TArgs&&... params) noex
 
     return result.get_result();
 }
-
 
 /// @brief Instantiates a generic MethodInfo* from the provided Il2CppClasses and invokes it.
 /// @n This method will not crash.
@@ -903,7 +898,6 @@ template <typename TOut = Il2CppObject*, CreationType creationType = CreationTyp
     RET_NULLOPT_UNLESS(logger, RunMethodOpt(obj, method, std::forward<TArgs>(args)...));
     return FromIl2CppObject<TOut>(obj);
 }
-
 
 // TODO: Rename to New, rename existing New to NewObject or equivalent
 /// @brief Allocates a new instance of a particular Il2CppClass*, either allowing it to be GC'd normally or manually controlled.
@@ -966,9 +960,9 @@ template <typename TOut = Il2CppObject*, CreationType creationType = CreationTyp
 // Creates a new object of the returned type using the given constructor parameters
 // Will only run a .ctor whose parameter types match the given arguments.
 #ifndef BS_HOOK_USE_CONCEPTS
-::std::enable_if_t<(... && ((!::std::is_same_v<const Il2CppClass*, TArgs> || !::std::is_same_v<Il2CppClass*, TArgs>)&&!::std::is_convertible_v<TArgs, ::std::string_view>)), ::std::optional<TOut>>
+::std::enable_if_t<(... && ((!::std::is_same_v<const Il2CppClass*, TArgs> || !::std::is_same_v<Il2CppClass*, TArgs>) && !::std::is_convertible_v<TArgs, ::std::string_view>)), ::std::optional<TOut>>
 #else
-    requires(... && ((!::std::is_same_v<const Il2CppClass*, TArgs> || !::std::is_same_v<Il2CppClass*, TArgs>)&&!::std::is_convertible_v<TArgs, ::std::string_view>))::std::optional<TOut>
+    requires(... && ((!::std::is_same_v<const Il2CppClass*, TArgs> || !::std::is_same_v<Il2CppClass*, TArgs>) && !::std::is_convertible_v<TArgs, ::std::string_view>))::std::optional<TOut>
 #endif
 New(TArgs&&... args) {
     auto const& logger = il2cpp_utils::Logger;
