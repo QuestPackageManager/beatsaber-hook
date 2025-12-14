@@ -24,7 +24,11 @@ on:
       - '**.md'
       - '.gitignore'
   pull_request:
-    branches: master
+    branches: 
+      - 'master'
+      - 'dev/*'
+      - 'feat/*'
+      - 'fix/*'
 
 env:
     module_id: beatsaber-hook
@@ -65,6 +69,7 @@ jobs:
         restore: true
         cache: true
         publish: false
+        resolve_ndk: true
 
     # if we have a tag, we are making a qpm release
     - name: Setup qpm for release
@@ -81,6 +86,7 @@ jobs:
         qpm_release_bin: true
         qpm_debug_bin: true
         qpm_qmod: ${{ env.qmod_name }}.qmod
+        resolve_ndk: true
 
     - name: Build & Create Qmod
       run: |
