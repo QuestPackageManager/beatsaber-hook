@@ -7,6 +7,8 @@
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #include "../../shared/utils/hooking.hpp"
 #include "../../shared/utils/base-wrapper-type.hpp"
+#include "utils/logging.hpp"
+
 
 MAKE_HOOK(test, 0x0, void, int arg) {
     throw il2cpp_utils::RunMethodException("lol rekt", nullptr);
@@ -17,7 +19,7 @@ void* test2(void* one, void*) {
     return one;
 }
 
-template<>
+template <>
 struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<&test2> {
     static const MethodInfo* methodInfo() {
         return nullptr;
@@ -33,5 +35,17 @@ MAKE_HOOK_WRAPPER(test2_hook, &test2, bs_hook::Il2CppWrapperType, bs_hook::Il2Cp
     return ret;
     // Return from overall hook is converted to a void*
 }
+
+void install_a_hook() {
+    ::Hooking ::InstallHook<Hook_test>(il2cpp_utils ::Logger).after("test-mod");
+
+    modloader::ModInfo chroma = { "chroma", "1.0.0", 0 };
+    auto& hook = INSTALL_HOOK(il2cpp_utils::Logger, test2_hook).after(chroma).before("test");
+
+    if (false) {
+        hook.uninstall();
+    }
+}
+
 #pragma clang diagnostic pop
 #endif
