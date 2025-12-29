@@ -1,53 +1,43 @@
 #include <iterator>
 #include <optional>
 #include <string_view>
+#include <variant>
 #include "flamingo/shared/hook-data.hpp"
 #include "flamingo/shared/hook-installation-result.hpp"
 #include "flamingo/shared/installer.hpp"
 #include "flamingo/shared/target-data.hpp"
 
+#include "./result.hpp"
+
 namespace bs_hook {
-struct FlamingoHandleHelper {
-    FlamingoHandleHelper() = default;
-    ~FlamingoHandleHelper() = default;
+struct FlamingoHandle;
 
-    // disable copy
-    FlamingoHandleHelper(FlamingoHandleHelper const&) = delete;
-    FlamingoHandleHelper& operator=(FlamingoHandleHelper const&) = delete;
+struct FlamingoHandleBuilder {
+    Paper::LoggerContext logger;
+    flamingo::HookInfo hookInfo;
 
-    // disable move
-    FlamingoHandleHelper(FlamingoHandleHelper&&) = delete;
-    FlamingoHandleHelper& operator=(FlamingoHandleHelper&&) = delete;
-
-    std::optional<flamingo::HookHandle> handle;
-    FlamingoHandleHelper(flamingo::HookHandle handle) : handle(handle) {}
-
-    operator std::optional<flamingo::HookHandle>() const {
-        return handle;
+    FlamingoHandleBuilder(Paper::LoggerContext const& log, flamingo::HookInfo info) : logger(log), hookInfo(std::move(info)) {
+        hookInfo.metadata.priority.is_final = false;
     }
+    FlamingoHandleBuilder(FlamingoHandleBuilder const&) = default;
+    FlamingoHandleBuilder(FlamingoHandleBuilder&&) = default;
+    ~FlamingoHandleBuilder() = default;
 
-    std::optional<flamingo::HookHandle> convert() {
-        return handle;
-    }
+    FlamingoHandleBuilder& operator=(FlamingoHandleBuilder const&) = default;
+    FlamingoHandleBuilder& operator=(FlamingoHandleBuilder&&) = default;
 
-    FlamingoHandleHelper& final(bool isFinal = true) {
-        if (!handle.has_value()) {
-            return *this;
-        }
-        handle->hook_location->metadata.priority.is_final = isFinal;
+    FlamingoHandleBuilder& final(bool isFinal = true) {
+        hookInfo.metadata.priority.is_final = isFinal;
         return *this;
     }
 
-    FlamingoHandleHelper& after(modloader::ModInfo const& info, std::string_view name = {}) {
+    FlamingoHandleBuilder& after(modloader::ModInfo const& info, std::string_view name = {}) {
         after(info.id, name);
         return *this;
     }
 
-    FlamingoHandleHelper& after(std::string_view modID, std::string_view name = {}) {
-        if (!handle.has_value()) {
-            return *this;
-        }
-        handle->hook_location->metadata.priority.afters.emplace_back(flamingo::HookNameMetadata{
+    FlamingoHandleBuilder& after(std::string_view modID, std::string_view name = {}) {
+        hookInfo.metadata.priority.afters.emplace_back(flamingo::HookNameMetadata{
             .name = std::string(name),
             .namespaze = std::string(modID),
         });
@@ -55,45 +45,84 @@ struct FlamingoHandleHelper {
         return *this;
     }
 
-    FlamingoHandleHelper& before(modloader::ModInfo const& info, std::string_view name = {}) {
+    FlamingoHandleBuilder& before(modloader::ModInfo const& info, std::string_view name = {}) {
         before(info.id, name);
         return *this;
     }
 
-    FlamingoHandleHelper& before(std::string_view modID, std::string_view name = {}) {
-        if (!handle.has_value()) {
-            return *this;
-        }
-        handle->hook_location->metadata.priority.befores.emplace_back(flamingo::HookNameMetadata{ .name = std::string(name), .namespaze = std::string(modID) });
+    FlamingoHandleBuilder& before(std::string_view modID, std::string_view name = {}) {
+        hookInfo.metadata.priority.befores.emplace_back(flamingo::HookNameMetadata{ .name = std::string(name), .namespaze = std::string(modID) });
         return *this;
     }
 
+    [[nodiscard]]
+    il2cpp_utils::Result<FlamingoHandle, flamingo::installation::Error> installOrError() noexcept;
 
-    FlamingoHandleHelper& reinstall() {
-        if (!handle.has_value()) {
-            return *this;
-        }
-        auto result = flamingo::Reinstall({ handle->hook_location->target });
-        if (result.has_value()) {
-            // Reinstall successful
-        }
+    [[nodiscard]]
+    FlamingoHandle install();
+};
 
-        return *this;
+struct FlamingoHandle {
+    Paper::LoggerContext logger;
+    flamingo::HookInfo info;
+    flamingo::HookHandle handle;
+
+    FlamingoHandle(Paper::LoggerContext logger, flamingo::HookHandle h, flamingo::HookInfo i) : logger(logger), info(i), handle(h) {}
+
+    FlamingoHandle(FlamingoHandle const&) = delete;
+    FlamingoHandle(FlamingoHandle&&) = default;
+
+    FlamingoHandle& operator=(FlamingoHandle const&) = delete;
+    FlamingoHandle& operator=(FlamingoHandle&&) = default;
+
+    ~FlamingoHandle() = default;
+
+    operator flamingo::HookHandle() const {
+        return handle;
     }
 
-    // TODO: Allow reinstalling, this currently invalidates the handle though
+    [[nodiscard]]
+    flamingo::HookHandle const& get_handle() const {
+        return handle;
+    }
+
     /// @brief Uninstalls the hook associated with this handle.
-    /// After uninstalling, the handle is no longer valid.
-    void uninstall() {
-        if (!handle.has_value()) {
-            return;
-        }
-        auto result = flamingo::Uninstall(*handle);
+    [[nodiscard]]
+    il2cpp_utils::Result<FlamingoHandleBuilder, std::monostate> uninstall() {
+        using Result = il2cpp_utils::Result<FlamingoHandleBuilder, std::monostate>;
+        auto result = flamingo::Uninstall(handle);
         if (result.has_value()) {
-            // Uninstall successful
+            return Result::Ok(FlamingoHandleBuilder(logger, info));
         }
-        handle = std::nullopt;
-        // TODO: Error handle
+        return Result::Err(std::monostate{});
+    }
+
+    [[nodiscard]]
+    auto reinstall() {
+        auto result = flamingo::Reinstall({ handle.hook_location->target });
+        return result;
     }
 };
+
+inline il2cpp_utils::Result<FlamingoHandle, flamingo::installation::Error> FlamingoHandleBuilder::installOrError() noexcept {
+    using Result = il2cpp_utils::Result<FlamingoHandle, flamingo::installation::Error>;
+
+    logger.info("Installing hook: {} to offset: {}", hookInfo.metadata.name_info, fmt::ptr(hookInfo.target));
+    auto install_result = flamingo::Install(std::move(hookInfo));
+    if (install_result.has_value()) {
+        return Result::Ok(FlamingoHandle(logger, install_result.value().returned_handle, std::move(hookInfo)));
+    } else {
+        return Result::Err(install_result.error());
+    }
+}
+
+inline FlamingoHandle FlamingoHandleBuilder::install() {
+    auto result = installOrError();
+    if (!result.has_result()) {
+        logger.critical("Failed to install hook: {} with flamingo: {}", hookInfo.metadata.name_info, result.get_exception());
+        SAFE_ABORT();
+    }
+
+    return result.move_result();
+}
 }  // namespace bs_hook

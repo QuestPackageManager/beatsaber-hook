@@ -36,16 +36,23 @@ MAKE_HOOK_WRAPPER(test2_hook, &test2, bs_hook::Il2CppWrapperType, bs_hook::Il2Cp
 }
 
 void install_a_hook() {
-    ::Hooking ::InstallHook<Hook_test>(il2cpp_utils ::Logger).after("test-mod");
+    // legacy hook API
+    ::Hooking ::InstallHook<Hook_test>(il2cpp_utils ::Logger);
 
+    INSTALL_HOOK(il2cpp_utils::Logger, test2_hook);
+
+    // new Hook API!
     modloader::ModInfo chroma = { "chroma", "1.0.0", 0 };
-    // reinstall after setting priorities   
-    auto& hook = INSTALL_HOOK(il2cpp_utils::Logger, test2_hook).after(chroma).before("test").reinstall();
+    auto hook = FLAMINGO_HOOK(il2cpp_utils::Logger, test2_hook).after(chroma).before("test-mod").install();
 
     if (false) {
         // uninstall the hook, which will also remove it from flamingo
         // hook is now invalid after this call
-        hook.uninstall();
+        auto builder = hook.uninstall().get_result();
+
+        builder.after("another-mod").before("test-mod-2").final();
+        // reinstall the hook
+        hook = builder.install();
     }
 }
 

@@ -12,6 +12,10 @@
 
 #include "./flamingo-utils.hpp"
 
+#ifndef BS_HOOKS_HOOK_NAMESPACE
+#define BS_HOOKS_HOOK_NAMESPACE MOD_ID
+#endif
+
 namespace Hooking {
 // For use in MAKE_HOOK_AUTO bodies.
 // Currently unused.
@@ -51,8 +55,6 @@ concept is_hook = requires {
     { T::trampoline() } -> std::same_as<typename T::funcType*>;
     // Must have a hook that returns the funcType
     { T::hook() } -> std::same_as<typename T::funcType>;
-    // Flamingo hook info
-    { T::flamingo() } -> std::same_as<bs_hook::FlamingoHandleHelper&>;
 };
 
 template <typename T>
@@ -125,37 +127,29 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                   \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper; \
         }                                                                          \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                         \
-            return flamingoHandle;                                                 \
-        }                                                                          \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                \
         static retval hook_##name_(__VA_ARGS__);                                   \
     };                                                                             \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
 
 // Make an address-specified hook.
-#define MAKE_HOOK_NO_CATCH(name_, addr_, retval, ...)               \
-    struct Hook_##name_ {                                           \
-        constexpr static const char* name() {                       \
-            return #name_;                                          \
-        }                                                           \
-        constexpr static void* addr() {                             \
-            return (void*)addr_;                                    \
-        }                                                           \
-        using funcType = retval (*)(__VA_ARGS__);                   \
-        static funcType* trampoline() {                             \
-            return &name_;                                          \
-        }                                                           \
-        static inline retval (*name_)(__VA_ARGS__) = nullptr;       \
-        static funcType hook() {                                    \
-            return hook_##name_;                                    \
-        }                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {          \
-            return flamingoHandle;                                  \
-        }                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle; \
-        static retval hook_##name_(__VA_ARGS__);                    \
-    };                                                              \
+#define MAKE_HOOK_NO_CATCH(name_, addr_, retval, ...)         \
+    struct Hook_##name_ {                                     \
+        constexpr static const char* name() {                 \
+            return #name_;                                    \
+        }                                                     \
+        constexpr static void* addr() {                       \
+            return (void*)addr_;                              \
+        }                                                     \
+        using funcType = retval (*)(__VA_ARGS__);             \
+        static funcType* trampoline() {                       \
+            return &name_;                                    \
+        }                                                     \
+        static inline retval (*name_)(__VA_ARGS__) = nullptr; \
+        static funcType hook() {                              \
+            return hook_##name_;                              \
+        }                                                     \
+        static retval hook_##name_(__VA_ARGS__);              \
+    };                                                        \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
 
 // Make a hook that resolves the 'infoGet' expression an installs the hook to that MethodInfo*, that has a catch handler.
@@ -175,10 +169,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                   \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper; \
         }                                                                          \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                         \
-            return flamingoHandle;                                                 \
-        }                                                                          \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                \
         static retval hook_##name_(__VA_ARGS__);                                   \
     };                                                                             \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -200,10 +190,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                     \
             return hook_##name_;                                     \
         }                                                            \
-        static bs_hook::FlamingoHandleHelper& flamingo() {           \
-            return flamingoHandle;                                   \
-        }                                                            \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;  \
         static retval hook_##name_(__VA_ARGS__);                     \
     };                                                               \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -225,10 +211,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                   \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper; \
         }                                                                          \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                         \
-            return flamingoHandle;                                                 \
-        }                                                                          \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                \
         static retval hook_##name_(__VA_ARGS__);                                   \
     };                                                                             \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -250,10 +232,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                  \
             return hook_##name_;                                                  \
         }                                                                         \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                        \
-            return flamingoHandle;                                                \
-        }                                                                         \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;               \
         static retval hook_##name_(__VA_ARGS__);                                  \
     };                                                                            \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -275,10 +253,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                 \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;               \
         }                                                                                        \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                       \
-            return flamingoHandle;                                                               \
-        }                                                                                        \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                              \
         static retval hook_##name_(__VA_ARGS__);                                                 \
     };                                                                                           \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -300,10 +274,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                 \
             return hook_##name_;                                                                 \
         }                                                                                        \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                       \
-            return flamingoHandle;                                                               \
-        }                                                                                        \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                              \
         static retval hook_##name_(__VA_ARGS__);                                                 \
     };                                                                                           \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -327,10 +297,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                           \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                         \
         }                                                                                                                                  \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                 \
-            return flamingoHandle;                                                                                                         \
-        }                                                                                                                                  \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                        \
         static retval hook_##name_(__VA_ARGS__);                                                                                           \
     };                                                                                                                                     \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -353,10 +319,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                           \
             return hook_##name_;                                                                                                           \
         }                                                                                                                                  \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                 \
-            return flamingoHandle;                                                                                                         \
-        }                                                                                                                                  \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                        \
         static retval hook_##name_(__VA_ARGS__);                                                                                           \
     };                                                                                                                                     \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -380,10 +342,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                          \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                                        \
         }                                                                                                                                                 \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                                \
-            return flamingoHandle;                                                                                                                        \
-        }                                                                                                                                                 \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                       \
         static retval hook_##name_(__VA_ARGS__);                                                                                                          \
     };                                                                                                                                                    \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -406,10 +364,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                          \
             return hook_##name_;                                                                                                                          \
         }                                                                                                                                                 \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                                \
-            return flamingoHandle;                                                                                                                        \
-        }                                                                                                                                                 \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                       \
         static retval hook_##name_(__VA_ARGS__);                                                                                                          \
     };                                                                                                                                                    \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -433,10 +387,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                              \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                            \
         }                                                                                                     \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                    \
-            return flamingoHandle;                                                                            \
-        }                                                                                                     \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                           \
         static retval hook_##name_(__VA_ARGS__);                                                              \
     };                                                                                                        \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -459,10 +409,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                              \
             return hook_##name_;                                                                              \
         }                                                                                                     \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                    \
-            return flamingoHandle;                                                                            \
-        }                                                                                                     \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                           \
         static retval hook_##name_(__VA_ARGS__);                                                              \
     };                                                                                                        \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -486,10 +432,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                        \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                      \
         }                                                                                               \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                              \
-            return flamingoHandle;                                                                      \
-        }                                                                                               \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                     \
         static retval hook_##name_(__VA_ARGS__);                                                        \
     };                                                                                                  \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -512,10 +454,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                        \
             return hook_##name_;                                                                        \
         }                                                                                               \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                              \
-            return flamingoHandle;                                                                      \
-        }                                                                                               \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                     \
         static retval hook_##name_(__VA_ARGS__);                                                        \
     };                                                                                                  \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -539,10 +477,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                    \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                                  \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static retval hook_##name_(__VA_ARGS__);                                                                                                    \
     };                                                                                                                                              \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -565,10 +499,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                    \
             return hook_##name_;                                                                                                                    \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static retval hook_##name_(__VA_ARGS__);                                                                                                    \
     };                                                                                                                                              \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -592,10 +522,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                    \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                                  \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static retval hook_##name_(__VA_ARGS__);                                                                                                    \
     };                                                                                                                                              \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -618,10 +544,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                    \
             return hook_##name_;                                                                                                                    \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static retval hook_##name_(__VA_ARGS__);                                                                                                    \
     };                                                                                                                                              \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -642,10 +564,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
             return &name_;                                                                                                                          \
         }                                                                                                                                           \
         static inline retval (*name_)(__VA_ARGS__) = nullptr;                                                                                       \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static funcType hook() {                                                                                                                    \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                                  \
         }                                                                                                                                           \
@@ -667,10 +585,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType* trampoline() {                                                                                                             \
             return &name_;                                                                                                                          \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static inline retval (*name_)(__VA_ARGS__) = nullptr;                                                                                       \
         static funcType hook() {                                                                                                                    \
             return hook_##name_;                                                                                                                    \
@@ -696,10 +610,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType* trampoline() {                                                                                                             \
             return &name_;                                                                                                                          \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static inline retval (*name_)(__VA_ARGS__) = nullptr;                                                                                       \
         static funcType hook() {                                                                                                                    \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                                  \
@@ -725,10 +635,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
             return &name_;                                                                                                                          \
         }                                                                                                                                           \
         static inline retval (*name_)(__VA_ARGS__) = nullptr;                                                                                       \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static funcType hook() {                                                                                                                    \
             return hook_##name_;                                                                                                                    \
         }                                                                                                                                           \
@@ -763,10 +669,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                    \
             return &::Hooking::HookCatchWrapper<&hook_##name_, funcType>::wrapper;                                                                  \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static retval hook_##name_(__VA_ARGS__);                                                                                                    \
     };                                                                                                                                              \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -791,10 +693,6 @@ struct HookCatchWrapper<Func, R (*)(TArgs...)> {
         static funcType hook() {                                                                                                                    \
             return hook_##name_;                                                                                                                    \
         }                                                                                                                                           \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                          \
-            return flamingoHandle;                                                                                                                  \
-        }                                                                                                                                           \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                 \
         static retval hook_##name_(__VA_ARGS__);                                                                                                    \
     };                                                                                                                                              \
     retval Hook_##name_::hook_##name_(__VA_ARGS__)
@@ -872,10 +770,6 @@ struct HookWrapperInvoke<R (*)(TArgs...)> {
         static funcType* trampoline() {                                                                                                                   \
             return &orig_base;                                                                                                                            \
         }                                                                                                                                                 \
-        static bs_hook::FlamingoHandleHelper& flamingo() {                                                                                                \
-            return flamingoHandle;                                                                                                                        \
-        }                                                                                                                                                 \
-        static inline bs_hook::FlamingoHandleHelper flamingoHandle;                                                                                       \
         static inline funcType orig_base = nullptr;                                                                                                       \
         template <class... TArgs>                                                                                                                         \
         static inline retval name_(TArgs... args) {                                                                                                       \
@@ -932,7 +826,7 @@ struct HookWrapperInvoke<R (*)(TArgs...)> {
 // };
 
 template <is_hook T, typename L, bool track = true, bool isFinal = false>
-inline bs_hook::FlamingoHandleHelper& __InstallHook(L& logger, void* addr) {
+inline void __InstallHook(L& logger, void* addr) {
 #ifndef SUPPRESS_MACRO_LOGS
     logger.info("Installing hook: {} to offset: {}", T::name(), fmt::ptr(addr));
 #endif
@@ -943,14 +837,13 @@ inline bs_hook::FlamingoHandleHelper& __InstallHook(L& logger, void* addr) {
 #ifndef SUPPRESS_MACRO_LOGS
         logger.info("Hook: {} installed with flamingo!", (const char*)T::name());
 #endif
-        T::flamingo().handle = install_result.value().returned_handle;
-        return T::flamingo();
+        return;
     } else {
 #ifndef SUPPRESS_MACRO_LOGS
         // FIX: Error is removed as it causes formatting errors
         logger.critical("Failed to install hook: {} with flamingo: ", (const char*)T::name());
 #endif
-        return T::flamingo();
+        return;
     }
 #else
     registerInlineHook((uint32_t)addr, (uint32_t)T::hook(), (uint32_t**)T::trampoline());
@@ -959,7 +852,7 @@ inline bs_hook::FlamingoHandleHelper& __InstallHook(L& logger, void* addr) {
 }
 
 template <is_hook T, typename L>
-bs_hook::FlamingoHandleHelper& __InstallFinalHook(L& logger, void* addr) {
+void __InstallFinalHook(L& logger, void* addr) {
 #ifndef SUPPRESS_MACRO_LOGS
     logger.info("Installing final priority hook: {} to offset: {}", T::name(), fmt::ptr(addr));
 #endif
@@ -972,13 +865,12 @@ bs_hook::FlamingoHandleHelper& __InstallFinalHook(L& logger, void* addr) {
 #ifndef SUPPRESS_MACRO_LOGS
         logger.info("Final hook: {} installed with flamingo!", T::name());
 #endif
-        T::flamingo() = install_result.value().returned_handle;
-        return T::flamingo();
+        return;
     } else {
 #ifndef SUPPRESS_MACRO_LOGS
         logger.critical("Failed to install final hook: {} with flamingo: {}", T::name(), install_result.error());
 #endif
-        return T::flamingo();
+        return;
     }
 #else
     registerInlineHook((uint32_t)addr, (uint32_t)T::hook(), (uint32_t**)T::trampoline());
@@ -988,14 +880,14 @@ bs_hook::FlamingoHandleHelper& __InstallFinalHook(L& logger, void* addr) {
 
 template <is_hook T, typename L>
     requires(is_addr_hook<T> && !is_findCall_hook<T> && is_logger<L>)
-bs_hook::FlamingoHandleHelper& InstallHook(L& logger) {
+void InstallHook(L& logger) {
     // Install T assuming it is an address hook.
     auto addr = reinterpret_cast<void*>(getRealOffset(T::addr()));
     return __InstallHook<T>(logger, addr);
 }
 template <is_hook T, typename L>
     requires(is_findCall_hook<T> && !is_addr_hook<T> && is_logger<L>)
-bs_hook::FlamingoHandleHelper& InstallHook(L& logger) {
+void InstallHook(L& logger) {
     // Install T assuming it is a hook that should call FindMethod.
     auto info = T::getInfo();
     if (!info) {
@@ -1009,7 +901,7 @@ bs_hook::FlamingoHandleHelper& InstallHook(L& logger) {
 }
 template <is_hook T, typename L>
     requires(is_findCall_hook<T> && !is_addr_hook<T> && is_logger<L>)
-bs_hook::FlamingoHandleHelper& InstallOrigHook(L& logger) {
+void InstallOrigHook(L& logger) {
     // Install T assuming it is a hook that should call FindMethod.
     auto info = T::getInfo();
     if (!info) {
@@ -1023,7 +915,7 @@ bs_hook::FlamingoHandleHelper& InstallOrigHook(L& logger) {
 }
 template <typename T, typename L>
     requires(is_hook<T> && is_logger<L>)
-bs_hook::FlamingoHandleHelper& InstallHookDirect(L& logger, void* dst) {
+void InstallHookDirect(L& logger, void* dst) {
     // Install T into the specified address. Null checks dst.
     if (!dst) {
 #ifndef SUPPRESS_MACRO_LOGS
@@ -1033,6 +925,39 @@ bs_hook::FlamingoHandleHelper& InstallHookDirect(L& logger, void* dst) {
     }
     return __InstallHook<T>(logger, dst);
 }
+
+/// Makes a flamingo hook builder for the provided hook type, finding the method via address.
+template <is_hook T>
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(Paper::LoggerContext logger, void* addr) {
+    flamingo::HookInfo hookInfo((void*)T::hook(), addr, (void**)T::trampoline(), flamingo::HookNameMetadata{ .name = T::name(), .namespaze = BS_HOOKS_HOOK_NAMESPACE });
+    return bs_hook::FlamingoHandleBuilder(logger, hookInfo);
+}
+
+/// Makes a flamingo hook builder for the provided hook type, finding the method via address.
+template <is_hook T, typename L>
+    requires(is_logger<L> && is_addr_hook<T>)
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger) {
+    auto addr = reinterpret_cast<void*>(getRealOffset(T::addr()));
+    return MakeFlamingoHook<T>(logger, addr);
+}
+
+/// Makes a flamingo hook builder for the provided hook type, finding the method via il2cpp_utils.
+template <is_hook T, typename L>
+    requires(is_logger<L> && is_findCall_hook<T>)
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger) {
+    auto info = T::getInfo();
+    if (!info) {
+#ifndef SUPPRESS_MACRO_LOGS
+        logger.critical("Attempting to make flamingo hook: {}, but method could not be found!", T::name());
+#endif
+        SAFE_ABORT();
+    }
+    auto addr = (void*)info->methodPointer;
+    return MakeFlamingoHook<T>(logger, addr);
+}
+
+#define FLAMINGO_HOOK(logger, name) ::Hooking::MakeFlamingoHook<Hook_##name>(logger)
+#define FLAMINGO_HOOK_DIRECT(logger, name, addr) ::Hooking::MakeFlamingoHook<Hook_##name>(logger, addr)
 
 // Installs the provided hook using the logger provided.
 // This properly specializes based off of whichever MAKE_HOOK macro you used, but is only valid if the name is from a MAKE_HOOK... macro.

@@ -50,6 +50,19 @@ struct Result {
         }
     }
 
+    template<typename... Args>
+    static Result Ok(Args&&... args) noexcept {
+        return Result(SuccessValue(std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    static Result Err(Args&&... args) noexcept {
+        return Result(ExceptionValue(std::forward<Args>(args)...));
+    }
+
+
+
     [[nodiscard]] inline bool has_result() const noexcept {
         return success;
     }
