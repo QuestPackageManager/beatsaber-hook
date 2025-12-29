@@ -943,7 +943,7 @@ inline bs_hook::FlamingoHandleHelper& __InstallHook(L& logger, void* addr) {
 #ifndef SUPPRESS_MACRO_LOGS
         logger.info("Hook: {} installed with flamingo!", (const char*)T::name());
 #endif
-        T::flamingo() = install_result.value().returned_handle;
+        T::flamingo().handle = install_result.value().returned_handle;
         return T::flamingo();
     } else {
 #ifndef SUPPRESS_MACRO_LOGS
@@ -990,7 +990,7 @@ template <is_hook T, typename L>
     requires(is_addr_hook<T> && !is_findCall_hook<T> && is_logger<L>)
 bs_hook::FlamingoHandleHelper& InstallHook(L& logger) {
     // Install T assuming it is an address hook.
-    auto addr = static_cast<void*>(getRealOffset(T::addr()));
+    auto addr = reinterpret_cast<void*>(getRealOffset(T::addr()));
     return __InstallHook<T>(logger, addr);
 }
 template <is_hook T, typename L>
