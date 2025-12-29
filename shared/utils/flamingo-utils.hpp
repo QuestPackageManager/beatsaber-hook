@@ -1,4 +1,5 @@
 #include <iterator>
+#include <optional>
 #include <string_view>
 #include "flamingo/shared/hook-data.hpp"
 #include "flamingo/shared/hook-installation-result.hpp"
@@ -18,7 +19,7 @@ struct FlamingoHandleHelper {
     FlamingoHandleHelper(FlamingoHandleHelper&&) = delete;
     FlamingoHandleHelper& operator=(FlamingoHandleHelper&&) = delete;
 
-    flamingo::HookHandle handle;
+    std::optional<flamingo::HookHandle> handle;
     FlamingoHandleHelper(flamingo::HookHandle handle) : handle(handle) {}
 
     operator std::optional<flamingo::HookHandle>() const {
@@ -30,7 +31,10 @@ struct FlamingoHandleHelper {
     }
 
     FlamingoHandleHelper& final(bool isFinal = true) {
-        handle.hook_location->metadata.priority.is_final = isFinal;
+        if (!handle.has_value()) {
+            return *this;
+        }
+        handle->hook_location->metadata.priority.is_final = isFinal;
         return *this;
     }
 
@@ -40,7 +44,10 @@ struct FlamingoHandleHelper {
     }
 
     FlamingoHandleHelper& after(std::string_view modID, std::string_view name = {}) {
-        handle.hook_location->metadata.priority.afters.emplace_back(flamingo::HookNameMetadata{
+        if (!handle.has_value()) {
+            return *this;
+        }
+        handle->hook_location->metadata.priority.afters.emplace_back(flamingo::HookNameMetadata{
             .name = std::string(name),
             .namespaze = std::string(modID),
         });
@@ -54,27 +61,38 @@ struct FlamingoHandleHelper {
     }
 
     FlamingoHandleHelper& before(std::string_view modID, std::string_view name = {}) {
-        handle.hook_location->metadata.priority.befores.emplace_back(flamingo::HookNameMetadata{ .name = std::string(name), .namespaze = std::string(modID) });
+        if (!handle.has_value()) {
+            return *this;
+        }
+        handle->hook_location->metadata.priority.befores.emplace_back(flamingo::HookNameMetadata{ .name = std::string(name), .namespaze = std::string(modID) });
         return *this;
     }
 
 
-    void reinstall() {
-        auto result = flamingo::Reinstall({ handle.hook_location->target });
+    FlamingoHandleHelper& reinstall() {
+        if (!handle.has_value()) {
+            return *this;
+        }
+        auto result = flamingo::Reinstall({ handle->hook_location->target });
         if (result.has_value()) {
             // Reinstall successful
         }
+
+        return *this;
     }
 
     // TODO: Allow reinstalling, this currently invalidates the handle though
     /// @brief Uninstalls the hook associated with this handle.
     /// After uninstalling, the handle is no longer valid.
     void uninstall() {
-        auto result = flamingo::Uninstall(handle);
+        if (!handle.has_value()) {
+            return;
+        }
+        auto result = flamingo::Uninstall(*handle);
         if (result.has_value()) {
             // Uninstall successful
         }
-        handle = {};
+        handle = std::nullopt;
         // TODO: Error handle
     }
 };

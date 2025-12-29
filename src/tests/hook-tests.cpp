@@ -5,10 +5,9 @@
 #pragma clang diagnostic ignored "-Wunused-value"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-parameter"
-#include "../../shared/utils/hooking.hpp"
 #include "../../shared/utils/base-wrapper-type.hpp"
+#include "../../shared/utils/hooking.hpp"
 #include "utils/logging.hpp"
-
 
 MAKE_HOOK(test, 0x0, void, int arg) {
     throw il2cpp_utils::RunMethodException("lol rekt", nullptr);
@@ -40,9 +39,12 @@ void install_a_hook() {
     ::Hooking ::InstallHook<Hook_test>(il2cpp_utils ::Logger).after("test-mod");
 
     modloader::ModInfo chroma = { "chroma", "1.0.0", 0 };
-    auto& hook = INSTALL_HOOK(il2cpp_utils::Logger, test2_hook).after(chroma).before("test");
+    // reinstall after setting priorities   
+    auto& hook = INSTALL_HOOK(il2cpp_utils::Logger, test2_hook).after(chroma).before("test").reinstall();
 
     if (false) {
+        // uninstall the hook, which will also remove it from flamingo
+        // hook is now invalid after this call
         hook.uninstall();
     }
 }
