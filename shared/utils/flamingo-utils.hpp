@@ -58,7 +58,7 @@ struct FlamingoHandleBuilder {
     }
 
     [[nodiscard]]
-    il2cpp_utils::Result<FlamingoHandle, flamingo::installation::Error> installOrError() noexcept;
+    bs_hook::Result<FlamingoHandle, flamingo::installation::Error> installOrError() noexcept;
 
     [[nodiscard]]
     FlamingoHandle install();
@@ -90,8 +90,8 @@ struct FlamingoHandle {
 
     /// @brief Uninstalls the hook associated with this handle.
     [[nodiscard]]
-    il2cpp_utils::Result<FlamingoHandleBuilder, std::monostate> uninstall() {
-        using Result = il2cpp_utils::Result<FlamingoHandleBuilder, std::monostate>;
+    bs_hook::Result<FlamingoHandleBuilder, std::monostate> uninstall() {
+        using Result = bs_hook::Result<FlamingoHandleBuilder, std::monostate>;
         auto result = flamingo::Uninstall(handle);
         if (result.has_value()) {
             return Result::Ok(FlamingoHandleBuilder(logger, info));
@@ -106,8 +106,8 @@ struct FlamingoHandle {
     }
 };
 
-inline il2cpp_utils::Result<FlamingoHandle, flamingo::installation::Error> FlamingoHandleBuilder::installOrError() noexcept {
-    using Result = il2cpp_utils::Result<FlamingoHandle, flamingo::installation::Error>;
+inline bs_hook::Result<FlamingoHandle, flamingo::installation::Error> FlamingoHandleBuilder::installOrError() noexcept {
+    using Result = bs_hook::Result<FlamingoHandle, flamingo::installation::Error>;
 
     logger.info("Installing hook: {} to offset: {}", hookInfo.metadata.name_info, fmt::ptr(hookInfo.target));
     auto install_result = flamingo::Install(std::move(hookInfo));
