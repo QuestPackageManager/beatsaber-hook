@@ -6,7 +6,7 @@
 
 #include "il2cpp-utils-exceptions.hpp"
 
-namespace il2cpp_utils {
+namespace bs_hook {
 
 namespace exceptions {
 struct ResultException : il2cpp_utils::exceptions::StackTraceException {
@@ -50,6 +50,19 @@ struct Result {
         }
     }
 
+    template<typename... Args>
+    static Result Ok(Args&&... args) noexcept {
+        return Result(SuccessValue(std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    static Result Err(Args&&... args) noexcept {
+        return Result(ExceptionValue(std::forward<Args>(args)...));
+    }
+
+
+
     [[nodiscard]] inline bool has_result() const noexcept {
         return success;
     }
@@ -58,38 +71,38 @@ struct Result {
     }
 
     [[nodiscard]] constexpr SuccessValue const& get_result() const {
-        if (!success) throw il2cpp_utils::exceptions::ResultException("Result does not contain a success result!");
+        if (!success) throw bs_hook::exceptions::ResultException("Result does not contain a success result!");
 
         return result;
     }
 
     [[nodiscard]] constexpr SuccessValue& get_result() {
-        if (!success) throw il2cpp_utils::exceptions::ResultException("Result does not contain a success result!");
+        if (!success) throw bs_hook::exceptions::ResultException("Result does not contain a success result!");
 
         return result;
     }
 
     /// move result value out of this wrapper
     [[nodiscard]] constexpr SuccessValue move_result() {
-        if (!success) throw il2cpp_utils::exceptions::ResultException("Result does not contain a success result!");
+        if (!success) throw bs_hook::exceptions::ResultException("Result does not contain a success result!");
 
         return std::move(result);
     }
 
     [[nodiscard]] constexpr ExceptionValue const& get_exception() const {
-        if (success) throw il2cpp_utils::exceptions::ResultException("Result does not contain an exception result!");
+        if (success) throw bs_hook::exceptions::ResultException("Result does not contain an exception result!");
 
         return exception;
     }
     [[nodiscard]] constexpr ExceptionValue& get_exception() {
-        if (success) throw il2cpp_utils::exceptions::ResultException("Result does not contain an exception result!");
+        if (success) throw bs_hook::exceptions::ResultException("Result does not contain an exception result!");
 
         return exception;
     }
 
     /// move result value out of this wrapper
     [[nodiscard]] constexpr ExceptionValue move_exception() {
-        if (success) throw il2cpp_utils::exceptions::ResultException("Result does not contain an exception result!");
+        if (success) throw bs_hook::exceptions::ResultException("Result does not contain an exception result!");
 
         return std::move(exception);
     }
@@ -197,4 +210,10 @@ struct Result {
     };
 };
 }  // namespace
-}  // namespace il2cpp_utils
+}  // namespace bs_hook
+
+namespace il2cpp_utils {
+    using bs_hook::exceptions::ResultException;
+    using bs_hook::Result;
+    using bs_hook::TypeOrMonostate;
+}

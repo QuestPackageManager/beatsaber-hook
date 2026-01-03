@@ -5,8 +5,9 @@
 #pragma clang diagnostic ignored "-Wunused-value"
 #pragma clang diagnostic ignored "-Wunused-variable"
 #pragma clang diagnostic ignored "-Wunused-parameter"
-#include "../../shared/utils/hooking.hpp"
 #include "../../shared/utils/base-wrapper-type.hpp"
+#include "../../shared/utils/hooking.hpp"
+#include "utils/logging.hpp"
 
 MAKE_HOOK(test, 0x0, void, int arg) {
     throw il2cpp_utils::RunMethodException("lol rekt", nullptr);
@@ -17,7 +18,7 @@ void* test2(void* one, void*) {
     return one;
 }
 
-template<>
+template <>
 struct ::il2cpp_utils::il2cpp_type_check::MetadataGetter<&test2> {
     static const MethodInfo* methodInfo() {
         return nullptr;
@@ -33,5 +34,30 @@ MAKE_HOOK_WRAPPER(test2_hook, &test2, bs_hook::Il2CppWrapperType, bs_hook::Il2Cp
     return ret;
     // Return from overall hook is converted to a void*
 }
+
+void install_a_hook() {
+    // legacy hook API
+    ::Hooking ::InstallHook<Hook_test>(il2cpp_utils ::Logger);
+
+    INSTALL_HOOK(il2cpp_utils::Logger, test2_hook);
+
+    // new Hook API!
+    modloader::ModInfo bs_hooks_mod_info = { MOD_ID, "1.0.0", 0 };
+    modloader::ModInfo chroma = { "chroma", "1.0.0", 0 };
+    auto hook = FLAMINGO_HOOK(il2cpp_utils::Logger, bs_hooks_mod_info, test2_hook).after(chroma).before("test-mod").install();
+    auto hook2 = FLAMINGO_HOOK(il2cpp_utils::Logger, "bs_hooks", test2_hook).after(chroma).before("test-mod").install();
+
+    auto doUninstall = false;
+    if (doUninstall) {
+        // uninstall the hook, which will also remove it from flamingo
+        // hook is now invalid after this call
+        auto builder = hook.uninstall().get_result();
+
+        builder.after("another-mod").before("test-mod-2").final();
+        // reinstall the hook
+        hook = builder.install();
+    }
+}
+
 #pragma clang diagnostic pop
 #endif
