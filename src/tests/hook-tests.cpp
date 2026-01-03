@@ -42,11 +42,13 @@ void install_a_hook() {
     INSTALL_HOOK(il2cpp_utils::Logger, test2_hook);
 
     // new Hook API!
-    modloader::ModInfo bs_hooks = { MOD_ID, "1.0.0", 0 };
+    modloader::ModInfo bs_hooks_mod_info = { MOD_ID, "1.0.0", 0 };
     modloader::ModInfo chroma = { "chroma", "1.0.0", 0 };
-    auto hook = FLAMINGO_HOOK(il2cpp_utils::Logger, bs_hooks, test2_hook).after(chroma).before("test-mod").install();
+    auto hook = FLAMINGO_HOOK(il2cpp_utils::Logger, bs_hooks_mod_info, test2_hook).after(chroma).before("test-mod").install();
+    auto hook2 = FLAMINGO_HOOK(il2cpp_utils::Logger, "bs_hooks", test2_hook).after(chroma).before("test-mod").install();
 
-    if (false) {
+    auto doUninstall = false;
+    if (doUninstall) {
         // uninstall the hook, which will also remove it from flamingo
         // hook is now invalid after this call
         auto builder = hook.uninstall().get_result();
