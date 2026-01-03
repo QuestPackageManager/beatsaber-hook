@@ -12,9 +12,6 @@
 
 #include "./flamingo-utils.hpp"
 
-#ifndef BS_HOOKS_HOOK_NAMESPACE
-#define BS_HOOKS_HOOK_NAMESPACE MOD_ID
-#endif
 
 namespace Hooking {
 // For use in MAKE_HOOK_AUTO bodies.
@@ -928,23 +925,23 @@ void InstallHookDirect(L& logger, void* dst) {
 
 /// Makes a flamingo hook builder for the provided hook type, finding the method via address.
 template <is_hook T>
-bs_hook::FlamingoHandleBuilder MakeFlamingoHook(Paper::LoggerContext logger, void* addr) {
-    flamingo::HookInfo hookInfo((void*)T::hook(), addr, (void**)T::trampoline(), flamingo::HookNameMetadata{ .name = T::name(), .namespaze = BS_HOOKS_HOOK_NAMESPACE });
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(Paper::LoggerContext logger, std::string_view namespaze, void* addr) {
+    flamingo::HookInfo hookInfo((void*)T::hook(), addr, (void**)T::trampoline(), flamingo::HookNameMetadata{ .name = T::name(), .namespaze = std::string(namespaze) });
     return bs_hook::FlamingoHandleBuilder(logger, hookInfo);
 }
 
 /// Makes a flamingo hook builder for the provided hook type, finding the method via address.
 template <is_hook T, typename L>
     requires(is_logger<L> && is_addr_hook<T>)
-bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger) {
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger, std::string_view namespaze) {
     auto addr = reinterpret_cast<void*>(getRealOffset(T::addr()));
-    return MakeFlamingoHook<T>(logger, addr);
+    return MakeFlamingoHook<T>(logger, namespaze, addr);
 }
 
 /// Makes a flamingo hook builder for the provided hook type, finding the method via il2cpp_utils.
 template <is_hook T, typename L>
     requires(is_logger<L> && is_findCall_hook<T>)
-bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger) {
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger, std::string_view namespaze) {
     auto info = T::getInfo();
     if (!info) {
 #ifndef SUPPRESS_MACRO_LOGS
@@ -953,11 +950,17 @@ bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger) {
         SAFE_ABORT();
     }
     auto addr = (void*)info->methodPointer;
-    return MakeFlamingoHook<T>(logger, addr);
+    return MakeFlamingoHook<T>(logger, namespaze, addr);
 }
 
-#define FLAMINGO_HOOK(logger, name) ::Hooking::MakeFlamingoHook<Hook_##name>(logger)
-#define FLAMINGO_HOOK_DIRECT(logger, name, addr) ::Hooking::MakeFlamingoHook<Hook_##name>(logger, addr)
+/// Modloader modinfo version of MakeFlamingoHook
+template <is_hook T, typename L, typename... TArgs>
+bs_hook::FlamingoHandleBuilder MakeFlamingoHook(L& logger, modloader::ModInfo const& modInfo, TArgs... args) {
+    return MakeFlamingoHook<T>(logger, std::string_view(modInfo.id), std::forward<TArgs>(args)...);
+}
+
+#define FLAMINGO_HOOK(logger, namespaze, name) ::Hooking::MakeFlamingoHook<Hook_##name>(logger, namespaze)
+#define FLAMINGO_HOOK_DIRECT(logger, namespaze, addr) ::Hooking::MakeFlamingoHook<Hook_##name>(logger, namespaze, addr)
 
 // Installs the provided hook using the logger provided.
 // This properly specializes based off of whichever MAKE_HOOK macro you used, but is only valid if the name is from a MAKE_HOOK... macro.
