@@ -136,7 +136,7 @@ static void test_safeptr_casts() {
     {
         Il2CppObject inst{};
         SafePtr<Il2CppObject> a(&inst);
-        auto maybeRef = a.try_cast<Il2CppReflectionType>();
+        auto maybeRef = a.try_cast_unsafe<Il2CppReflectionType>();
         logger.info("[il2cpp-tests] SafePtr<Il2CppObject>.try_cast<Il2CppReflectionType> -> {}", maybeRef.has_value());
         if (maybeRef) {
             logger.info("[il2cpp-tests] Cast succeeded (unexpected)");

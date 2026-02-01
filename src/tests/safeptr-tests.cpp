@@ -10,6 +10,9 @@ struct Derived2 : public Derived {
     int value2;
 };
 
+DEFINE_IL2CPP_ARG_TYPE(Derived, "", "Derived");
+DEFINE_IL2CPP_ARG_TYPE(Derived2, "", "Derived2");
+
 static void testRef(SafePtr<int>& ref) {
     *ref = 55;
 }
