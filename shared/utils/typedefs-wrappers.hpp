@@ -340,6 +340,7 @@ struct SafePtr {
         return *this;
     }
     /// @brief Performs an il2cpp type checked cast from T to U.
+    /// This ensures that U is part of the inheritance chain of T.
     /// This should only be done if both T and U are reference types
     /// Currently assumes the `klass` field is the first pointer in T.
     /// This function may throw TypeCastException or NullHandleException or otherwise abort.
@@ -348,7 +349,21 @@ struct SafePtr {
     /// @tparam AllowUnityPrime Whether the casted SafePtr should allow unity conversions.
     /// @return A new SafePtr of the cast value.
     template <class U, bool AllowUnityPrime = AllowUnity>
+    requires(std::derived_from<U, T> || std::derived_from<T, U>)
     [[nodiscard]] inline SafePtr<U, AllowUnityPrime> cast() const {
+        return cast_unsafe<U, AllowUnityPrime>();
+    }
+
+    /// @brief Performs an il2cpp type checked cast from T to U.
+    /// This should only be done if both T and U are reference types
+    /// Currently assumes the `klass` field is the first pointer in T.
+    /// This function may throw TypeCastException or NullHandleException or otherwise abort.
+    /// See try_cast for a version that does not.
+    /// @tparam U The type to cast to.
+    /// @tparam AllowUnityPrime Whether the casted SafePtr should allow unity conversions.
+    /// @return A new SafePtr of the cast value.
+    template <class U, bool AllowUnityPrime = AllowUnity>
+    [[nodiscard]] inline SafePtr<U, AllowUnityPrime> cast_unsafe() const {
         // TODO: We currently assume that the first sizeof(void*) bytes of ptr is the klass field.
         // This should hold true for everything except value types.
         if (!internalHandle) {
@@ -362,7 +377,7 @@ struct SafePtr {
         auto* k1 = CRASH_UNLESS(classof(U*));
         auto* k2 = *CRASH_UNLESS(reinterpret_cast<Il2CppClass**>(internalHandle->instancePointer));
         il2cpp_functions::Init();
-        if (il2cpp_functions::class_is_assignable_from(k1, k2)) {
+        if (k1 == k2 || il2cpp_functions::class_is_assignable_from(k1, k2)) {
             return SafePtr<U, AllowUnityPrime>(reinterpret_cast<U*>(internalHandle->instancePointer));
         }
 #if __has_feature(cxx_exceptions)
@@ -372,6 +387,20 @@ struct SafePtr {
         return SafePtr<U, AllowUnityPrime>();
 #endif
     }
+
+    /// @brief Performs an il2cpp type checked cast from T to U.
+    /// This ensures that U is part of the inheritance chain of T.
+    /// This should only be done if both T and U are reference types
+    /// Currently assumes the `klass` field is the first pointer in T.
+    /// @tparam U The type to cast to.
+    /// @tparam AllowUnityPrime Whether the casted SafePtr should allow unity conversions.
+    /// @return A new SafePtr of the cast value, if successful.
+    template <class U, bool AllowUnityPrime = AllowUnity>
+    requires(std::derived_from<U, T> || std::derived_from<T, U>)
+    [[nodiscard]] inline std::optional<SafePtr<U, AllowUnityPrime>> try_cast() const noexcept {
+        return try_cast_unsafe<U, AllowUnityPrime>();
+    }
+
     /// @brief Performs an il2cpp type checked cast from T to U.
     /// This should only be done if both T and U are reference types
     /// Currently assumes the `klass` field is the first pointer in T.
@@ -379,7 +408,7 @@ struct SafePtr {
     /// @tparam AllowUnityPrime Whether the casted SafePtr should allow unity conversions.
     /// @return A new SafePtr of the cast value, if successful.
     template <class U, bool AllowUnityPrime = AllowUnity>
-    [[nodiscard]] inline std::optional<SafePtr<U, AllowUnityPrime>> try_cast() const noexcept {
+    [[nodiscard]] inline std::optional<SafePtr<U, AllowUnityPrime>> try_cast_unsafe() const noexcept {
         auto* k1 = classof(U*);
         if (!internalHandle || !internalHandle->instancePointer || k1) {
             return std::nullopt;
@@ -389,7 +418,7 @@ struct SafePtr {
             return std::nullopt;
         }
         il2cpp_functions::Init();
-        if (il2cpp_functions::class_is_assignable_from(k1, k2)) {
+        if (k1 == k2 || il2cpp_functions::class_is_assignable_from(k1, k2)) {
             return SafePtr<U, AllowUnityPrime>(reinterpret_cast<U*>(internalHandle->instancePointer));
         }
         return std::nullopt;

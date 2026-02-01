@@ -2,6 +2,14 @@
 #include "../../shared/utils/typedefs.h"
 #include <cassert>
 
+struct Derived : public Il2CppObject {
+    int value;
+};
+
+struct Derived2 : public Derived {
+    int value2;
+};
+
 static void testRef(SafePtr<int>& ref) {
     *ref = 55;
 }
@@ -66,8 +74,8 @@ static void test_cast() {
     {
         SafePtr<int> a(&x);
         // We should then be able to cast to a SafePtr<float>, but in this case this will fail because we don't handle value type casts
-        auto b = a.cast<float>();
-        auto c = *a.try_cast<float>();
+        // auto b = a.cast<float>();
+        // auto c = *a.try_cast<float>();
     }
     // If we have reference types, however, we can do that instead.
     {
@@ -75,12 +83,12 @@ static void test_cast() {
         SafePtr<Il2CppObject> a(&inst);
         // We could then cast this to whatever we wish, including an Il2CppReflectionType
         // (though the validity is obviously a failure with a null class)
-        auto b = a.cast<Il2CppReflectionType>();
-        auto c = *a.try_cast<Il2CppReflectionType>();
+        auto b = a.cast_unsafe<Il2CppReflectionType>();
+        auto c = *a.try_cast_unsafe<Il2CppReflectionType>();
 
         // Just to make sure:
-        auto* q = il2cpp_utils::cast<Il2CppReflectionType>(&inst);
-        auto* p = *il2cpp_utils::try_cast<Il2CppObject>(q);
+        auto* q = il2cpp_utils::cast_unsafe<Il2CppReflectionType>(&inst);
+        auto* p = *il2cpp_utils::try_cast_unsafe<Il2CppObject>(q);
         assert(q == p && q == &inst);
         if (p != &inst) {
             // FAILSAFE TO AVOID UNUSUED p
@@ -93,8 +101,8 @@ static void test_cast() {
         // Standard operations should apply just fine for an Il2CppObject--
         // we are casting to grab an invalid field, so this won't ever work in practice, but
         // it should compile
-        auto b = a.cast<Il2CppReflectionType>();
-        auto c = *a.try_cast<Il2CppReflectionType>();
+        auto b = a.cast_unsafe<Il2CppReflectionType>();
+        auto c = *a.try_cast_unsafe<Il2CppReflectionType>();
         if (a) {
             CRASH_UNLESS(static_cast<Il2CppObject*>(a));
         }
@@ -109,6 +117,34 @@ static void test_cast() {
         // Il2CppObject& v = ca;
         call_cref(*ca);
         call_cref(*a);
+    }
+
+    {
+        Derived derivedInst;
+        derivedInst.value = 42;
+        SafePtr<Il2CppObject> a(&derivedInst);
+        auto b = a.cast<Derived>();
+        auto c = *a.try_cast<Derived>();
+        CRASH_UNLESS(static_cast<Il2CppObject*>(a.ptr()) == static_cast<Il2CppObject*>(&derivedInst));
+        CRASH_UNLESS(b.ptr() == static_cast<Il2CppObject*>(&derivedInst));
+        CRASH_UNLESS(c.ptr() == static_cast<Il2CppObject*>(&derivedInst));
+
+        auto d = a.cast<Derived2>();
+        auto e = a.try_cast<Derived2>();
+        CRASH_UNLESS(!d.ptr());
+        CRASH_UNLESS(!e.has_value());
+    }
+
+    {
+        // test il2cpp_utils::cast and try_cast
+        Derived derivedInst;
+        derivedInst.value = 42;
+        Il2CppObject* objPtr = static_cast<Il2CppObject*>(&derivedInst);
+        auto d = il2cpp_utils::cast<Derived>(objPtr);
+        CRASH_UNLESS(d == static_cast<Derived*>(&derivedInst));
+
+        auto e = il2cpp_utils::try_cast<Derived2>(objPtr);
+        CRASH_UNLESS(!e.has_value());
     }
 }
 #endif

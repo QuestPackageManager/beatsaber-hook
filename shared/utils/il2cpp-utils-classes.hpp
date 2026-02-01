@@ -11,6 +11,7 @@
 #include <optional>
 #include <vector>
 
+#include <concepts>
 namespace il2cpp_utils {
     template<class TOut>
     ::std::optional<TOut> FromIl2CppObject(Il2CppObject* obj) {
@@ -186,11 +187,26 @@ namespace il2cpp_utils {
     /// This should only be done if both T and U are reference types
     /// Currently assumes the `klass` field is the first pointer in T.
     /// This function may crash. See try_cast for a version that does not.
+    /// This version checks if U is part of the inheritance chain of T.
     /// @tparam T The type to cast from.
     /// @tparam U The type to cast to.
     /// @return A U* of the cast value.
     template<class U, class T>
+    requires(std::derived_from<U, T>)
     [[nodiscard]] U* cast(T* inst) {
+        return cast_unsafe<U>(inst);
+    }
+
+    /// @brief Performs an il2cpp type checked cast from T to U.
+    /// This should only be done if both T and U are reference types
+    /// Currently assumes the `klass` field is the first pointer in T.
+    /// This function may crash. See try_cast for a version that does not.
+    /// This version does not check if U is part of the inheritance chain of T.
+    /// @tparam T The type to cast from.
+    /// @tparam U The type to cast to.
+    /// @return A U* of the cast value.
+    template<class U, class T>
+    [[nodiscard]] U* cast_unsafe(T* inst) {
         // TODO: Assumes T* is (at least) an Il2CppClass**, this means it assumes klass as first field.
         static auto* k1 = classof(U*);
         if (!k1) {
@@ -218,14 +234,29 @@ namespace il2cpp_utils {
     [[nodiscard]] U& cast_ref(T& inst) {
         return *cast(std::addressof(inst));
     }
+
     /// @brief Performs an il2cpp type checked cast from T to U.
     /// This should only be done if both T and U are reference types
     /// Currently assumes the `klass` field is the first pointer in T.
+    /// This checks if U is part of the inheritance chain of T.
+    /// @tparam T The type to cast from.
+    /// @tparam U The type to cast to.
+    /// @return A U& of the cast value.
+    template<typename U, typename T>
+    requires(std::derived_from<U, T>)
+    [[nodiscard]] std::optional<U*> try_cast(T* inst) noexcept {
+        return try_cast_unsafe<U>(inst);
+    }
+
+    /// @brief Performs an il2cpp type checked cast from T to U.
+    /// This should only be done if both T and U are reference types
+    /// Currently assumes the `klass` field is the first pointer in T.
+    /// This does not check if U is part of the inheritance chain of T.
     /// @tparam T The type to cast from.
     /// @tparam U The type to cast to.
     /// @return A U* of the cast value, if successful.
     template<typename U, typename T>
-    [[nodiscard]] std::optional<U*> try_cast(T* inst) noexcept {
+    [[nodiscard]] std::optional<U*> try_cast_unsafe(T* inst) noexcept {
         static auto* k1 = classof(U*);
         if (!k1 || !inst) {
             return std::nullopt;
