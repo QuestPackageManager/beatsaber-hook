@@ -1,13 +1,63 @@
+Language: Cpp
 BasedOnStyle: Google
-AllowShortBlocksOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: true
-ColumnLimit: 200
-CommentPragmas: NOLINT:.*
+AccessModifierOffset: -1
+AlignAfterOpenBracket: BlockIndent
+AlignOperands: AlignAfterOperator
+AlignTrailingComments:
+  Kind: Never
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+BreakAfterAttributes: Never
+BreakBeforeConceptDeclarations: Always
+BreakConstructorInitializers: AfterColon
+BreakInheritanceList: AfterColon
+BreakStringLiterals: false
+ColumnLimit: 150
 DerivePointerAlignment: false
-IncludeBlocks: Preserve
+FixNamespaceComments: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: "^<[^.>]+>$"
+    Priority: 2
+    SortPriority: 3
+    CaseSensitive: false
+  - Regex: '^<.+\.(h|hpp)>$'
+    Priority: 2
+    SortPriority: 4
+    CaseSensitive: false
+  - Regex: '^"[A-Z].*\/.+\.hpp"$'
+    Priority: 5
+    CaseSensitive: true
+  - Regex: "^.+/shared/.+"
+    Priority: 1
+    SortPriority: 2
+    CaseSensitive: true
+  - Regex: ".*"
+    Priority: 1
+    SortPriority: 1
+    CaseSensitive: false
+IndentExternBlock: Indent
+IndentRequiresClause: false
 IndentWidth: 4
-PointerAlignment: Left
-TabWidth: 4
-UseTab: Never
-Cpp11BracedListStyle: false
+InsertBraces: true
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+LineEnding: LF
+NamespaceIndentation: All
+PackConstructorInitializers: CurrentLine
+PenaltyExcessCharacter: 100
+PenaltyReturnTypeOnItsOwnLine: 50
+QualifierAlignment: Right
+RequiresClausePosition: OwnLine
+RequiresExpressionIndentation: OuterScope
+SkipMacroDefinitionBody: true
+SpaceAfterCStyleCast: true
+SpacesBeforeTrailingComments: 2
