@@ -29,9 +29,9 @@ namespace i2c::hooking {
             // Must have a hook that returns the func_t
             { T::hook() } -> std::same_as<typename T::func_t>;
             // Must have an installation handle
-            { T::install_handle } -> std::same_as<flamingo::HookHandle>;
+            { T::install_handle } -> std::same_as<flamingo::HookHandle&>;
             // Must have installation priority
-            { T::install_priority } -> std::same_as<flamingo::HookPriority>;
+            { T::install_priority } -> std::same_as<flamingo::HookPriority&>;
         } &&
         (
             // Must have an address
@@ -59,7 +59,8 @@ namespace i2c::hooking {
     template <typename R, typename T1, typename... TArgs>
     struct resolve_addr<R (*)(T1, TArgs...)> {
         auto operator()(find_class_info klass, std::string_view name, bool instance = std::is_pointer_v<T1> && type_check::valid_type<T1>) {
-            auto args = instance ? std::initializer_list{class_of<TArgs>()...} : std::initializer_list{class_of<T1>(), class_of<TArgs>()...};
+            auto args = instance ? std::initializer_list<Il2CppType const*>{type_of<TArgs>()...}
+                                 : std::initializer_list<Il2CppType const*>{type_of<T1>(), type_of<TArgs>()...};
             return find_method(klass, {name, {}, args});
         }
     };
@@ -72,7 +73,7 @@ namespace i2c::hooking {
     };
     template <auto C, typename R, typename T, typename... Ts>
     // Uses C (a constexpr verification function) to see if an instance method (and a particular overload) can be used
-    requires(C.template operator()<method_ptr_t<R, T, Ts...>>())
+    requires(C.template operator()<method_ptr_t<T, R, Ts...>>())
     struct method_check<C, R (*)(T*, Ts...)> {
         using type = R (T::*)(Ts...);
     };
@@ -143,24 +144,24 @@ namespace i2c::hooking {
 
 #define __INTERNAL_HOOK_STRUCT(name_, addr_, ret_type, ...) \
     constexpr static const char* name() { return #name_; }  \
-    static void* addr() { return addr_; }                   \
-    static func_t hook() { return hook_##name_; }           \
+    static auto addr() { return addr_; }                    \
+    static func_t hook() { return hook_m_##name_; }         \
     static func_t* trampoline() { return &name_; }          \
     static inline flamingo::HookHandle install_handle;      \
     static inline flamingo::HookPriority install_priority;  \
-    static retval hook_##name_(__VA_ARGS__); /* Hook */     \
-    static inline retval (*name_)(__VA_ARGS__) = nullptr; /* Orig */
+    static ret_type hook_m_##name_(__VA_ARGS__); /* Hook */ \
+    static inline ret_type (*name_)(__VA_ARGS__) = nullptr; /* Orig */
 
 // Defines a hook to a manually found address or il2cpp method.
 // addr_info must be in parentheses, and can either be an expression that produces a pointer,
 // or a find_class_info, method name, and boolean flag if an instance method.
 // If given an il2cpp method, it will search for one that matches the given return type and parameters.
-#define MAKE_HOOK(name_, addr_info, ret_type, ...)                                                           \
-    struct hook_##name_ {                                                                                    \
-        using func_t = ret_type (*)(__VA_ARGS__);                                                            \
-        __INTERNAL_HOOK_STRUCT(name_, ::i2c::hooking::resolve_addr<func_t> addr_info, ret_type, __VA_ARGS__) \
-    };                                                                                                       \
-    retval hook_##name_::hook_##name_(__VA_ARGS__)
+#define MAKE_HOOK(name_, addr_info, ret_type, ...)                                                             \
+    struct hook_##name_ {                                                                                      \
+        using func_t = ret_type (*)(__VA_ARGS__);                                                              \
+        __INTERNAL_HOOK_STRUCT(name_, ::i2c::hooking::resolve_addr<func_t>{} addr_info, ret_type, __VA_ARGS__) \
+    };                                                                                                         \
+    ret_type hook_##name_::hook_m_##name_(__VA_ARGS__)
 
 // Defines a hook to a method with metadata provided through i2c::metadata_getter.
 // Will automatically cast overloads, check types, and detect static/instance methods, based on the given return type and parameters.
@@ -171,10 +172,10 @@ namespace i2c::hooking {
         using func_t = ret_type (*)(__VA_ARGS__);                                                                                \
         using cast_t = ::i2c::hooking::method_check<cast_test, func_t>::type;                                                    \
         static_assert(cast_test.operator()<cast_t>(), "Hook method signature does not match!");                                  \
-        static_assert(match_hookable<static_cast<cast_t>(method)>, "Method cannot be hooked!");                                  \
+        static_assert(::i2c::hooking::match_hookable<static_cast<cast_t>(method)>, "Method cannot be hooked!");                  \
         __INTERNAL_HOOK_STRUCT(name_, ::i2c::metadata_getter<static_cast<cast_t>(method)>::method_info(), ret_type, __VA_ARGS__) \
     };                                                                                                                           \
-    retval hook_##name_::hook_##name_(__VA_ARGS__)
+    ret_type hook_##name_::hook_m_##name_(__VA_ARGS__)
 
 // Tells a hook to be installed as the final hook, if other hooks are installed to the same target.
 #define HOOK_ORIG(name_)                                \

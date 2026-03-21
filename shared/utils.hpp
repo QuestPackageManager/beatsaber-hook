@@ -84,7 +84,7 @@ template <typename TRet, typename... TArgs>
 using function_ptr_t = TRet (*)(TArgs...);
 
 // Like function_ptr_t, but for an instance method
-template <typename TRet, typename T, typename... TArgs>
+template <typename T, typename TRet, typename... TArgs>
 using method_ptr_t = TRet (T::*)(TArgs...);
 
 // Creates all directories for a provided file path
