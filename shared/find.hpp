@@ -20,7 +20,7 @@ namespace i2c {
         find_class_info& operator=(find_class_info const&) = default;
 
         // Finds a class by namespace and name.
-        find_class_info(auto const& namespaze, auto const& name) :
+        find_class_info(std::convertible_to<std::string_view> auto const& namespaze, std::convertible_to<std::string_view> auto const& name) :
             data(by_name{static_cast<std::string_view>(namespaze), static_cast<std::string_view>(name)}) {}
         // Gets the class from an instance.
         find_class_info(Il2CppObject* instance) : data(by_instance{instance}) {}
@@ -30,7 +30,7 @@ namespace i2c {
         find_class_info(std::nullptr_t) : data(nullptr) {}
         // Finds a class based on C++ type.
         template <type_check::valid_type T>
-        find_class_info(T&&) : data(class_of<T>()) {}
+        find_class_info(T const&) : data(class_of<T>()) {}
     };
 
     struct find_method_info {
@@ -62,11 +62,16 @@ namespace i2c {
         find_method_info& operator=(find_method_info const&) = default;
 
         // Finds the first method with a given name.
-        find_method_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
+        find_method_info(std::convertible_to<std::string_view> auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
         // Finds the first method with a given name and number of arguments.
-        find_method_info(auto const& name, int args) : data(by_args{static_cast<std::string_view>(name), args}) {}
+        find_method_info(std::convertible_to<std::string_view> auto const& name, int args) :
+            data(by_args{static_cast<std::string_view>(name), args}) {}
         // Finds the best match of all methods with a given name, based on generics and argument types.
-        find_method_info(auto const& name, std::span<Il2CppClass const* const> generics, std::span<Il2CppType const* const> params) :
+        find_method_info(
+            std::convertible_to<std::string_view> auto const& name,
+            std::span<Il2CppClass const* const> generics,
+            std::span<Il2CppType const* const> params
+        ) :
             data(by_types{static_cast<std::string_view>(name), generics, params}) {}
         // Finds the method with the given vtable slot in the class.
         find_method_info(int slot) : data(by_slot{slot}) {}

@@ -492,13 +492,13 @@ char* i2c::functions::Type_GetName(Il2CppType const* type, Il2CppTypeNameFormat 
     return buffer;
 }
 
-static std::optional<uint32_t*> blrFind(cs_insn* insn) {
-    return insn->id == ARM64_INS_BLR ? std::optional<uint32_t*>(reinterpret_cast<uint32_t*>(insn->address)) : std::nullopt;
-}
+// static std::optional<uint32_t*> blrFind(cs_insn* insn) {
+//     return insn->id == ARM64_INS_BLR ? std::optional<uint32_t*>(reinterpret_cast<uint32_t*>(insn->address)) : std::nullopt;
+// }
 
-static std::optional<uint32_t*> findADRP(cs_insn* insn) {
-    return (insn->id == ARM64_INS_ADRP) ? std::optional<uint32_t*>(reinterpret_cast<uint32_t*>(insn->address)) : std::nullopt;
-}
+// static std::optional<uint32_t*> findADRP(cs_insn* insn) {
+//     return (insn->id == ARM64_INS_ADRP) ? std::optional<uint32_t*>(reinterpret_cast<uint32_t*>(insn->address)) : std::nullopt;
+// }
 
 static void find_GC_free(Paper::LoggerContext const& logger) {
     using namespace i2c::functions;
@@ -511,14 +511,14 @@ static void find_GC_free(Paper::LoggerContext const& logger) {
     logger.debug("gc::GarbageCollector::FreeFixed found? offset: {:X}", reinterpret_cast<uintptr_t>(GC_free) - i2c::binary::get_real_offset(0));
 }
 
-static bool find_GC_SetWriteBarrier(uint32_t const* set_wbarrier_field) {
-    using namespace i2c::functions;
-    if (!set_wbarrier_field) {
-        return false;
-    }
-    GarbageCollector_SetWriteBarrier = reinterpret_cast<decltype(GarbageCollector_SetWriteBarrier)>(*set_wbarrier_field);
-    return true;
-}
+// static bool find_GC_SetWriteBarrier(uint32_t const* set_wbarrier_field) {
+//     using namespace i2c::functions;
+//     if (!set_wbarrier_field) {
+//         return false;
+//     }
+//     GarbageCollector_SetWriteBarrier = reinterpret_cast<decltype(GarbageCollector_SetWriteBarrier)>(*set_wbarrier_field);
+//     return true;
+// }
 
 void* (*wrapped_gc_malloc_uncollectable)(size_t sz, long long type);
 
@@ -747,7 +747,7 @@ struct nullable {
     explicit constexpr nullable(char const* s) : str(s) {}
 };
 
-static constexpr char const* format_as(nullable n) {
+inline char const* format_as(nullable n) {
     return n.str ? n.str : "(null)";
 }
 

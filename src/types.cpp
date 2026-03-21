@@ -383,7 +383,7 @@ Il2CppObject* i2c::create_manual(Il2CppClass const* klass) {
     // Call cctor, we don't bother making a new thread for the type initializer. BE WARNED!
     if (klass->has_cctor && !klass->cctor_finished_or_no_cctor && !klass->cctor_started) {
         obj->klass->cctor_started = true;
-        run_method(klass, ".cctor");
+        run_method(obj->klass, ".cctor");
         obj->klass->cctor_finished_or_no_cctor = true;
     }
     return obj;

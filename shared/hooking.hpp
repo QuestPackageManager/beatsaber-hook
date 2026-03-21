@@ -65,12 +65,12 @@ namespace i2c::hooking {
     };
 
     // Used to check overloaded match hooks against the parameter list
-    template <auto C, class T>
+    template <auto C, typename T>
     // Default fallback to static method type
     struct method_check {
         using type = T;
     };
-    template <auto C, class R, class T, class... Ts>
+    template <auto C, typename R, typename T, typename... Ts>
     // Uses C (a constexpr verification function) to see if an instance method (and a particular overload) can be used
     requires(C.template operator()<method_ptr_t<R, T, Ts...>>())
     struct method_check<C, R (*)(T*, Ts...)> {
@@ -167,7 +167,7 @@ namespace i2c::hooking {
 // Generic methods cannot be hooked with this macro.
 #define MAKE_HOOK_MATCH(name_, method, ret_type, ...)                                                                            \
     struct hook_##name_ {                                                                                                        \
-        static constexpr auto cast_test = []<class T>() { return requires { static_cast<T>(method); }; };                        \
+        static constexpr auto cast_test = []<typename T>() { return requires { static_cast<T>(method); }; };                     \
         using func_t = ret_type (*)(__VA_ARGS__);                                                                                \
         using cast_t = ::i2c::hooking::method_check<cast_test, func_t>::type;                                                    \
         static_assert(cast_test.operator()<cast_t>(), "Hook method signature does not match!");                                  \

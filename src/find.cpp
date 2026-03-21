@@ -27,7 +27,7 @@ struct span_vec_w : std::span<T> {
         if (this->size() != rhs.size()) {
             return false;
         }
-        for (int i = 0; i < this->size(); i++) {
+        for (decltype(this->size()) i = 0; i < this->size(); i++) {
             if ((*this)[i] != rhs[i]) {
                 return false;
             }

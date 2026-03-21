@@ -159,7 +159,7 @@ namespace i2c {
         concept valid_type = has_get<no_arg_class<T>> && has_mark<T>;
 
         template <typename T>
-        concept wrapper_type = valid_type<T> && std::is_constructible_v<T, void*> && requires(T t) {
+        concept wrapper_type = std::is_constructible_v<T, void*> && requires(T t) {
             { t.convert() } -> std::same_as<void*>;
         };
 
@@ -214,7 +214,7 @@ namespace i2c {
     }
 }
 
-#define DEFINE_IL2CPP_DEFAULT_TYPE(type, field_name)               \
+#define DEFINE_IL2CPP_DEFAULT_CLASS(type, field_name)              \
     template<>                                                     \
     struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<type> {  \
         static inline Il2CppClass* get() {                         \
@@ -222,11 +222,11 @@ namespace i2c {
             return ::i2c::functions::defaults->field_name##_class; \
         }                                                          \
     }
-#define DEFINE_IL2CPP_DEFAULT_TYPE_VAL(type, field_name) \
-    DEFINE_IL2CPP_DEFAULT_TYPE(type, field_name);        \
+#define DEFINE_IL2CPP_DEFAULT_CLASS_VAL(type, field_name) \
+    DEFINE_IL2CPP_DEFAULT_CLASS(type, field_name);        \
     MARK_VAL_T(type);
-#define DEFINE_IL2CPP_DEFAULT_TYPE_REF(type, field_name) \
-    DEFINE_IL2CPP_DEFAULT_TYPE(type, field_name);        \
+#define DEFINE_IL2CPP_DEFAULT_CLASS_REF(type, field_name) \
+    DEFINE_IL2CPP_DEFAULT_CLASS(type, field_name);        \
     MARK_REF_T(type);
 
 #define MARK_VAL_T(type) \
@@ -239,7 +239,7 @@ namespace i2c {
 #define MARK_GEN_REF_T(type) \
     template<> struct BS_HOOK_HIDDEN ::i2c::type_markers::gen_ref_type_trait<type> { static constexpr bool value = true; }
 
-#define DEFINE_IL2CPP_ARG_TYPE(type, namespaze, name)                      \
+#define DEFINE_IL2CPP_CLASS(type, namespaze, name)                         \
     template <>                                                            \
     struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<type> {          \
         static inline Il2CppClass* get() {                                 \
@@ -247,7 +247,7 @@ namespace i2c {
             return klass;                                                  \
         }                                                                  \
     }
-#define DEFINE_IL2CPP_GEN_ARG_TYPE(type, namespaze, name)                  \
+#define DEFINE_IL2CPP_GEN_CLASS(type, namespaze, name)                     \
     template <>                                                            \
     struct BS_HOOK_HIDDEN ::i2c::type_check::gen_no_arg_class<type> {      \
         static inline Il2CppClass* get() {                                 \
@@ -284,7 +284,7 @@ namespace System {
 }
 #endif
 
-template <class T>
+template <typename T>
 struct Array : public Il2CppArray {
     static_assert(i2c::type_check::valid_type<T>, "T must be a valid C# type!");
     // static_assert(
@@ -300,7 +300,7 @@ struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<Array<T>*> {
         static Il2CppClass* klass;
         if (!klass) {
             functions::initialize();
-            Il2CppClass* element_class = RET_0_UNLESS(::i2c::logger, no_arg_class<T>::get());
+            Il2CppClass* element_class = RET_DEF_UNLESS(::i2c::logger, no_arg_class<T>::get());
             klass = functions::array_class_get(element_class, 1);
         }
         return klass;
@@ -308,72 +308,72 @@ struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<Array<T>*> {
 };
 MARK_GEN_REF_T(Array);
 
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(int8_t, sbyte);
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(uint8_t, byte);
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(int16_t, int16);  // "short"
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(uint16_t, uint16);  // "ushort"
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(int32_t, int32);  // "int"
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(uint32_t, uint32);  // "uint"
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(int64_t, int64);  // "long"
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(uint64_t, uint64);  // "ulong"
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(int8_t, sbyte);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(uint8_t, byte);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(int16_t, int16);  // "short"
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(uint16_t, uint16);  // "ushort"
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(int32_t, int32);  // "int"
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(uint32_t, uint32);  // "uint"
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(int64_t, int64);  // "long"
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(uint64_t, uint64);  // "ulong"
 
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(float, single);
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(double, double);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(float, single);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(double, double);
 
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(bool, boolean);
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(Il2CppChar, char);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(bool, boolean);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(Il2CppChar, char);
 
-DEFINE_IL2CPP_DEFAULT_TYPE_VAL(void, void);
+DEFINE_IL2CPP_DEFAULT_CLASS_VAL(void, void);
 
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppObject*, object);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppString*, string);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppArray*, array);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionType*, systemtype);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppObject*, object);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppString*, string);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppArray*, array);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionType*, systemtype);
 
 // From Runtime.cpp (some may need the * removed):
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppMulticastDelegate*, multicastdelegate);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppAsyncCall*, async_call);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppInternalThread*, internal_thread);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionEvent*, event_info);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppStringBuilder*, stringbuilder);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppStackFrame*, stack_frame);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionAssemblyName*, assembly_name);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppMulticastDelegate*, multicastdelegate);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppAsyncCall*, async_call);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppInternalThread*, internal_thread);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionEvent*, event_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppStringBuilder*, stringbuilder);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppStackFrame*, stack_frame);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionAssemblyName*, assembly_name);
 #if !defined(UNITY_2021) && !defined(UNITY_6)
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionAssembly*, mono_assembly);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionField*, mono_field);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionParameter*, mono_parameter_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionAssembly*, mono_assembly);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionField*, mono_field);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionParameter*, mono_parameter_info);
 #else
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionAssembly*, assembly);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionField*, field_info);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionProperty*, property_info);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionParameter*, parameter_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionAssembly*, assembly);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionField*, field_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionProperty*, property_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionParameter*, parameter_info);
 #endif
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionModule*, module);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionModule*, module);
 #if !defined(UNITY_2021) && !defined(UNITY_6)
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionPointer*, pointer);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionPointer*, pointer);
 #endif
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppSystemException*, system_exception);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppArgumentException*, argument_exception);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppMarshalByRefObject*, marshalbyrefobject);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppSafeHandle*, safe_handle);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppSortKey*, sort_key);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppErrorWrapper*, error_wrapper);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppComObject*, il2cpp_com_object);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppTypedRef, typed_reference);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppSystemException*, system_exception);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppArgumentException*, argument_exception);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppMarshalByRefObject*, marshalbyrefobject);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppSafeHandle*, safe_handle);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppSortKey*, sort_key);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppErrorWrapper*, error_wrapper);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppComObject*, il2cpp_com_object);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppTypedRef, typed_reference);
 
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppDelegate*, delegate);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionMonoType*, monotype);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppThread*, thread);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionRuntimeType*, runtimetype);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppDelegate*, delegate);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionMonoType*, monotype);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppThread*, thread);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionRuntimeType*, runtimetype);
 #if !defined(UNITY_2021) && !defined(UNITY_6)
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionMonoEventInfo*, mono_event_info);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionMethod*, mono_method);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppMethodInfo*, mono_method_info);
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppPropertyInfo*, mono_property_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionMonoEventInfo*, mono_event_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionMethod*, mono_method);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppMethodInfo*, mono_method_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppPropertyInfo*, mono_property_info);
 #else
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppReflectionMethod*, method_info);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppReflectionMethod*, method_info);
 #endif
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(Il2CppException*, exception);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(Il2CppException*, exception);
 
-DEFINE_IL2CPP_ARG_TYPE(long double, "System", "Decimal");
+DEFINE_IL2CPP_CLASS(long double, "System", "Decimal");
 MARK_VAL_T(long double);

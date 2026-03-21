@@ -436,7 +436,7 @@ namespace i2c {
     /// @tparam TArgs The arguments of the function to resolve
     /// @param name The name of the icall to resolve
     /// @return The resolved function pointer, will always be valid or throws an std::runtime_error.
-    template <class R, class... TArgs>
+    template <typename R, typename... TArgs>
     function_ptr_t<R, TArgs...> resolve_icall(std::string_view name) {
         functions::initialize();
         if (auto out = reinterpret_cast<function_ptr_t<R, TArgs...>>(functions::resolve_icall(name.data()))) {

@@ -196,7 +196,7 @@ StringW operator+(T const lhs, StringW const& rhs) noexcept {
     return i2c::strs::strappend(lhs, static_cast<System::String const*>(rhs));
 }
 
-DEFINE_IL2CPP_DEFAULT_TYPE_REF(StringW, string);
+DEFINE_IL2CPP_DEFAULT_CLASS_REF(StringW, string);
 
 static_assert(sizeof(StringW) == sizeof(void*));
 static_assert(i2c::type_check::wrapper_ref_type<StringW>);

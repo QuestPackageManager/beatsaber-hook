@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.hpp"
+#include "paper2_scotland2/shared/backtrace.hpp"
 
 #include <optional>
 #include <string_view>

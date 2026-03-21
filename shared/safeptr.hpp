@@ -16,7 +16,7 @@ namespace i2c::detail {
 
     /// @brief Represents a smart pointer that has a reference count, which does NOT destroy the held instance on refcount reaching 0.
     /// @tparam T The type to wrap as a pointer.
-    template <class T>
+    template <typename T>
     struct count_ptr {
         /// @brief Default constructor for Count Pointer, defaults to a nullptr, with 0 references.
         explicit count_ptr() : ptr(nullptr) {}

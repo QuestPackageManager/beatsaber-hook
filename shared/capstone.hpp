@@ -46,7 +46,7 @@ namespace cs {
         return func(cs::AddrSearchPair(reinterpret_cast<uint32_t const*>(hook), init_search_size));
     }
 
-    template <std::size_t Sz, class F1, class F2>
+    template <std::size_t Sz, typename F1, typename F2>
     auto find_nth(std::array<AddrSearchPair, Sz>& addrs, uint32_t n_to_ret_on, int ret_count, F1&& match, F2&& skip) {
         cs_insn* insn = cs_malloc(get_handle());
         for (std::size_t search_idx = 0; search_idx < addrs.size(); search_idx++) {
@@ -122,7 +122,7 @@ namespace cs {
         return (decltype(match(insn))) std::nullopt;
     }
 
-    template <uint32_t NToRetOn, int RetCount = -1, size_t SzBytes = 4096, class F1, class F2>
+    template <uint32_t NToRetOn, int RetCount = -1, size_t SzBytes = 4096, typename F1, typename F2>
     requires((NToRetOn >= 1 && (SzBytes % 4) == 0))
     auto find_nth(uint32_t const* addr, F1&& match, F2&& skip) {
         cs_insn* insn = cs_malloc(get_handle());

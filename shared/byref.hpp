@@ -4,7 +4,7 @@
 
 /// @brief Represents a byref parameter that wraps a reference.
 /// This is REQUIRED for codegen invokes, as run_method can't tell the difference between a reference parameter and a byref on constexpr time.
-template <class T>
+template <typename T>
 requires(!std::is_reference_v<T>)
 struct by_ref {
     constexpr by_ref(T& val) noexcept : ref(val) {}
@@ -17,7 +17,7 @@ struct by_ref {
     constexpr T* operator->() noexcept { return &ref; }
     constexpr T const* operator->() const noexcept { return &ref; }
 
-    by_ref<T>& operator=(T const&& other) {
+    by_ref<T>& operator=(T& other) {
         ref = other;
         return *this;
     }

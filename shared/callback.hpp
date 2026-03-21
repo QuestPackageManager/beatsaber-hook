@@ -14,7 +14,7 @@ namespace detail {
         container.size();
     };
 
-    template <class T>
+    template <typename T>
     struct abstract_func;
 
     template <typename R, typename T, typename... TArgs>
@@ -27,7 +27,7 @@ namespace detail {
         virtual R operator()(TArgs... args) const noexcept = 0;
     };
 
-    template <class T>
+    template <typename T>
     struct func_wrapper;
 
     template <typename R, typename... TArgs>
@@ -104,7 +104,7 @@ namespace detail {
         return a.ptr() < b.ptr();
     }
 
-    template <class T>
+    template <typename T>
     struct thin_virtual_layer;
 
     template <typename R, typename T, typename... TArgs>
@@ -148,7 +148,7 @@ struct std::hash<detail::thin_virtual_layer<R(T*, TArgs...)>> {
 // TODO: Also require the function type to be invokable and all that
 template <template <typename...> typename C, typename... TArgs>
 requires(detail::valid_container<C, detail::thin_virtual_layer<void(void*, TArgs...)>>)
-class basic_event_callback {
+struct basic_event_callback {
     void invoke(TArgs... args) const {
 #ifndef NO_EVENT_CALLBACK_INVOKE_SAFETY
         // copy the callbacks so an unsubscribe during invoke of the container doesn't cause UB
@@ -170,7 +170,6 @@ class basic_event_callback {
     void add(void (T::*callback)(TArgs...), T* inst) {
         callbacks.emplace(callback, inst);
     }
-    void add(void (*callback)(TArgs...)) { callbacks.emplace(callback); }
     void add(detail::thin_virtual_layer<void(void*, TArgs...)> callback) { callbacks.emplace(std::move(callback)); }
 
     template <typename T>
@@ -189,7 +188,6 @@ class basic_event_callback {
             }
         }
     }
-    void remove(void (*callback)(TArgs...)) { callbacks.erase(callback); }
     void remove(detail::thin_virtual_layer<void(void*, TArgs...)> callback) { callbacks.erase(callback); }
 
     basic_event_callback& operator+=(auto callback) {

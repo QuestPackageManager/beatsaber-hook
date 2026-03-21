@@ -2,9 +2,9 @@
 
 #include "members.hpp"
 
-template <class Facet>
+template <typename Facet>
 struct deletable_facet : Facet {
-    template <class... TArgs>
+    template <typename... TArgs>
     deletable_facet(TArgs&&... args) : Facet(std::forward<TArgs>(args)...) {}
     ~deletable_facet() {}
 };
@@ -12,7 +12,7 @@ struct deletable_facet : Facet {
 // Note that char is actually required here over char8_t-- this is due to NDK not having a char8_t specialization for this yet.
 deletable_facet<std::codecvt<char16_t, char8_t, std::mbstate_t>> conv;
 
-template <class T>
+template <typename T>
 concept is_specialized = std::is_same_v<char16_t, typename T::intern_type>;
 static_assert(is_specialized<std::codecvt<char16_t, char8_t, std::mbstate_t>>);
 

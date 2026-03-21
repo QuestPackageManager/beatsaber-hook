@@ -152,36 +152,32 @@ struct ArrayW {
 
     reference front() { return (*this)[0]; }
     const_reference front() const { return (*this)[0]; }
-    reference front(auto&& pred) {
-        auto itr = std::find_if(begin(), end(), pred);
-        return *itr;
-    }
-    const_reference front(auto&& pred) const {
-        auto itr = std::find_if(begin(), end(), pred);
-        return *itr;
-    }
+    reference front(auto&& pred) { return *find_if(pred); }
+    const_reference front(auto&& pred) const { return *find_if(pred); }
 
     template <typename... TArgs>
     requires(std::is_default_constructible_v<value> && std::is_copy_constructible_v<value>)
     value front_or_default(TArgs&&... args) const {
-        return front(std::forward<TArgs...>(args...)).value_or(value{});
+        auto itr = std::find_if(begin(), end(), std::forward<TArgs>(args)...);
+        if (itr == end()) {
+            return {};
+        }
+        return *itr;
     }
 
     reference back() { return (*this)[size() - 1]; }
     const_reference back() const { return (*this)[size() - 1]; }
-    reference back(auto&& pred) {
-        auto itr = std::find_if(rbegin(), rend(), pred);
-        return *itr;
-    }
-    const_reference back(auto&& pred) const {
-        auto itr = std::find_if(rbegin(), rend(), pred);
-        return *itr;
-    }
+    reference back(auto&& pred) { return *rfind_if(pred); }
+    const_reference back(auto&& pred) const { return *rfind_if(pred); }
 
     template <typename... TArgs>
     requires(std::is_default_constructible_v<value> && std::is_copy_constructible_v<value>)
     value back_or_default(TArgs&&... args) const {
-        return back(std::forward<TArgs...>(args...)).value_or(value{});
+        auto itr = std::find_if(rbegin(), rend(), std::forward<TArgs>(args)...);
+        if (itr == rend()) {
+            return {};
+        }
+        return *itr;
     }
 
     bool contains(const_reference item) const { return find(item) != end(); }
