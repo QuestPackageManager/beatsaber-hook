@@ -92,7 +92,7 @@ namespace i2c::hooking {
             if constexpr (std::is_same_v<decltype(info_or_addr), void*>) {
                 addr = info_or_addr;
             } else if (info_or_addr) {
-                addr = info_or_addr->methodPointer;
+                addr = reinterpret_cast<void*>(info_or_addr->methodPointer);
             } else {
                 MACRO_LOG(logger, critical, "Attempting to install hook: {}, but method could not be found!", T::name());
                 SAFE_ABORT("Failure installing hook: {}", T::name());
@@ -103,13 +103,14 @@ namespace i2c::hooking {
             SAFE_ABORT("Failure installing hook: {}", T::name());
         }
         MACRO_LOG(logger, info, "Installing hook: {} to offset: {}", T::name(), fmt::ptr(addr));
+        auto install_priority = T::install_priority;
         auto install_result = flamingo::Install(
             flamingo::HookInfo{
                 reinterpret_cast<void*>(T::hook()),
                 addr,
                 reinterpret_cast<void**>(T::trampoline()),
                 flamingo::HookNameMetadata{.name = T::name()},
-                T::install_priority
+                std::move(install_priority)
             }
         );
         if (install_result.has_value()) {

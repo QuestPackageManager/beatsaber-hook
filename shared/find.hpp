@@ -137,11 +137,7 @@ namespace i2c {
     FieldInfo* find_field(find_class_info const& class_info, find_field_info const& info);
 
     // Represents a specialization type that should be used for exposing metadata from particular values, such as methods.
+    // Currently only used for MAKE_HOOK_MATCH.
     template <auto V>
     struct BS_HOOK_HIDDEN metadata_getter;
-
-    template <auto V>
-    concept valid_method = requires {
-        { metadata_getter<V>::method_info() } -> std::same_as<MethodInfo const*>;
-    };
 }

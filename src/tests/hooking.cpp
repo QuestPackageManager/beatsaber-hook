@@ -15,19 +15,19 @@ TEST(queue_hook) {
         auto queue = i2c::new_ctor({"System.Collections", "Queue"});
         LOG_OK("Created queue -> {}", fmt::ptr(queue));
 
-        bool contains = i2c::run_method<bool>(queue, "Contains", nullptr);
+        bool contains = i2c::run_method<bool>(queue, "Contains", static_cast<Il2CppObject*>(nullptr));
         LOG_OK("Queue contains before hook -> {}", contains);
 
         INSTALL_HOOK(i2c::logger, test1);
         LOG_OK("Hook installed");
 
-        contains = i2c::run_method<bool>(queue, "Contains", nullptr);
+        contains = i2c::run_method<bool>(queue, "Contains", static_cast<Il2CppObject*>(nullptr));
         LOG_OK("Queue contains after hook install -> {}", contains);
 
         UNINSTALL_HOOK(i2c::logger, test1);
         LOG_OK("Hook uninstalled");
 
-        contains = i2c::run_method<bool>(queue, "Contains", nullptr);
+        contains = i2c::run_method<bool>(queue, "Contains", static_cast<Il2CppObject*>(nullptr));
         LOG_OK("Queue contains after hook uninstall -> {}", contains);
     } catch (std::exception const& e) {
         LOG_FAIL("Error during hook test: {}", e.what());

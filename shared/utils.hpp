@@ -25,7 +25,7 @@ namespace i2c {
         // Make sure the message appears at least once in the log
         for (int i = 0; i < 2; i++) {
             usleep(100000L);  // 0.1s
-            logger.critical(fmt, args...);
+            logger.critical(std::move(fmt), std::forward<TArgs>(args)...);
         }
         logger.Backtrace(512);
         Paper::Logger::WaitForFlush();
