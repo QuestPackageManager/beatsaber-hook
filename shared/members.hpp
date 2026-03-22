@@ -61,9 +61,7 @@ namespace i2c {
     template <type_check::valid_type T = void, type_check::valid_type... TArgs>
     T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) {
         if (auto name = method.only_name()) {
-            method = {
-                *name, std::initializer_list<Il2CppClass*>{class_of<TArgs>()...}, std::initializer_list<Il2CppType const*>{extract_type(args)...}
-            };
+            method = {*name, {class_of<TArgs>()...}, {extract_type(args)...}};
         }
         auto method_info = find_method(klass, method);
         if (!method_info) {
@@ -73,12 +71,7 @@ namespace i2c {
             throw std::runtime_error("Method pointer cannot be null (did you call an abstract method directly?)");
         }
         if (!method.type_checked()) {
-            if (!param_match(
-                     method_info,
-                     std::initializer_list<Il2CppClass*>{class_of<TArgs>()...},
-                     std::initializer_list<Il2CppType const*>{extract_type(args)...}
-                )
-                     .first) {
+            if (!param_match(method_info, {class_of<TArgs>()...}, {extract_type(args)...}).first) {
                 throw std::runtime_error("Parameters do not match");
             }
             if (!is_convertible_from(type_of<T>(), method_info->return_type, false)) {
@@ -86,7 +79,7 @@ namespace i2c {
             }
         }
         if (method_info->is_generic) {
-            method_info = make_generic(method_info, std::initializer_list<Il2CppClass*>{class_of<TArgs>()...});
+            method_info = make_generic(method_info, {class_of<TArgs>()...});
         }
         // Need to potentially call Class::Init here as well
         // This snippet is almost identical to what libil2cpp does

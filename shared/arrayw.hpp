@@ -46,13 +46,14 @@ struct ArrayW {
     // From container
     template <typename U>
     requires(std::is_convertible_v<U, T>)
-    explicit ArrayW(std::span<U> vals) : ArrayW(vals.size()) {
+    ArrayW(i2c::view<U> vals) : ArrayW(vals.size()) {
         std::copy(vals.begin(), vals.end(), begin());
     }
-    // Convenience overload to convert vector to span
+    // Required because C++ cannot deduce the type inside a parameter if it also has to construct that parameter
+    ArrayW(i2c::view<T> vals) : ArrayW(vals.size()) { std::copy(vals.begin(), vals.end(), begin()); }
     template <typename U>
     requires(std::is_convertible_v<U, T>)
-    explicit ArrayW(std::vector<U> const& vals) : ArrayW(std::span<U const>(vals)) {}
+    ArrayW(std::vector<U> vals) : ArrayW(i2c::view{vals}) {}
 
     constexpr bool operator==(ArrayW const&) const noexcept = default;
 
@@ -188,7 +189,6 @@ struct ArrayW {
         }
         std::copy_n(begin(), size(), std::next(destination.begin(), index));
     }
-    void copy_to(ArrayW<value> destination, il2cpp_array_size_t index = 0) const { copy_to(destination.ref_to(), index); }
 
     long index_of(const_reference item) const {
         auto itr = find(item);

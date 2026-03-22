@@ -43,8 +43,8 @@ namespace i2c {
         };
         struct by_types {
             std::string_view name;
-            std::span<Il2CppClass const* const> generics;
-            std::span<Il2CppType const* const> params;
+            i2c::view<Il2CppClass const*> generics;
+            i2c::view<Il2CppType const*> params;
         };
         struct by_slot {
             int slot;
@@ -68,9 +68,7 @@ namespace i2c {
             data(by_args{static_cast<std::string_view>(name), args}) {}
         // Finds the best match of all methods with a given name, based on generics and argument types.
         find_method_info(
-            std::convertible_to<std::string_view> auto const& name,
-            std::span<Il2CppClass const* const> generics,
-            std::span<Il2CppType const* const> params
+            std::convertible_to<std::string_view> auto const& name, i2c::view<Il2CppClass const*> generics, i2c::view<Il2CppType const*> params
         ) :
             data(by_types{static_cast<std::string_view>(name), generics, params}) {}
         // Finds the method with the given vtable slot in the class.

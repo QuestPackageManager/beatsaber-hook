@@ -63,13 +63,14 @@ struct ListW {
     // From container
     template <typename U>
     requires(std::is_convertible_v<U, T>)
-    explicit ListW(std::span<U const> vals) : ListW(vals.size()) {
+    ListW(i2c::view<U> vals) : ListW(vals.size()) {
         std::copy(vals.begin(), vals.end(), begin());
     }
-    // Convenience overload to convert vector to span
+    // Required because C++ cannot deduce the type inside a parameter if it also has to construct that parameter
+    ListW(i2c::view<T> vals) : ListW(vals.size()) { std::copy(vals.begin(), vals.end(), begin()); }
     template <typename U>
     requires(std::is_convertible_v<U, T>)
-    explicit ListW(std::vector<U> const& vals) : ListW(std::span<U const>(vals)) {}
+    ListW(std::vector<U> vals) : ListW(i2c::view{vals}) {}
 
     constexpr bool operator==(ListW const&) const noexcept = default;
 
@@ -313,7 +314,7 @@ struct ListW {
         val->_version++;
     }
     void insert_range(auto&& begin, int count) { insert_range(begin, begin + count); }
-    void insert_range(std::span<T const> span) { insert_range(span.begin(), span.end()); }
+    void insert_range(i2c::view<T> span) { insert_range(span.begin(), span.end()); }
 
     /// @brief Provides a reference span of the held data within this list. The span should NOT outlive this instance.
     /// @return The created span.

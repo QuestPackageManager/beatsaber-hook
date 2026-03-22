@@ -11,7 +11,7 @@ namespace i2c {
     Il2CppReflectionType* get_system_type(Il2CppType const* type);
 
     // Function made by zoller27osu, modified by Sc2ad
-    Il2CppClass* make_generic(Il2CppClass const* klass, std::span<Il2CppClass const* const> args);
+    Il2CppClass* make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass const*> args);
 
     // Gets the standard class name of an Il2CppClass*
     std::string class_standard_name(Il2CppClass const* klass, bool generics = true);
@@ -23,11 +23,10 @@ namespace i2c {
     bool is_convertible_from(Il2CppType const* to, Il2CppType const* from, bool args = false);
 
     // Checks if all given parameters can be converted to the parameters of a method - [convertible, exact match]
-    std::pair<bool, bool>
-    param_match(MethodInfo const* method, std::span<Il2CppClass const* const> gen_types, std::span<Il2CppType const* const> arg_types);
+    std::pair<bool, bool> param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types);
 
     // Instantiates a generic MethodInfo* from the provided Il2CppClasses
-    MethodInfo const* make_generic(MethodInfo const* method, std::span<Il2CppClass const* const> types);
+    MethodInfo const* make_generic(MethodInfo const* method, i2c::view<Il2CppClass const*> types);
 
     /// @brief Manually creates an instance of the provided Il2CppClass*. Must be freed using gc_free_specific!
     /// The created instance's type initializer will NOT execute on another thread! Be warned!

@@ -116,8 +116,7 @@ TEST(arrays_and_generics) {
         auto int_klass = i2c::find_class({"System", "Int32"});
 
         // Make List<int> generic class
-        Il2CppClass const* type_args[] = {int_klass};
-        auto* generic_list_klass = i2c::make_generic(list_klass, type_args);
+        auto* generic_list_klass = i2c::make_generic(list_klass, {int_klass});
         if (!generic_list_klass) {
             LOG_FAIL("Could not make List<int> generic class");
             return;

@@ -110,7 +110,7 @@ Il2CppReflectionType* i2c::get_system_type(Il2CppType const* type) {
     return reinterpret_cast<Il2CppReflectionType*>(functions::type_get_object(type));
 }
 
-Il2CppClass* i2c::make_generic(Il2CppClass const* klass, std::span<Il2CppClass const* const> args) {
+Il2CppClass* i2c::make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass const*> args) {
     functions::initialize();
     auto class_type = RET_DEF_UNLESS(logger, get_system_type(klass));
 
@@ -260,8 +260,7 @@ static Il2CppGenericContainer const* get_generic_container(MethodInfo const* met
     }
 }
 
-std::pair<bool, bool>
-i2c::param_match(MethodInfo const* method, std::span<Il2CppClass const* const> gen_types, std::span<Il2CppType const* const> arg_types) {
+std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types) {
     functions::initialize();
     if (method->parameters_count != arg_types.size()) {
         logger.warn("Potential method match had wrong number of parameters {} (expected {})", method->parameters_count, arg_types.size());
@@ -328,7 +327,7 @@ i2c::param_match(MethodInfo const* method, std::span<Il2CppClass const* const> g
     return {matches, identical};
 }
 
-MethodInfo const* i2c::make_generic(MethodInfo const* method, std::span<Il2CppClass const* const> types) {
+MethodInfo const* i2c::make_generic(MethodInfo const* method, i2c::view<Il2CppClass const*> types) {
     // Ensure it exists and is generic
     THROW_UNLESS(logger, method && method->is_generic);
     // Create the Il2CppReflectionMethod* from the MethodInfo* using the MethodInfo's type

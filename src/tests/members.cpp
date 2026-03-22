@@ -97,8 +97,7 @@ TEST(property_get_set) {
         auto list_klass = i2c::find_class({"System.Collections.Generic", "List`1"});
         auto int_klass = i2c::find_class({"System", "Int32"});
 
-        Il2CppClass const* type_args[] = {int_klass};
-        auto* generic_list_klass = i2c::make_generic(list_klass, std::span(type_args));
+        auto generic_list_klass = i2c::make_generic(list_klass, {int_klass});
         auto list_instance = i2c::new_ctor(generic_list_klass);
 
         i2c::run_method<void>(list_instance, "Add", 10);

@@ -6,17 +6,15 @@
 
 // Allow transparent comparisons and conversions between a span and a vector
 template <typename T>
-struct span_vec_w : std::span<T> {
-    using base_type = std::span<T>;
+struct span_vec_w : i2c::view<T> {
+    using base_type = i2c::view<T>;
     using base_type::base_type;
 
     constexpr span_vec_w() = default;
     constexpr span_vec_w(span_vec_w const&) = default;
     constexpr span_vec_w(span_vec_w&&) = default;
 
-    constexpr span_vec_w(base_type base) : base_type(base) {}
-    constexpr span_vec_w(std::vector<T>& arr) : base_type(arr.begin(), arr.end()) {}
-    constexpr span_vec_w(std::vector<T> const& arr) : base_type(arr.cbegin(), arr.cend()) {}
+    constexpr span_vec_w(i2c::view<T> view) : base_type(std::move(view)) {}
 
     constexpr span_vec_w& operator=(span_vec_w const&) = default;
     constexpr span_vec_w& operator=(span_vec_w&&) = default;
@@ -38,7 +36,7 @@ struct span_vec_w : std::span<T> {
 
 template <typename T>
 struct std::hash<span_vec_w<T>> {
-    std::size_t operator()(span_vec_w<T const> const& val) const noexcept {
+    std::size_t operator()(span_vec_w<T> const& val) const noexcept {
         std::size_t seed = val.size();
         for (auto const& i : val) {
             seed = i2c::hash_combine(i, seed);
@@ -106,8 +104,7 @@ Il2CppClass* i2c::find_class(find_class_info const& info) {
 }
 
 tuple_map<std::tuple<Il2CppClass*, std::string, int>, MethodInfo const*> args_cache;
-tuple_map<std::tuple<Il2CppClass*, std::string, std::vector<Il2CppClass const* const>, std::vector<Il2CppType const* const>>, MethodInfo const*>
-    types_cache;
+tuple_map<std::tuple<Il2CppClass*, std::string, std::vector<Il2CppClass const*>, std::vector<Il2CppType const*>>, MethodInfo const*> types_cache;
 std::shared_mutex caches_lock;
 
 static MethodInfo const* find_method(Il2CppClass* klass, std::function<std::pair<bool, int>(MethodInfo const*)> const& match) {
@@ -175,7 +172,7 @@ std::string format_as(std::tuple<std::string_view, int> const& tup) {
         return std::string(name);
     }
 }
-std::string format_as(std::tuple<std::string_view, span_vec_w<Il2CppClass const* const>, span_vec_w<Il2CppType const* const>> const& tup) {
+std::string format_as(std::tuple<std::string_view, span_vec_w<Il2CppClass const*>, span_vec_w<Il2CppType const*>> const& tup) {
     auto& [name, gens, args] = tup;
 
     std::vector<std::string> arg_type_names;

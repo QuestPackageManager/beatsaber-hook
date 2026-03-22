@@ -77,6 +77,13 @@ namespace i2c {
     void reset_ss(std::stringstream& ss);
     // Prints the given number of "tabs" as spaces to the given output stream.
     void tabs(std::ostream& os, int tabs, int spacesPerTab = 2);
+
+    // Like a span, but can be implicitly constructed from brace-enclosed lists
+    template <typename T>
+    struct view : public std::span<T const> {
+        view(std::initializer_list<T> init) : std::span<T const>(init) {}
+        view(auto const& init) : std::span<T const>({init.begin(), init.end()}) {}
+    };
 }
 
 // function_ptr_t courtesy of DaNike

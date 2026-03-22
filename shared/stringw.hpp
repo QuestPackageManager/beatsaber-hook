@@ -108,8 +108,15 @@ struct StringW {
     using ptr = System::String*;
     using const_ptr = System::String const*;
 
-    using iterator = Il2CppChar*;
-    using const_iterator = Il2CppChar const*;
+    using value = Il2CppChar;
+    using const_value = Il2CppChar const;
+    using pointer = Il2CppChar*;
+    using const_pointer = Il2CppChar const*;
+    using reference = Il2CppChar&;
+    using const_reference = Il2CppChar const&;
+
+    using iterator = pointer;
+    using const_iterator = const_pointer;
 
     constexpr StringW() noexcept : inst(nullptr) {}
     constexpr StringW(std::nullptr_t npt) noexcept : inst(npt) {}
@@ -175,11 +182,11 @@ struct StringW {
     iterator end() { return inst->chars + inst->length; }
     const_iterator end() const { return inst->chars + inst->length; }
 
-    operator std::span<Il2CppChar>() { return {begin(), end()}; }
-    operator std::span<Il2CppChar const> const() const { return {begin(), end()}; }
+    operator std::span<value>() { return {begin(), end()}; }
+    operator std::span<const_value>() const { return {begin(), end()}; }
 
-    Il2CppChar& operator[](size_t const& idx) { return inst->chars[idx]; }
-    Il2CppChar const& operator[](size_t const& idx) const { return inst->chars[idx]; }
+    reference operator[](size_t const& idx) { return inst->chars[idx]; }
+    const_reference operator[](size_t const& idx) const { return inst->chars[idx]; }
 
     operator std::string() const { return i2c::strs::to_string(inst); }
     operator std::u16string() const { return i2c::strs::to_u16string(inst); }
