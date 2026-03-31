@@ -66,9 +66,9 @@ struct ConstString {
         }
     }
     // Copies allowed? But should probably be avoided.
-    ConstString(ConstString const&) = default;
+    ConstString(ConstString const&) noexcept = default;
     // Moves allowed
-    ConstString(ConstString&&) = default;
+    ConstString(ConstString&&) noexcept = default;
 
     void init() noexcept { klass = i2c::functions::defaults->string_class; }
 
@@ -122,12 +122,14 @@ struct StringW {
     constexpr StringW(std::nullptr_t npt) noexcept : inst(npt) {}
     constexpr StringW(void* ins) noexcept : inst(static_cast<ptr>(ins)) {}
     constexpr StringW(ptr ins) noexcept : inst(ins) {}
-    constexpr StringW(StringW const& str) noexcept : inst(str.inst) {}
     template <int sz>
     constexpr StringW(ConstString<sz>& str) noexcept : inst(static_cast<ptr>(str)) {}
     // Dynamically allocated string
     template <i2c::strs::convertible_to_il2cpp T>
     StringW(T str) : inst(i2c::strs::alloc_str(str)) {}
+
+    constexpr StringW(StringW const&) noexcept = default;
+    constexpr StringW(StringW&&) noexcept = default;
 
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(inst)); }
 

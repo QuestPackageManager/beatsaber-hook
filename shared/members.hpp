@@ -4,7 +4,7 @@
 
 namespace i2c {
     template <typename T>
-    Il2CppType const* extract_type(T const& arg) {
+    Il2CppType const* extract_type(T const& arg) noexcept {
         if constexpr (std::is_same_v<T, Il2CppObject*>) {
             functions::initialize();
             return functions::class_get_type(functions::object_get_class(arg));
@@ -13,7 +13,7 @@ namespace i2c {
     }
 
     template <bool Box, typename T>
-    auto to_object(T& class_or_inst, bool fake_box = true) {
+    auto to_object(T& class_or_inst, bool fake_box = true) noexcept {
         using R = std::conditional_t<Box, Il2CppObject*, void*>;
 
         void* inst;
@@ -43,7 +43,7 @@ namespace i2c {
     }
 
     template <type_check::valid_type T, bool Boxed>
-    auto from_object(void* inst) {
+    auto from_object(void* inst) noexcept {
         if constexpr (Boxed && type_check::value_type<T>) {
             inst = reinterpret_cast<void*>(reinterpret_cast<char*>(inst) + sizeof(Il2CppObject));
         }

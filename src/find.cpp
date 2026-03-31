@@ -90,7 +90,7 @@ struct tup_eq {
 template <typename K, typename V>
 using tuple_map = std::unordered_map<K, V, tup_hash, tup_eq>;
 
-Il2CppClass* i2c::find_class(find_class_info const& info) {
+Il2CppClass* i2c::find_class(find_class_info const& info) noexcept {
     if (auto by_name = std::get_if<find_class_info::by_name>(&info.data)) {
         return get_class_from_name(by_name->namespaze, by_name->name);
     }
@@ -244,7 +244,7 @@ static int param_distance(Il2CppClass* method_class, Il2CppClass* passed_class) 
     return distance;
 }
 
-MethodInfo const* i2c::find_method(find_class_info const& class_info, find_method_info const& info) {
+MethodInfo const* i2c::find_method(find_class_info const& class_info, find_method_info const& info) noexcept {
     if (auto by_name = std::get_if<find_method_info::by_name>(&info.data)) {
         return find_method_cached(
             find_class(class_info),
@@ -380,7 +380,7 @@ MethodInfo const* i2c::find_method(find_class_info const& class_info, find_metho
 static tuple_map<std::tuple<Il2CppClass const*, std::string>, PropertyInfo const*> properties_cache;
 std::shared_mutex props_cache_lock;
 
-PropertyInfo const* i2c::find_property(find_class_info const& class_info, find_property_info const& info) {
+PropertyInfo const* i2c::find_property(find_class_info const& class_info, find_property_info const& info) noexcept {
     if (auto by_name = std::get_if<find_property_info::by_name>(&info.data)) {
         auto klass = RET_DEF_UNLESS(logger, find_class(class_info));
         functions::initialize();
@@ -416,7 +416,7 @@ PropertyInfo const* i2c::find_property(find_class_info const& class_info, find_p
 static tuple_map<std::tuple<Il2CppClass const*, std::string>, FieldInfo*> fields_cache;
 std::shared_mutex fields_cache_lock;
 
-FieldInfo* i2c::find_field(find_class_info const& class_info, find_field_info const& info) {
+FieldInfo* i2c::find_field(find_class_info const& class_info, find_field_info const& info) noexcept {
     if (auto by_name = std::get_if<find_field_info::by_name>(&info.data)) {
         auto klass = RET_DEF_UNLESS(logger, find_class(class_info));
         functions::initialize();

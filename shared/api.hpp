@@ -391,7 +391,7 @@ namespace i2c::functions {
     // Whether all of the il2cpp functions have been initialized or not
     extern bool initialized;
     // Initializes all of the IL2CPP functions via dlopen and dlsym for use.
-    void initialize();
+    void initialize() noexcept;
 }
 
 #undef API_FUNC
@@ -407,7 +407,7 @@ namespace i2c {
     /// This function fallsback to calloc if no GC_Alloc or GC_Free implementations are found via xref/sigscan.
     /// @param sz The size to allocate an instance of.
     /// @return The allocated instance.
-    [[nodiscard]] void* gc_alloc_specific(size_t sz);
+    [[nodiscard]] void* gc_alloc_specific(size_t sz) noexcept;
 
     /// @brief Deletes the provided allocated instance from the gc_alloc_specific function defined here.
     /// Other pointers will cause undefined behavior.
@@ -420,14 +420,14 @@ namespace i2c {
     /// @param ptr The pointer to resize.
     /// @param new_size The new size of the memory.
     /// @return The resized instance.
-    [[nodiscard]] void* gc_realloc_specific(void* ptr, size_t new_size);
+    [[nodiscard]] void* gc_realloc_specific(void* ptr, size_t new_size) noexcept;
 
     /// @brief EXTREMEMLY UNSAFE ALLOCATION! THIS SHOULD BE AVOIDED UNLESS YOU KNOW WHAT YOU ARE DOING!
     /// This function allocates a GC-able object of the size provided by manipulating an existing Il2CppClass' instance_size.
     /// This is VERY DANGEROUS (and NOT THREAD SAFE!) and may cause all sorts of race conditions. Use at your own risk.
     /// @param size The size to allocate the unsafe object with.
     /// @return The returned GC-allocated instance.
-    [[deprecated("DO NOT USE")]] void* __allocate_unsafe(std::size_t size);
+    [[deprecated("DO NOT USE")]] void* __allocate_unsafe(std::size_t size) noexcept;
 
     /// @brief Resolves the provided icall, throwing an std::runtime_error with backtrace information if failed.
     /// Does NOT cache the resolved method pointer.

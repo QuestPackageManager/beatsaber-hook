@@ -11,7 +11,7 @@
 
 namespace i2c {
     template <typename T>
-    auto&& unwrap_optionals(T&& arg) {
+    auto&& unwrap_optionals(T&& arg) noexcept {
         return arg;
     }
 
@@ -21,7 +21,7 @@ namespace i2c {
     }
 
     template <typename... TArgs>
-    BS_HOOK_NO_RETURN inline void safe_abort(Paper::FmtStrSrcLoc<TArgs...> fmt, TArgs&&... args) {
+    BS_HOOK_NO_RETURN inline void safe_abort(Paper::FmtStrSrcLoc<TArgs...> fmt, TArgs&&... args) noexcept {
         // Make sure the message appears at least once in the log
         for (int i = 0; i < 2; i++) {
             usleep(100000L);  // 0.1s
@@ -33,7 +33,7 @@ namespace i2c {
         std::terminate();  // Cleans things up and then calls abort
     }
 
-    BS_HOOK_NO_RETURN inline void safe_abort() {
+    BS_HOOK_NO_RETURN inline void safe_abort() noexcept {
         safe_abort("Aborting");
     }
 

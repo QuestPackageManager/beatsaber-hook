@@ -4,11 +4,11 @@
 
 namespace i2c {
     // Returns the first matching class from the given namespace and type_name by searching through all assemblies that are loaded. (Cached)
-    Il2CppClass* get_class_from_name(std::string_view namespaze, std::string_view type_name);
+    Il2CppClass* get_class_from_name(std::string_view namespaze, std::string_view type_name) noexcept;
 
     // Gets the System.Type Il2CppObject* (actually an Il2CppReflectionType*) for an Il2CppClass*
-    Il2CppReflectionType* get_system_type(Il2CppClass const* klass);
-    Il2CppReflectionType* get_system_type(Il2CppType const* type);
+    Il2CppReflectionType* get_system_type(Il2CppClass const* klass) noexcept;
+    Il2CppReflectionType* get_system_type(Il2CppType const* type) noexcept;
 
     // Function made by zoller27osu, modified by Sc2ad
     Il2CppClass* make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass const*> args);

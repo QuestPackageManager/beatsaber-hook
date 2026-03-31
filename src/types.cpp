@@ -48,7 +48,7 @@ static Il2CppClass* find_nested(Il2CppClass* declaring, std::string_view type_na
     return find_nested(found, type_name.substr(nested_pos + 1));
 }
 
-Il2CppClass* i2c::get_class_from_name(std::string_view namespaze, std::string_view type_name) {
+Il2CppClass* i2c::get_class_from_name(std::string_view namespaze, std::string_view type_name) noexcept {
     functions::initialize();
     // Check cache
     name_hash_lock.lock();
@@ -101,11 +101,11 @@ Il2CppClass* i2c::get_class_from_name(std::string_view namespaze, std::string_vi
     return nullptr;
 }
 
-Il2CppReflectionType* i2c::get_system_type(Il2CppClass const* klass) {
+Il2CppReflectionType* i2c::get_system_type(Il2CppClass const* klass) noexcept {
     functions::initialize();
     return get_system_type(functions::class_get_type_const(klass));
 }
-Il2CppReflectionType* i2c::get_system_type(Il2CppType const* type) {
+Il2CppReflectionType* i2c::get_system_type(Il2CppType const* type) noexcept {
     functions::initialize();
     return reinterpret_cast<Il2CppReflectionType*>(functions::type_get_object(type));
 }

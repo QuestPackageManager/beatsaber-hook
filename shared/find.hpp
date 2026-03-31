@@ -126,13 +126,13 @@ namespace i2c {
     };
 
     // Finds a class based on the find_class_info. (Cached)
-    Il2CppClass* find_class(find_class_info const& info);
+    Il2CppClass* find_class(find_class_info const& info) noexcept;
     // Finds a method in the given class, based on the find_method_info. (Cached)
-    MethodInfo const* find_method(find_class_info const& class_info, find_method_info const& info);
+    MethodInfo const* find_method(find_class_info const& class_info, find_method_info const& info) noexcept;
     // Finds a property in the given class, based on the find_property_info. (Cached)
-    PropertyInfo const* find_property(find_class_info const& class_info, find_property_info const& info);
+    PropertyInfo const* find_property(find_class_info const& class_info, find_property_info const& info) noexcept;
     // Finds a field in the given class, based on the find_field_info. (Cached)
-    FieldInfo* find_field(find_class_info const& class_info, find_field_info const& info);
+    FieldInfo* find_field(find_class_info const& class_info, find_field_info const& info) noexcept;
 
     // Represents a specialization type that should be used for exposing metadata from particular values, such as methods.
     // Currently only used for MAKE_HOOK_MATCH.
