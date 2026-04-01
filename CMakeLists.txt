@@ -51,8 +51,9 @@ function(shared_setup TARGET)
     add_custom_command(
         TARGET ${TARGET}
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E rename "lib${TARGET}.so" "debug_lib${TARGET}.so"
-        COMMAND ${CMAKE_STRIP} -d --strip-all "debug_lib${TARGET}.so" -o "lib${TARGET}.so"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "debug"
+        COMMAND ${CMAKE_COMMAND} -E rename "lib${TARGET}.so" "debug/lib${TARGET}.so"
+        COMMAND ${CMAKE_STRIP} -d --strip-all "debug/lib${TARGET}.so" -o "lib${TARGET}.so"
         COMMENT "Create stripped and debug libraries"
     )
 endfunction()
