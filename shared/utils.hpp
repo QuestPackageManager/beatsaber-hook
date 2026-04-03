@@ -84,6 +84,13 @@ namespace i2c {
         view(std::initializer_list<T> init) : std::span<T const>(init) {}
         view(auto const& init) : std::span<T const>({init.begin(), init.end()}) {}
     };
+
+    // Allows literal strings as template parameters
+    template <size_t N>
+    struct str_lit {
+        constexpr str_lit(char const (&str)[N]) { std::copy_n(str, N, data); }
+        char data[N] = {};
+    };
 }
 
 // function_ptr_t courtesy of DaNike

@@ -173,6 +173,15 @@ namespace i2c {
             return reinterpret_cast<U>(converted_inst);
         }
     }
+
+    // Allows the constexpr specification of types, for use in for example generic template parameters
+    template <str_lit Namespace, str_lit Name>
+    struct const_type {};
+
+    template <str_lit Namespace, str_lit Name>
+    struct BS_HOOK_HIDDEN type_check::no_arg_class<const_type<Namespace, Name>> {
+        static inline Il2CppClass* get() { return get_class_from_name(Namespace.data, Name.data); }
+    };
 }
 
 #define DEFINE_IL2CPP_DEFAULT_CLASS(type, field_name)              \
