@@ -795,7 +795,7 @@ static void init_api(Paper::LoggerContext const& logger, void* imagehandle) {
     API_SYM(class_is_assignable_from);
     API_SYM(class_is_subclass_of);
     API_SYM(class_has_parent);
-    API_SYM(class_from_type);
+    API_SYM(class_from_il2cpp_type);
     API_SYM(class_from_name);
     API_SYM(class_from_system_type);
     API_SYM(class_get_element_class);
