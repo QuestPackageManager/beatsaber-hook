@@ -1,13 +1,16 @@
 #pragma once
 
+#include "exceptions.hpp"
 #include "find.hpp"
 
 namespace i2c {
     template <typename T>
     Il2CppType const* extract_type(T const& arg) noexcept {
         if constexpr (std::is_same_v<T, Il2CppObject*>) {
-            functions::initialize();
-            return functions::class_get_type(functions::object_get_class(arg));
+            if (arg != nullptr) {
+                functions::initialize();
+                return functions::class_get_type(functions::object_get_class(arg));
+            }
         }
         return type_of<T>();
     }
@@ -60,10 +63,12 @@ namespace i2c {
     // while still allowing for the elegant construction of find_class_info with multiple parameters (namepace + name)
     template <type_check::full_type T = void, type_check::has_type... TArgs>
     T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) {
+        MethodInfo const* method_info;
         if (auto name = method.only_name()) {
-            method = {*name, {class_of<TArgs>()...}, {extract_type(args)...}};
+            method_info = find_method(klass, {*name, {class_of<TArgs>()...}, {extract_type(args)...}});
+        } else {
+            method_info = find_method(klass, method);
         }
-        auto method_info = find_method(klass, method);
         if (!method_info) {
             throw std::runtime_error("Method cannot be null");
         }
@@ -81,24 +86,25 @@ namespace i2c {
         if (method_info->is_generic) {
             method_info = make_generic(method_info, {class_of<TArgs>()...});
         }
-        // Need to potentially call Class::Init here as well
-        // This snippet is almost identical to what libil2cpp does
-        if (method_info->flags & METHOD_ATTRIBUTE_STATIC && method_info->klass && !method_info->klass->cctor_finished_or_no_cctor) {
-            functions::initialize();
-            functions::Class_Init(method_info->klass);
+        // Invoke the method with runtime_invoke - using the method pointer would be more performant,
+        // but much more effort to catch and handle exceptions with their info
+        functions::initialize();
+        void* inst = method_info->flags & METHOD_ATTRIBUTE_STATIC ? nullptr : to_object<false>(class_or_inst);
+        std::array<void*, sizeof...(args)> params{to_object<false>(args)...};
+        Il2CppException* ex = nullptr;
+        Il2CppObject* ret = functions::runtime_invoke(method_info, inst, params.data(), &ex);
+        if (ex) {
+            throw std::runtime_error(fmt::format("Method: {} failed with an exception: {}", method_info->name, exception_to_string(ex)));
         }
-        try {
-            if (method_info->flags & METHOD_ATTRIBUTE_STATIC) {
-                return reinterpret_cast<function_ptr_t<T, std::decay_t<decltype(args)>..., MethodInfo const*>>(method_info->methodPointer)(
-                    args..., method_info
-                );
+        if constexpr (!std::is_void_v<T>) {
+            if constexpr (type_check::value_type<T>) {
+                on_scope_exit f([ret]() { functions::GC_free(ret); });
+                return from_object<T, true>(ret);
             } else {
-                // In older Il2Cpp versions (not sure which), struct instances need to be boxed even for raw method pointer invokes
-                void* instance = to_object<false>(class_or_inst);
-                return reinterpret_cast<function_ptr_t<T, void*, std::decay_t<decltype(args)>..., MethodInfo const*>>(method_info->methodPointer)(
-                    instance, args..., method_info
-                );
+                return from_object<T, true>(ret);
             }
+        }
+    }
     template <type_check::full_type T = void, type_check::has_type... TArgs>
     T run_method(auto&& class_or_inst, find_method_info method, auto&&... args) {
         return run_method_impl<T, TArgs...>(
@@ -109,7 +115,7 @@ namespace i2c {
         );
     }
 
-    template <type_check::valid_type T>
+    template <type_check::full_type T>
     T get_property_impl(find_class_info klass, auto&& class_or_inst, find_property_info prop) {
         auto prop_info = THROW_UNLESS(logger, find_property(klass, prop));
         functions::initialize();
@@ -124,7 +130,7 @@ namespace i2c {
         return get_property_impl<T>({class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(prop));
     }
 
-    template <type_check::valid_type T>
+    template <type_check::full_type T>
     void set_property_impl(find_class_info klass, auto&& class_or_inst, find_property_info prop, T&& value) {
         auto prop_info = THROW_UNLESS(logger, find_property(klass, prop));
         functions::initialize();
@@ -141,7 +147,7 @@ namespace i2c {
         );
     }
 
-    template <type_check::valid_type T>
+    template <type_check::full_type T>
     T get_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field) {
         auto field_info = find_field(klass, field);
         if (!is_convertible_from(type_of<T>(), field_info->type, false)) {
@@ -159,10 +165,10 @@ namespace i2c {
     }
     template <type_check::full_type T>
     T get_field(auto&& class_or_inst, find_field_info field) {
-        return get_field_impl<T>({class_or_inst}, class_or_inst, std::move(field));
+        return get_field_impl<T>({class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(field));
     }
 
-    template <type_check::valid_type T>
+    template <type_check::full_type T>
     void set_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field, T&& value) {
         auto field_info = find_field(klass, field);
         if (!is_convertible_from(type_of<T>(), field_info->type, false)) {
@@ -179,7 +185,9 @@ namespace i2c {
     }
     template <type_check::full_type T>
     void set_field(auto&& class_or_inst, find_field_info field, T&& value) {
-        set_field_impl<T>({class_or_inst}, class_or_inst, field, std::forward<T>(value));
+        set_field_impl<T>(
+            {class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(field), std::forward<T>(value)
+        );
     }
 
     // Below can be considered the true APIs for the functions in this file, noting that find_x_info structs can be implicitly constructed
@@ -260,7 +268,7 @@ namespace i2c {
 
     // Sets a field value to an instance or static class.
     // Will throw on error, including a mismatch between T and the field type.
-    template <type_check::valid_type T>
+    template <type_check::full_type T>
     void set_field(find_class_info klass, find_field_info field, T&& value) {
         set_field_impl<T>(std::move(klass), nullptr, std::move(field), std::forward<T>(value));
     }

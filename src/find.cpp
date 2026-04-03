@@ -110,6 +110,7 @@ std::shared_mutex caches_lock;
 static MethodInfo const* find_method(Il2CppClass* klass, std::function<std::pair<bool, int>(MethodInfo const*)> const& match) {
     int best_val = std::numeric_limits<int>::max();
     MethodInfo const* best_match = nullptr;
+    bool multiple = false;
 
     // Iterate through class and its parents
     while (klass) {
@@ -122,6 +123,7 @@ static MethodInfo const* find_method(Il2CppClass* klass, std::function<std::pair
             if (exact_match) {
                 return method;
             } else if (match_value < best_val) {
+                multiple = best_match;
                 best_val = match_value;
                 best_match = method;
             }
@@ -129,8 +131,10 @@ static MethodInfo const* find_method(Il2CppClass* klass, std::function<std::pair
         klass = klass->parent;
     }
 
-    i2c::logger.warn("Found multiple methods that match! With weight {}, using {}:", best_val, fmt::ptr(best_match));
-    i2c::log_method(i2c::logger, best_match);
+    if (multiple) {
+        i2c::logger.warn("Found multiple methods that match! With weight {}, using {}:", best_val, fmt::ptr(best_match));
+        i2c::log_method(i2c::logger, best_match);
+    }
     return best_match;
 }
 

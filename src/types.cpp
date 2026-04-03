@@ -121,7 +121,7 @@ Il2CppClass* i2c::make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass c
         if (auto arg_type = get_system_type(args[i])) {
             arg_types[i] = arg_type;
         } else {
-            logger.error("Failed to get type for {}", functions::class_get_name_const(args[i]));
+            logger.error("Failed to get type for {}", class_standard_name(args[i]));
             return nullptr;
         }
     }
@@ -169,9 +169,9 @@ std::string i2c::class_standard_name(Il2CppClass const* klass, bool generics) {
 
     if (generics) {
         functions::class_is_generic(klass);
-        auto* genClass = klass->generic_class;
-        if (genClass) {
-            generics_to_string(genClass, ss);
+        auto gen_class = klass->generic_class;
+        if (gen_class) {
+            generics_to_string(gen_class, ss);
         }
     }
     return ss.str();
@@ -185,7 +185,7 @@ char const* i2c::type_simple_name(Il2CppType const* type) {
 
     type_names_lock.lock();
     if (type_names.empty()) {
-        auto& defaults = functions::defaults;
+        auto defaults = functions::defaults;
         type_names[defaults->boolean_class] = "bool";
         type_names[defaults->byte_class] = "byte";
         type_names[defaults->sbyte_class] = "sbyte";
@@ -263,12 +263,11 @@ static Il2CppGenericContainer const* get_generic_container(MethodInfo const* met
 std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types) {
     functions::initialize();
     if (method->parameters_count != arg_types.size()) {
-        logger.warn("Potential method match had wrong number of parameters {} (expected {})", method->parameters_count, arg_types.size());
+        // logger.warn("Potential method match had wrong number of parameters {} (expected {})", method->parameters_count, arg_types.size());
         return {false, false};
     }
 
     Il2CppGenericContainer const* container;
-
     int32_t gen_count = 0;
     if (method->is_generic) {
         container = get_generic_container(method);
@@ -284,7 +283,7 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
     bool matches = true;
     // TODO: supply boolStrictMatch and use type_equals instead of is_convertible_from if supplied?
     for (decltype(method->parameters_count) i = 0; i < method->parameters_count; i++) {
-        auto* param_type = method->parameters[i];
+        auto param_type = method->parameters[i];
         if (arg_types[i] == nullptr) {
             logger.warn("Arg type {} is null. Method: {}", i, fmt::ptr(method));
             log_method(logger, method);
@@ -312,7 +311,7 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
                 continue;
             }
 
-            auto* klass = gen_types[gen_idx];
+            auto klass = gen_types[gen_idx];
             param_type = (param_type->byref) ? &klass->this_arg : &klass->byval_arg;
         }
         // parameters are identical if every param matches exactly!
@@ -349,7 +348,7 @@ MethodInfo const* i2c::make_generic(MethodInfo const* method, i2c::view<Il2CppCl
         i++;
     }
     // Call instance function on method object to MakeGeneric
-    auto inflated_object = run_method<Il2CppReflectionMethod*>(method_object, "MakeGenericMethod", types_array);
+    auto inflated_object = run_method<Il2CppReflectionMethod*>(reinterpret_cast<Il2CppObject*>(method_object), "MakeGenericMethod", types_array);
     if (!inflated_object) {
         logger.error("Failed to run MakeGenericMethod!");
         THROW_UNLESS(logger, inflated_object);

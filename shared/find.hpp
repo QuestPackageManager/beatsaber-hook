@@ -15,9 +15,7 @@ namespace i2c {
 
         find_class_info() = delete;
         find_class_info(find_class_info&&) = default;
-        find_class_info(find_class_info const&) = default;
-
-        find_class_info& operator=(find_class_info const&) = default;
+        find_class_info(find_class_info const&) = delete;
 
         // Finds a class by namespace and name.
         find_class_info(std::convertible_to<std::string_view> auto const& namespaze, std::convertible_to<std::string_view> auto const& name) :
@@ -57,9 +55,7 @@ namespace i2c {
 
         find_method_info() = delete;
         find_method_info(find_method_info&&) = default;
-        find_method_info(find_method_info const&) = default;
-
-        find_method_info& operator=(find_method_info const&) = default;
+        find_method_info(find_method_info const&) = delete;
 
         // Finds the first method with a given name.
         find_method_info(std::convertible_to<std::string_view> auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
@@ -74,7 +70,7 @@ namespace i2c {
         // Finds the method with the given vtable slot in the class.
         find_method_info(int slot) : data(by_slot{slot}) {}
         // Finds the method corresponding to the vtable slot in the given declaring class.
-        find_method_info(find_class_info declaring_class, int slot) : data(by_vtable{std::move(declaring_class), slot}) {}
+        find_method_info(find_class_info&& declaring_class, int slot) : data(by_vtable{std::move(declaring_class), slot}) {}
         // Passes an already found method through.
         find_method_info(MethodInfo const* method) : data(method) {}
 
@@ -97,9 +93,7 @@ namespace i2c {
 
         find_property_info() = delete;
         find_property_info(find_property_info&&) = default;
-        find_property_info(find_property_info const&) = default;
-
-        find_property_info& operator=(find_property_info const&) = default;
+        find_property_info(find_property_info const&) = delete;
 
         // Finds the property with a given name.
         find_property_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
@@ -115,9 +109,7 @@ namespace i2c {
 
         find_field_info() = delete;
         find_field_info(find_field_info&&) = default;
-        find_field_info(find_field_info const&) = default;
-
-        find_field_info& operator=(find_field_info const&) = default;
+        find_field_info(find_field_info const&) = delete;
 
         // Finds the field with a given name.
         find_field_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
