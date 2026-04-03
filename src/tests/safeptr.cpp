@@ -103,9 +103,8 @@ TEST(safeptr_unity_gameobject) {
     LOG_OK("GameObject safe_ptr -> {}", static_cast<bool>(go_ptr));
 
     try {
-        auto add_rect_transform_method =
-            i2c::find_method(game_obj, {"AddComponent", std::initializer_list{i2c::class_of<UnityEngine::RectTransform*>()}, {}});
-        i2c::make_generic(add_rect_transform_method, std::initializer_list{i2c::class_of<UnityEngine::RectTransform*>()});
+        auto add_rect_transform_method = i2c::find_method(game_obj, {"AddComponent", {i2c::class_of<UnityEngine::RectTransform*>()}, {}});
+        i2c::make_generic(add_rect_transform_method, {i2c::class_of<UnityEngine::RectTransform*>()});
         i2c::run_method(game_obj, add_rect_transform_method);
         LOG_OK("Added RectTransform component to GameObject");
     } catch (std::exception& e) {

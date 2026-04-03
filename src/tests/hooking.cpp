@@ -3,9 +3,9 @@
 #include "members.hpp"
 #include "tests.hpp"
 
-MAKE_HOOK(test1, ({"System.Collections", "Queue"}, "Contains", true), bool, void* self, void* item) {
-    LOG_OK("Hook run, self -> {} | item -> {} | orig -> {}", fmt::ptr(self), fmt::ptr(item), test1(self, item));
-    return true;
+MAKE_HOOK(test1, ({"System.Collections", "Queue"}, "GetElement", true), void*, void* self, int i) {
+    LOG_OK("Hook run, self -> {} | item -> {} | orig -> {}", fmt::ptr(self), i, test1(self, i));
+    return reinterpret_cast<void*>(uintptr_t(5));
 }
 
 TEST(queue_hook) {
@@ -15,20 +15,21 @@ TEST(queue_hook) {
         auto queue = i2c::new_ctor({"System.Collections", "Queue"});
         LOG_OK("Created queue -> {}", fmt::ptr(queue));
 
-        bool contains = i2c::run_method<bool>(queue, "Contains", static_cast<Il2CppObject*>(nullptr));
-        LOG_OK("Queue contains before hook -> {}", contains);
+        i2c::run_method(queue, "Enqueue", static_cast<Il2CppObject*>(nullptr));
+        Il2CppObject* element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
+        LOG_OK("Queue GetElement before hook -> {}", fmt::ptr(element));
 
         INSTALL_HOOK(i2c::logger, test1);
         LOG_OK("Hook installed");
 
-        contains = i2c::run_method<bool>(queue, "Contains", static_cast<Il2CppObject*>(nullptr));
-        LOG_OK("Queue contains after hook install -> {}", contains);
+        element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
+        LOG_OK("Queue GetElement after hook install -> {}", fmt::ptr(element));
 
         UNINSTALL_HOOK(i2c::logger, test1);
         LOG_OK("Hook uninstalled");
 
-        contains = i2c::run_method<bool>(queue, "Contains", static_cast<Il2CppObject*>(nullptr));
-        LOG_OK("Queue contains after hook uninstall -> {}", contains);
+        element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
+        LOG_OK("Queue GetElement after hook uninstall -> {}", fmt::ptr(element));
     } catch (std::exception const& e) {
         LOG_FAIL("Error during hook test: {}", e.what());
         return;

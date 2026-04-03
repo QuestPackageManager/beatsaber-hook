@@ -1,9 +1,9 @@
 {
     "_QPVersion": "0.1.1",
-    "name": "${mod_name} (Tests)",
-    "id": "${mod_id}",
+    "name": "BSHook Tests",
+    "id": "test-beatsaber-hook",
     "author": "sc2ad",
-    "version": "${version}",
+    "version": "0.1.0",
     "description": "Tests modding utilities for unity il2cpp games",
     "modloader": "Scotland2",
     "dependencies": [],

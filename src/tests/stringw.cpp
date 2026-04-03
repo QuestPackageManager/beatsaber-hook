@@ -2,6 +2,12 @@
 
 #include "tests.hpp"
 
+static_assert(i2c::type_check::full_type<System::String*>);
+static_assert(i2c::type_check::ptr_ref_type<System::String*>);
+
+static_assert(i2c::type_check::full_type<StringW>);
+static_assert(i2c::type_check::wrapper_ref_type<StringW>);
+
 TEST(stringw) {
     LOG_OK("Starting StringW tests");
 
