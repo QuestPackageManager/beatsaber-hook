@@ -2,12 +2,18 @@
 
 #include "tests.hpp"
 
+static_assert(i2c::type_check::full_type<System::Collections::Generic::List_1<int>*>);
+static_assert(i2c::type_check::ptr_ref_type<System::Collections::Generic::List_1<int>*>);
+
+static_assert(i2c::type_check::full_type<ListW<int>>);
+static_assert(i2c::type_check::wrapper_ref_type<ListW<int>>);
+
 TEST(listw) {
     LOG_OK("Starting ListW tests");
 
     try {
         // Create a managed List<int> and wrap it
-        ListW<int> arr;
+        ListW<int> arr(int(0));
         arr.push_back(7);
         arr.push_back(13);
         LOG_OK("Created ListW<int> arr (ptr {})", fmt::ptr(arr.convert()));

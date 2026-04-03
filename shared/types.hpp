@@ -35,24 +35,8 @@ namespace i2c {
     Il2CppObject* create_manual(Il2CppClass const* klass);
 
     namespace type_markers {
-        // Used to apply the just the template of an instantiation to a type trait
-        template <template <template <typename...> typename> typename Trait, typename T>
-        struct decompose {
-            static constexpr bool value = false;
-        };
-        template <template <template <typename...> typename> typename Trait, template <typename...> typename T, typename... TArgs>
-        struct decompose<Trait, T<TArgs...>> {
-            static constexpr bool value = Trait<T>::value;
-        };
-
         template <typename T>
         struct value_type_trait {
-            static constexpr bool value = false;
-        };
-
-        // Special generic types are needed so they can work with any specialization
-        template <template <typename...> typename T>
-        struct gen_value_type_trait {
             static constexpr bool value = false;
         };
 
@@ -60,21 +44,16 @@ namespace i2c {
         struct ref_type_trait {
             static constexpr bool value = false;
         };
-
-        template <template <typename...> typename T>
-        struct gen_ref_type_trait {
-            static constexpr bool value = false;
-        };
     }
 
     namespace type_check {
         // If T is a value type - requires MARK_VAL_T or MARK_GEN_VAL_T
         template <typename T>
-        concept value_type = type_markers::value_type_trait<T>::value || type_markers::decompose<type_markers::gen_value_type_trait, T>::value;
+        concept value_type = type_markers::value_type_trait<T>::value;
 
-        // If T is a reference type - requires MARK_REF_T or MARK_GEN_REF_T
+        // If T is a reference type - requires MARK_REF_T, MARK_GEN_REF_T, or MARK_GEN_REF_T_PTR
         template <typename T>
-        concept ref_type = type_markers::ref_type_trait<T>::value || type_markers::decompose<type_markers::gen_ref_type_trait, T>::value;
+        concept ref_type = type_markers::ref_type_trait<T>::value;
 
         template <typename T>
         concept has_get = requires { T::get(); };
@@ -102,26 +81,6 @@ namespace i2c {
                     ptr_class = functions::Class_GetPtrClass(base);
                 }
                 return ptr_class;
-            }
-        };
-
-        // no_arg_class for generic types
-        template <template <typename...> typename T>
-        struct BS_HOOK_HIDDEN gen_no_arg_class {};
-
-        // Uses gen_no_arg_class to get the class of a template instantiation
-        template <template <typename...> typename T, typename... TArgs>
-        requires(has_get<gen_no_arg_class<T>>)
-        struct BS_HOOK_HIDDEN no_arg_class<T<TArgs...>> {
-            static inline Il2CppClass* get() {
-                static Il2CppClass* gen_inst = nullptr;
-                if (!gen_inst) {
-                    auto base = gen_no_arg_class<T>::get();
-                    // std::array<Il2CppClass const*, sizeof...(TArgs)> const types{no_arg_class<TArgs>::get()...};
-                    auto const types = std::array{no_arg_class<TArgs>::get()...};
-                    gen_inst = i2c::make_generic(base, types);
-                }
-                return gen_inst;
             }
         };
 
@@ -155,7 +114,10 @@ namespace i2c {
         // };
 
         template <typename T>
-        concept valid_type = has_get<no_arg_class<T>> && has_mark<T>;
+        concept has_type = has_get<no_arg_class<T>>;
+
+        template <typename T>
+        concept full_type = has_type<T> && has_mark<T>;
 
         template <typename T>
         concept wrapper_type = std::is_constructible_v<T, void*> && requires(T t) {
@@ -233,10 +195,11 @@ namespace i2c {
 #define MARK_REF_T(type) \
     template<> struct BS_HOOK_HIDDEN ::i2c::type_markers::ref_type_trait<type> { static constexpr bool value = true; }
 #define MARK_GEN_VAL_T(type) \
-    template<> struct BS_HOOK_HIDDEN ::i2c::type_markers::gen_value_type_trait<type> { static constexpr bool value = true; }
-// template<typename... TArgs> struct BS_HOOK_HIDDEN ::i2c::type_markers::value_type_trait<type<TArgs...>> { static constexpr bool value = true; }
+    template<typename... TArgs> struct BS_HOOK_HIDDEN ::i2c::type_markers::value_type_trait<type<TArgs...>> { static constexpr bool value = true; }
 #define MARK_GEN_REF_T(type) \
-    template<> struct BS_HOOK_HIDDEN ::i2c::type_markers::gen_ref_type_trait<type> { static constexpr bool value = true; }
+    template<typename... TArgs> struct BS_HOOK_HIDDEN ::i2c::type_markers::ref_type_trait<type<TArgs...>> { static constexpr bool value = true; }
+#define MARK_GEN_REF_T_PTR(type) \
+    template<typename... TArgs> struct BS_HOOK_HIDDEN ::i2c::type_markers::ref_type_trait<type<TArgs...>*> { static constexpr bool value = true; }
 
 #define DEFINE_IL2CPP_CLASS(type, namespaze, name)                         \
     template <>                                                            \
@@ -246,14 +209,30 @@ namespace i2c {
             return klass;                                                  \
         }                                                                  \
     }
-#define DEFINE_IL2CPP_GEN_CLASS(type, namespaze, name)                     \
-    template <>                                                            \
-    struct BS_HOOK_HIDDEN ::i2c::type_check::gen_no_arg_class<type> {      \
-        static inline Il2CppClass* get() {                                 \
-            static auto klass = i2c::get_class_from_name(namespaze, name); \
-            return klass;                                                  \
-        }                                                                  \
-    }
+#define DEFINE_IL2CPP_GEN_CLASS(type, namespaze, name)                               \
+    template <typename... TArgs>                                                     \
+    struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<type<TArgs...>> {          \
+        static inline Il2CppClass* get() {                                           \
+            static Il2CppClass* gen_inst = nullptr;                                  \
+            if (!gen_inst) {                                                         \
+                auto base = i2c::get_class_from_name(namespaze, name);               \
+                gen_inst = i2c::make_generic(base, {no_arg_class<TArgs>::get()...}); \
+            }                                                                        \
+            return gen_inst;                                                         \
+        }                                                                            \
+    };
+#define DEFINE_IL2CPP_GEN_CLASS_PTR(type, namespaze, name)                           \
+    template <typename... TArgs>                                                     \
+    struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<type<TArgs...>*> {         \
+        static inline Il2CppClass* get() {                                           \
+            static Il2CppClass* gen_inst = nullptr;                                  \
+            if (!gen_inst) {                                                         \
+                auto base = i2c::get_class_from_name(namespaze, name);               \
+                gen_inst = i2c::make_generic(base, {no_arg_class<TArgs>::get()...}); \
+            }                                                                        \
+            return gen_inst;                                                         \
+        }                                                                            \
+    };
 
 #ifdef HAS_CODEGEN
 namespace System {
@@ -285,7 +264,7 @@ namespace System {
 
 template <typename T>
 struct Array : public Il2CppArray {
-    static_assert(i2c::type_check::valid_type<T>, "T must be a valid C# type!");
+    static_assert(i2c::type_check::full_type<T>, "T must be a valid C# type!");
     // static_assert(
     //     (std::is_arithmetic_v<T> || std::is_enum_v<T> || std::is_pointer_v<T> || std::is_standard_layout_v<T>) && !std::is_base_of_v<Il2CppObject,
     //     T>, "T must be a C# value type! (primitive, pointer or Struct)"
@@ -305,7 +284,7 @@ struct BS_HOOK_HIDDEN ::i2c::type_check::no_arg_class<Array<T>*> {
         return klass;
     }
 };
-MARK_GEN_REF_T(Array);
+MARK_GEN_REF_T_PTR(Array);
 
 DEFINE_IL2CPP_DEFAULT_CLASS_VAL(int8_t, sbyte);
 DEFINE_IL2CPP_DEFAULT_CLASS_VAL(uint8_t, byte);

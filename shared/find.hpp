@@ -29,7 +29,7 @@ namespace i2c {
         // Passes a null class through.
         find_class_info(std::nullptr_t) : data(nullptr) {}
         // Finds a class based on C++ type.
-        template <type_check::valid_type T>
+        template <type_check::has_type T>
         find_class_info(T const&) : data(class_of<T>()) {}
     };
 

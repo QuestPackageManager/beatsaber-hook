@@ -15,13 +15,13 @@ namespace System::Collections::Generic {
     };
 }
 
-DEFINE_IL2CPP_GEN_CLASS(System::Collections::Generic::List_1, "System.Collections.Generic", "List`1");
-MARK_GEN_REF_T(System::Collections::Generic::List_1);
+DEFINE_IL2CPP_GEN_CLASS_PTR(System::Collections::Generic::List_1, "System.Collections.Generic", "List`1");
+MARK_GEN_REF_T_PTR(System::Collections::Generic::List_1);
 #endif
 
 template <typename T>
 struct ListW {
-    static_assert(i2c::type_check::valid_type<T>, "T must be a valid C# type!");
+    static_assert(i2c::type_check::full_type<T>, "T must be a valid C# type!");
 
     using ptr = System::Collections::Generic::List_1<T>*;
     using const_ptr = System::Collections::Generic::List_1<T> const*;
