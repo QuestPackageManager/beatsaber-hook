@@ -59,7 +59,7 @@ namespace i2c::hooking {
     template <typename R, typename T1, typename... TArgs>
     struct resolve_addr<R (*)(T1, TArgs...)> {
         auto operator()(find_class_info klass, std::string_view name, bool instance = std::is_pointer_v<T1> && type_check::valid_type<T1>) {
-            auto args = instance ? std::initializer_list{type_of<TArgs>()...} : std::initializer_list{type_of<T1>(), type_of<TArgs>()...};
+            auto args = instance ? std::initializer_list<Il2CppType const*>{type_of<TArgs>()...} : std::initializer_list<Il2CppType const*>{type_of<T1>(), type_of<TArgs>()...};
             return find_method(klass, {name, {}, args});
         }
     };
