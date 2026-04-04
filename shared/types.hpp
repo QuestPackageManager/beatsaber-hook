@@ -87,13 +87,19 @@ namespace i2c {
         // Get the il2cpp type (not class) from only a C++ type
         template <typename T>
         struct BS_HOOK_HIDDEN no_arg_type {
-            static inline Il2CppType const* get() { return &no_arg_class<T>::get()->byval_arg; }
+            static inline Il2CppType const* get() {
+                auto klass = no_arg_class<T>::get();
+                return klass ? &klass->byval_arg : nullptr;
+            }
         };
 
         // Get the byref type for a reference
         template <typename T>
         struct BS_HOOK_HIDDEN no_arg_type<T&> {
-            static inline Il2CppType const* get() { return &no_arg_class<T>::get()->this_arg; }
+            static inline Il2CppType const* get() {
+                auto klass = no_arg_class<T>::get();
+                return klass ? &klass->this_arg : nullptr;
+            }
         };
 
         // A method cannot store a result back to a const ref. It is not a C# ref, so use byval
