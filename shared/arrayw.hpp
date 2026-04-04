@@ -190,7 +190,7 @@ struct ArrayW {
         std::copy_n(begin(), size(), std::next(destination.begin(), index));
     }
 
-    long index_of(const_reference item) const {
+    il2cpp_array_size_t index_of(const_reference item) const {
         auto itr = find(item);
         if (itr == end()) {
             return -1;
