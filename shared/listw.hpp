@@ -347,7 +347,7 @@ struct ListW {
         if (value < size()) {
             throw i2c::trace_exception("Attempting to set list capacity to smaller than its size");
         }
-        if (value == val->_items.size()) {
+        if (val->_items && value == val->_items.size()) {
             return;
         }
         auto array = ArrayW<T>(value);
