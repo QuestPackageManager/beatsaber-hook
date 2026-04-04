@@ -126,7 +126,8 @@ Il2CppClass* i2c::make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass c
         }
     }
 
-    auto reflection_type = RET_DEF_UNLESS(logger, run_method<System::Type*>(class_of<System::Type*>(), "MakeGenericType", class_type, arg_types));
+    auto reflection_type =
+        RET_DEF_UNLESS(logger, run_method<System::Type*>(reinterpret_cast<Il2CppObject*>(class_type), "MakeGenericType", arg_types));
     auto ret = RET_DEF_UNLESS(logger, functions::class_from_system_type(reflection_type));
     return ret;
 }
