@@ -41,17 +41,17 @@ TEST(class_of_checks) {
             LOG_FAIL("class_of -> {} | find_class -> {}", fmt::ptr(k_int), fmt::ptr(expected_int));
         }
 
-        // void* (pointer type) — log the resolved class name for diagnostics
-        auto* k_voidp = i2c::class_of<void*>();
+        // void (pointer type) — log the resolved class name for diagnostics
+        auto* k_voidp = i2c::class_of<void>();
         char const* ns = i2c::functions::class_get_namespace(k_voidp);
         char const* name = i2c::functions::class_get_name(k_voidp);
-        LOG_OK("class_of(void*) -> {}::{} ({})", ns ? ns : "(null)", name ? name : "(null)", fmt::ptr(k_voidp));
+        LOG_OK("class_of(void) -> {}::{} ({})", ns ? ns : "(null)", name ? name : "(null)", fmt::ptr(k_voidp));
         // should be equal to void
         auto expected_void = i2c::find_class({"System", "Void"});
         if (k_voidp == expected_void) {
-            LOG_OK("class_of(void*) matches System.Void -> {}", fmt::ptr(k_voidp));
+            LOG_OK("class_of(void) matches System.Void -> {}", fmt::ptr(k_voidp));
         } else {
-            LOG_FAIL("class_of(void*) != find_class('System','Void')");
+            LOG_FAIL("class_of(void) != find_class('System','Void')");
             LOG_FAIL("class_of -> {} | find_class -> {}", fmt::ptr(k_voidp), fmt::ptr(expected_void));
         }
 
