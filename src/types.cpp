@@ -276,7 +276,7 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
     }
 
     if ((size_t) gen_count != gen_types.size()) {
-        // logger.warn("Potential method match had wrong number of generics {} (expected {})", genCount, gen_types.size());
+        // logger.warn("Potential method match had wrong number of generics {} (expected {})", gen_count, gen_types.size());
         // logger.warn("is generic {} is inflated {}", method->is_generic, method->is_inflated);
         return {false, false};
     }
@@ -298,7 +298,7 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
             auto gen_idx = functions::MetadataCache_GetGenericParameterIndexFromParameter(param_type->data.genericParameterHandle) -
                            container->genericParameterStart;
             if (gen_idx < 0) {
-                // logger.warn("Extracted invalid genIdx {} from parameter {}", genIdx, i);
+                logger.warn("Extracted invalid gen_idx {} from parameter {}", gen_idx, i);
                 continue;
             }
             if (gen_idx >= gen_count) {
