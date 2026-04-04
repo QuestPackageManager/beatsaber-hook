@@ -19,8 +19,7 @@ namespace i2c {
         void* stacktrace_buffer[STACK_TRACE_SIZE];
         uint16_t stacktrace_size;
 
-        trace_exception(std::string_view msg, std::source_location sl = std::source_location::current()) :
-            std::runtime_error(fmt::format("[{}:{}:{} @ {}] {}", sl.file_name(), sl.line(), sl.column(), sl.function_name(), msg)) {
+        trace_exception(std::string_view msg) : std::runtime_error(msg.data()) {
             // TODO: Eventually skip two frames (assuming no inlined methods) for this constructor and the captured backtrace call.
             stacktrace_size = capture_backtrace(stacktrace_buffer, STACK_TRACE_SIZE, 0);
         }
