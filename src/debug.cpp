@@ -387,10 +387,12 @@ void i2c::log_method(Paper::LoggerContext const& logger, MethodInfo const* metho
     if (flags & METHOD_ATTRIBUTE_ABSTRACT) {
         flagStream << "abstract ";
     }
-    auto const& flagStrRef = flagStream.str();
-    char const* flagStr = flagStrRef.c_str();
     auto retType = functions::method_get_return_type(method);
     auto retTypeStr = type_simple_name(retType);
+    std::vector<Il2CppType const*> gen_types;
+    if (retType->type == IL2CPP_TYPE_MVAR) {
+        gen_types.emplace_back(retType);
+    }
     auto methodName = functions::method_get_name(method);
     methodName = methodName ? methodName : "__noname__";
     std::stringstream paramStream;
@@ -405,11 +407,22 @@ void i2c::log_method(Paper::LoggerContext const& logger, MethodInfo const* metho
         paramStream << type_simple_name(argType) << " ";
         auto name = functions::method_get_param_name(method, i);
         paramStream << (name ? name : "__noname__");
+        if (argType->type == IL2CPP_TYPE_MVAR) {
+            gen_types.emplace_back(argType);
+        }
     }
-    auto const& paramStrRef = paramStream.str();
-    char const* paramStr = paramStrRef.c_str();
-    // TODO: add <T> after methodName
-    logger.debug("{}{} {}({});", flagStr, retTypeStr, methodName, paramStr);
+    std::stringstream genericsStream;
+    if (!gen_types.empty()) {
+        genericsStream << "<";
+        for (size_t i = 0; i < gen_types.size(); i++) {
+            if (i > 0) {
+                genericsStream << ", ";
+            }
+            genericsStream << type_simple_name(gen_types[i]);
+        }
+        genericsStream << ">";
+    }
+    logger.debug("{}{} {}{}({});", flagStream.str(), retTypeStr, methodName, genericsStream.str(), paramStream.str());
 }
 
 void i2c::log_methods(Paper::LoggerContext const& logger, Il2CppClass const* klass, bool parents) {
