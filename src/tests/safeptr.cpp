@@ -104,7 +104,7 @@ TEST(safeptr_unity_gameobject) {
 
     try {
         auto add_rect_transform_method = i2c::find_method(game_obj, {"AddComponent", {i2c::class_of<UnityEngine::RectTransform*>()}, {}});
-        i2c::make_generic(add_rect_transform_method, {i2c::class_of<UnityEngine::RectTransform*>()});
+        add_rect_transform_method = i2c::make_generic(add_rect_transform_method, {i2c::class_of<UnityEngine::RectTransform*>()});
         i2c::run_method(game_obj, add_rect_transform_method);
         LOG_OK("Added RectTransform component to GameObject");
     } catch (std::exception& e) {
@@ -127,7 +127,7 @@ TEST(safeptr_unity_gameobject) {
     LOG_OK("Transform safe_ptr.try_cast<RectTransform> -> {}", static_cast<bool>(rect_cast));
 
     try {
-        i2c::run_method({"UnityEngine", "Object"}, "Destroy", game_obj);
+        i2c::run_method({"UnityEngine", "Object"}, "DestroyImmediate", game_obj);
         LOG_OK("Destroyed GameObject");
     } catch (std::exception& e) {
         LOG_FAIL("Exception thrown while destroying GameObject: {}", e.what());
