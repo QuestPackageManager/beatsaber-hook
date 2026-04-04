@@ -2,7 +2,7 @@
 
 #include "api.hpp"
 
-#ifndef EXCEPTION_MESSAGE_SIE
+#ifndef EXCEPTION_MESSAGE_SIZE
 #define EXCEPTION_MESSAGE_SIZE 4096
 #endif
 
