@@ -52,8 +52,14 @@ It also includes [rapidjson](https://github.com/Tencent/rapidjson).
 
 There are a few defines that can control the built code:
 
-- `HAS_CODEGEN`: Assumes a codegen-like library is present that provides headers for all C# types.
 - `UNITY_2019`/`UNITY_2021`/`UNITY_6`: Sets the target unity version. Exactly one should be defined; currently set in `CMakeLists.txt`.
+- `HAS_CODEGEN`: Assumes a codegen-like library is present that provides headers for all C# types.
+- `BS_HOOK_MATCH_UNSAFE`: Disables checks for method size and existence in `MAKE_HOOK_MATCH`.
+- `SUPPRESS_MACRO_LOGS`: Disables a number of primarily error log messages.
+- `PERSISTENT_DIR`: Override the base directory for mod data storage.
+- `CONFIG_PATH_FORMAT`: Override the directory for mod config files.
+- `NO_EVENT_CALLBACK_INVOKE_SAFETY`: Disables safety for events being added to a `basic_event_callback` during an invoke.
+- `EXCEPTION_MESSAGE_SIZE`: Maximum size for il2cpp exception message formatting.
 
 ## Running tests
 
