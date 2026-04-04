@@ -155,7 +155,7 @@ inline std::string get_config_path(modloader::ModInfo const& info) {
     ::i2c::unwrap_optionals(__temp__); })
 
 #define THROW_UNLESS(logger, ...) \
-    BS_HOOK_DO_UNLESS(throw std::runtime_error(#__VA_ARGS__ " returned false!"), logger, __VA_ARGS__)
+    BS_HOOK_DO_UNLESS(throw i2c::trace_exception(#__VA_ARGS__ " returned false!"), logger, __VA_ARGS__)
 
 // Logs error and RETURNS argument 1 IFF argument 2 boolean evaluates as false; else EVALUATES to argument 2
 #define RET_UNLESS(retval, logger, ...) \

@@ -88,7 +88,7 @@ struct ArrayW {
 
     void assert_bounds(il2cpp_array_size_t i) const {
         if (i < 0 || i >= size()) {
-            throw std::runtime_error(fmt::format("{} is out of bounds for array of length: {}", i, size()));
+            throw i2c::trace_exception(fmt::format("{} is out of bounds for array of length: {}", i, size()));
         }
     }
 
@@ -105,14 +105,14 @@ struct ArrayW {
     reference operator[](il2cpp_array_size_t i) noexcept { return val->_values[i]; }
     const_reference operator[](il2cpp_array_size_t i) const noexcept { return val->_values[i]; }
 
-    /// @brief Get a given index, performs bound checking and throws std::runtime_error on failure.
+    /// @brief Get a given index, performs bound checking and throws i2c::trace_exception on failure.
     /// @param i The index to get.
     /// @return The reference to the item.
     reference at(il2cpp_array_size_t i) {
         assert_bounds(i);
         return (*this)[i];
     }
-    /// @brief Get a given index, performs bound checking and throws std::runtime_error on failure.
+    /// @brief Get a given index, performs bound checking and throws i2c::trace_exception on failure.
     /// @param i The index to get.
     /// @return The const reference to the item.
     const_reference at(il2cpp_array_size_t i) const {
@@ -185,7 +185,7 @@ struct ArrayW {
 
     void copy_to(std::span<value> destination, il2cpp_array_size_t index = 0) const {
         if (index + size() > destination.size()) {
-            throw std::runtime_error("Destination span is too short for copy");
+            throw i2c::trace_exception("Destination span is too short for copy");
         }
         std::copy_n(begin(), size(), std::next(destination.begin(), index));
     }

@@ -143,7 +143,7 @@ struct safe_ptr {
         if (handle.count() <= 1) {
             i2c::functions::initialize();
             if (!i2c::functions::has_gc_funcs) {
-                throw std::runtime_error("A safe_ptr<T> instance was created too early or a necessary GC function was not found!");
+                throw i2c::trace_exception("A safe_ptr<T> instance was created too early or a necessary GC function was not found!");
             }
             i2c::functions::gc_free_fixed(handle.get());
         }
@@ -184,13 +184,13 @@ struct safe_ptr {
         auto* k1 = i2c::class_of<T2*>();
         auto* k2 = *reinterpret_cast<Il2CppClass**>(ptr());
         if (!k1 || !k2) {
-            throw std::runtime_error("Invalid class in safe_ptr cast!");
+            throw i2c::trace_exception("Invalid class in safe_ptr cast!");
         }
         i2c::functions::initialize();
         if (k1 == k2 || i2c::functions::class_is_assignable_from(k1, k2)) {
             return safe_ptr<T2, U2>(reinterpret_cast<T2*>(handle->inst));
         }
-        throw std::runtime_error("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
+        throw i2c::trace_exception("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
     }
 
     /// @brief Performs an il2cpp type checked cast from T to U.
@@ -216,13 +216,13 @@ struct safe_ptr {
 
     T* ptr() {
         if (!handle) {
-            throw std::runtime_error("A safe_ptr<T> instance is holding a null handle!");
+            throw i2c::trace_exception("A safe_ptr<T> instance is holding a null handle!");
         }
         return handle->inst;
     }
     T* const ptr() const {
         if (!handle) {
-            throw std::runtime_error("A safe_ptr<T> instance is holding a null handle!");
+            throw i2c::trace_exception("A safe_ptr<T> instance is holding a null handle!");
         }
         return handle->inst;
     }
@@ -277,7 +277,7 @@ struct safe_ptr {
             // It should be safe to assume that gc_alloc_fixed returns a non-null pointer. If it does return null, we have a pretty big issue.
             i2c::functions::initialize();
             if (!i2c::functions::has_gc_funcs) {
-                throw std::runtime_error("A safe_ptr<T> instance was created too early or a necessary GC function was not found!");
+                throw i2c::trace_exception("A safe_ptr<T> instance was created too early or a necessary GC function was not found!");
             }
             auto allocated = CRASH_UNLESS(reinterpret_cast<wrapper*>(i2c::functions::gc_alloc_fixed(sizeof(wrapper))));
             allocated->inst = instance;

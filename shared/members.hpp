@@ -64,23 +64,25 @@ namespace i2c {
     template <type_check::full_type T = void, type_check::has_type... TArgs>
     T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) {
         MethodInfo const* method_info;
+        bool types_checked = method.type_checked();
         if (auto name = method.only_name()) {
+            types_checked = true;
             method_info = find_method(klass, {*name, {class_of<TArgs>()...}, {extract_type(args)...}});
         } else {
             method_info = find_method(klass, method);
         }
         if (!method_info) {
-            throw std::runtime_error("Method cannot be null");
+            throw i2c::trace_exception("Method cannot be null");
         }
         if (!method_info->methodPointer) {
-            throw std::runtime_error("Method pointer cannot be null (did you call an abstract method directly?)");
+            throw i2c::trace_exception("Method pointer cannot be null (did you call an abstract method directly?)");
         }
-        if (!method.type_checked()) {
+        if (!types_checked) {
             if (!param_match(method_info, {class_of<TArgs>()...}, {extract_type(args)...}).first) {
-                throw std::runtime_error("Parameters do not match");
+                throw i2c::trace_exception("Parameters do not match");
             }
             if (!is_convertible_from(type_of<T>(), method_info->return_type, false)) {
-                throw std::runtime_error("Return type does not match");
+                throw i2c::trace_exception("Return type does not match");
             }
         }
         if (method_info->is_generic) {
@@ -94,7 +96,7 @@ namespace i2c {
         Il2CppException* ex = nullptr;
         Il2CppObject* ret = functions::runtime_invoke(method_info, inst, params.data(), &ex);
         if (ex) {
-            throw std::runtime_error(fmt::format("Method: {} failed with an exception: {}", method_info->name, exception_to_string(ex)));
+            throw i2c::trace_exception(fmt::format("Method: {} failed with an exception: {}", method_info->name, exception_to_string(ex)));
         }
         if constexpr (!std::is_void_v<T>) {
             if constexpr (type_check::value_type<T>) {
@@ -121,7 +123,7 @@ namespace i2c {
         functions::initialize();
         auto getter = THROW_UNLESS(logger, functions::property_get_get_method(prop_info));
         if (!is_convertible_from(type_of<T>(), getter->return_type, false)) {
-            throw std::runtime_error("Property type for getter does not match");
+            throw i2c::trace_exception("Property type for getter does not match");
         }
         return run_method_impl<T>(std::move(klass), std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), getter);
     }
@@ -136,7 +138,7 @@ namespace i2c {
         functions::initialize();
         auto setter = THROW_UNLESS(logger, functions::property_get_set_method(prop_info));
         if (setter->parameters_count != 1 || !is_convertible_from(type_of<T>(), setter->parameters[0], false)) {
-            throw std::runtime_error("Property type for setter does not match");
+            throw i2c::trace_exception("Property type for setter does not match");
         }
         run_method_impl<T>(std::move(klass), std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), setter, std::forward<T>(value));
     }
@@ -151,7 +153,7 @@ namespace i2c {
     T get_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field) {
         auto field_info = find_field(klass, field);
         if (!is_convertible_from(type_of<T>(), field_info->type, false)) {
-            throw std::runtime_error("Field type does not match");
+            throw i2c::trace_exception("Field type does not match");
         }
         functions::initialize();
         auto instance = to_object<true>(class_or_inst);
@@ -172,7 +174,7 @@ namespace i2c {
     void set_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field, T&& value) {
         auto field_info = find_field(klass, field);
         if (!is_convertible_from(type_of<T>(), field_info->type, false)) {
-            throw std::runtime_error("Field type does not match");
+            throw i2c::trace_exception("Field type does not match");
         }
         functions::initialize();
         auto instance = to_object<true>(class_or_inst);
@@ -201,7 +203,7 @@ namespace i2c {
     Il2CppObject* new_ctor(find_class_info class_info, auto&&... args) {
         auto klass = find_class(class_info);
         if (!klass) {
-            throw std::runtime_error("Could not find class for new_ctor!");
+            throw i2c::trace_exception("Could not find class for new_ctor!");
         }
         Il2CppObject* obj;
         if constexpr (Manual) {
@@ -211,7 +213,7 @@ namespace i2c {
             obj = functions::object_new(klass);
         }
         if (!obj) {
-            throw std::runtime_error("Failed to allocate object!");
+            throw i2c::trace_exception("Failed to allocate object!");
         }
         run_method(obj, ".ctor", std::forward<std::decay_t<decltype(args)>>(args)...);
         return obj;

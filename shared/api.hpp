@@ -1,5 +1,6 @@
 #pragma once
 
+#include "exceptions.hpp"
 #include "utils.hpp"
 
 #pragma pack(push)
@@ -429,20 +430,20 @@ namespace i2c {
     /// @return The returned GC-allocated instance.
     [[deprecated("DO NOT USE")]] void* __allocate_unsafe(std::size_t size) noexcept;
 
-    /// @brief Resolves the provided icall, throwing an std::runtime_error with backtrace information if failed.
+    /// @brief Resolves the provided icall, throwing an i2c::trace_exception with backtrace information if failed.
     /// Does NOT cache the resolved method pointer.
     /// Also does NOT perform any type checking of parameters, so make sure you check your parameters and return types!
     /// @tparam R The return type of the function to resolve
     /// @tparam TArgs The arguments of the function to resolve
     /// @param name The name of the icall to resolve
-    /// @return The resolved function pointer, will always be valid or throws an std::runtime_error.
+    /// @return The resolved function pointer, will always be valid or throws an i2c::trace_exceptionon.
     template <typename R, typename... TArgs>
     function_ptr_t<R, TArgs...> resolve_icall(std::string_view name) {
         functions::initialize();
         if (auto out = reinterpret_cast<function_ptr_t<R, TArgs...>>(functions::resolve_icall(name.data()))) {
             return out;
         }
-        throw std::runtime_error(fmt::format("Failed to resolve_icall for: {}!", name.data()));
+        throw i2c::trace_exception(fmt::format("Failed to resolve_icall for: {}!", name.data()));
     }
 }
 

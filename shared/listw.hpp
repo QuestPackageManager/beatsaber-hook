@@ -105,7 +105,7 @@ struct ListW {
 
     inline void assert_bounds(il2cpp_array_size_t i) const {
         if (i < 0 || i >= size()) {
-            throw std::runtime_error(fmt::format("{} is out of bounds for list of length: {}", i, size()));
+            throw i2c::trace_exception(fmt::format("{} is out of bounds for list of length: {}", i, size()));
         }
     }
 
@@ -122,14 +122,14 @@ struct ListW {
     reference operator[](il2cpp_array_size_t i) noexcept { return val->_items[i]; }
     const_reference operator[](il2cpp_array_size_t i) const noexcept { return val->_items[i]; }
 
-    /// @brief Get a given index, performs bound checking and throws std::runtime_error on failure.
+    /// @brief Get a given index, performs bound checking and throws i2c::trace_exception on failure.
     /// @param i The index to get.
     /// @return The reference to the item.
     reference at(il2cpp_array_size_t i) {
         assert_bounds(i);
         return (*this)[i];
     }
-    /// @brief Get a given index, performs bound checking and throws std::runtime_error on failure.
+    /// @brief Get a given index, performs bound checking and throws i2c::trace_exception on failure.
     /// @param i The index to get.
     /// @return The const reference to the item.
     const_reference at(il2cpp_array_size_t i) const {
@@ -202,7 +202,7 @@ struct ListW {
 
     void copy_to(std::span<value> destination, int index) const {
         if (index + size() > destination.size()) {
-            throw std::runtime_error("Destination span is too short for copy");
+            throw i2c::trace_exception("Destination span is too short for copy");
         }
         std::copy(begin(), end(), std::next(destination.begin(), index));
     }
@@ -227,7 +227,7 @@ struct ListW {
 
     void insert_at(il2cpp_array_size_t index, value&& item) {
         if (index > size()) {
-            throw std::runtime_error(val, "Capacity size too small");
+            throw i2c::trace_exception(val, "Capacity size too small");
         }
         if (size() == val->_items.size()) {
             ensure_capacity(size() + 1);
@@ -270,7 +270,7 @@ struct ListW {
 
     void erase_at(il2cpp_array_size_t index) {
         if (index >= size()) {
-            throw std::runtime_error("Erased index is greater than size");
+            throw i2c::trace_exception("Erased index is greater than size");
         }
         val->_version++;
         if (index < size()) {
@@ -287,10 +287,10 @@ struct ListW {
             return;
         }
         if (index < 0) {
-            throw std::runtime_error("First index of erased range is less than 0");
+            throw i2c::trace_exception("First index of erased range is less than 0");
         }
         if (size() - index < count) {
-            throw std::runtime_error("Erased range is too large");
+            throw i2c::trace_exception("Erased range is too large");
         }
         val->_version++;
         if (index < size()) {
@@ -345,7 +345,7 @@ struct ListW {
 
     void set_capacity(il2cpp_array_size_t value) {
         if (value < size()) {
-            throw std::runtime_error("Attempting to set list capacity to smaller than its size");
+            throw i2c::trace_exception("Attempting to set list capacity to smaller than its size");
         }
         if (value == val->_items.size()) {
             return;
