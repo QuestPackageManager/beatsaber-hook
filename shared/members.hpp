@@ -137,7 +137,7 @@ namespace i2c {
         auto prop_info = THROW_UNLESS(logger, find_property(klass, prop));
         functions::initialize();
         auto setter = THROW_UNLESS(logger, functions::property_get_set_method(prop_info));
-        if (setter->parameters_count != 1 || !is_convertible_from(type_of<T>(), setter->parameters[0], false)) {
+        if (setter->parameters_count != 1 || !is_convertible_from(setter->parameters[0], type_of<T>(), true)) {
             throw i2c::trace_exception("Property type for setter does not match");
         }
         run_method_impl<T>(std::move(klass), std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), setter, std::forward<T>(value));
@@ -173,7 +173,7 @@ namespace i2c {
     template <type_check::full_type T>
     void set_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field, T&& value) {
         auto field_info = find_field(klass, field);
-        if (!is_convertible_from(type_of<T>(), field_info->type, false)) {
+        if (!is_convertible_from(field_info->type, type_of<T>(), false)) {
             throw i2c::trace_exception("Field type does not match");
         }
         functions::initialize();
