@@ -285,6 +285,9 @@ MethodInfo const* i2c::find_method(find_class_info const& class_info, find_metho
                     return std::make_pair(false, std::numeric_limits<int>::max());
                 }
                 auto [matches, exact] = param_match(method, by_types->generics, by_types->params);
+                if (!matches) {
+                    return std::make_pair(false, std::numeric_limits<int>::max());
+                }
                 if (exact) {
                     return std::make_pair(true, std::numeric_limits<int>::max());
                 }
