@@ -193,7 +193,7 @@ struct safe_ptr {
         throw i2c::trace_exception("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
     }
 
-    /// @brief Performs an il2cpp type checked cast from T to U.
+    /// @brief Performs an il2cpp type checked cast from T to U, returning a default constructed safe_ptr if it fails.
     /// @tparam U The type to cast to.
     /// @tparam AllowUnityPrime Whether the casted safe_ptr should allow unity conversions.
     /// @return A new safe_ptr of the cast value, if successful.

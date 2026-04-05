@@ -153,10 +153,43 @@ namespace i2c {
     }
 
     /// @brief Performs an il2cpp type checked cast from T to U.
-    /// Currently assumes the `klass` field is the first pointer in T (which is the case if T inherits from Il2CppObject).
+    /// This function will throw an exception if the cast fails, see try_cast for a version that does not.
     /// @tparam T The type to cast from.
     /// @tparam U The type to cast to.
-    /// @return A U& of the cast value.
+    /// @return A U of the cast value, if successful.
+    template <type_check::ref_type U, type_check::ref_type T>
+    [[nodiscard]] U cast(T inst) noexcept {
+        static auto to_class = class_of<U>();
+        Il2CppObject* converted_inst = nullptr;
+        if constexpr (type_check::wrapper_type<T>) {
+            converted_inst = reinterpret_cast<Il2CppObject*>(inst.convert());
+        } else {
+            converted_inst = reinterpret_cast<Il2CppObject*>(inst);
+        }
+        if (!converted_inst) {
+            throw i2c::trace_exception("Null pointer passed to i2c::cast!");
+        }
+        auto from_class = converted_inst->klass;
+        if (!to_class || !from_class) {
+            throw i2c::trace_exception("Invalid class in i2c::cast!");
+        }
+        if (from_class != to_class) {
+            functions::initialize();
+            if (!functions::class_is_assignable_from(to_class, from_class)) {
+                throw i2c::trace_exception("The type could not be cast safely! Check your i2c::cast calls!");
+            }
+        }
+        if constexpr (type_check::wrapper_type<U>) {
+            return U(reinterpret_cast<void*>(converted_inst));
+        } else {
+            return reinterpret_cast<U>(converted_inst);
+        }
+    }
+
+    /// @brief Performs an il2cpp type checked cast from T to U, returning nullptr if it fails.
+    /// @tparam T The type to cast from.
+    /// @tparam U The type to cast to.
+    /// @return A U of the cast value.
     template <type_check::ref_type U, type_check::ref_type T>
     [[nodiscard]] U try_cast(T inst) noexcept {
         static auto to_class = class_of<U>();
@@ -167,10 +200,15 @@ namespace i2c {
             converted_inst = reinterpret_cast<Il2CppObject*>(inst);
         }
         if (converted_inst) {
-            functions::initialize();
             auto from_class = converted_inst->klass;
-            if (!to_class || !from_class || !functions::class_is_assignable_from(to_class, from_class)) {
+            if (!to_class || !from_class) {
                 converted_inst = nullptr;
+            }
+            if (from_class != to_class) {
+                functions::initialize();
+                if (!functions::class_is_assignable_from(to_class, from_class)) {
+                    converted_inst = nullptr;
+                }
             }
         }
         if constexpr (type_check::wrapper_type<U>) {
