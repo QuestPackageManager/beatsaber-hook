@@ -151,11 +151,11 @@ namespace i2c {
             throw i2c::trace_exception("Field type does not match");
         }
         functions::initialize();
-        auto instance = to_object<true>(class_or_inst);
         T ret;
         if (field_info->type->attrs & FIELD_ATTRIBUTE_STATIC) {
             functions::field_static_get_value(field_info, &ret);
         } else {
+            auto instance = to_object<true>(class_or_inst);
             functions::field_get_value(instance, field_info, &ret);
         }
         return ret;
@@ -172,11 +172,11 @@ namespace i2c {
             throw i2c::trace_exception("Field type does not match");
         }
         functions::initialize();
-        auto instance = to_object<true>(class_or_inst);
         auto converted_value = to_object<false>(value);
         if (field_info->type->attrs & FIELD_ATTRIBUTE_STATIC) {
             functions::field_static_set_value(field_info, converted_value);
         } else {
+            auto instance = to_object<true>(class_or_inst);
             functions::field_set_value(instance, field_info, converted_value);
         }
     }
