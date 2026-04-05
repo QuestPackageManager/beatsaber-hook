@@ -6,61 +6,6 @@
 #include "types.hpp"
 
 namespace i2c {
-    template <typename T>
-    Il2CppType const* extract_type(T const& arg) noexcept {
-        if constexpr (std::is_same_v<T, Il2CppObject*>) {
-            if (arg != nullptr) {
-                functions::initialize();
-                return functions::class_get_type(functions::object_get_class(arg));
-            }
-        }
-        return type_of<T>();
-    }
-
-    template <bool Box, typename T>
-    auto to_object(T& class_or_inst, bool fake_box = true) noexcept {
-        using R = std::conditional_t<Box, Il2CppObject*, void*>;
-
-        void* inst;
-        if constexpr (type_check::wrapper_type<T>) {
-            inst = class_or_inst.convert();
-        } else if constexpr (type_check::ref_type<T>) {
-            inst = reinterpret_cast<void*>(class_or_inst);
-        } else if constexpr (type_check::value_type<T>) {
-            inst = reinterpret_cast<void*>(&class_or_inst);
-        } else if constexpr (std::is_same_v<T, Il2CppClass*> || std::is_same_v<T, nullptr_t>) {
-            return static_cast<R>(nullptr);
-        } else {
-            static_assert(false, "Invalid type passed to to_object");
-        }
-
-        if constexpr (Box && type_check::value_type<T>) {
-            // Real boxing by necessity copies the struct into the boxed object, in addition to having higher overhead,
-            // so modifications would have to be copied back to the original object
-            if (fake_box) {
-                return reinterpret_cast<R>(reinterpret_cast<char*>(inst) - sizeof(Il2CppObject));
-            } else {
-                functions::initialize();
-                return reinterpret_cast<R>(functions::value_box(class_of<T>(), inst));
-            }
-        }
-        return reinterpret_cast<R>(inst);
-    }
-
-    template <type_check::full_type T, bool Boxed>
-    auto from_object(void* inst) noexcept {
-        if constexpr (Boxed && type_check::value_type<T>) {
-            inst = reinterpret_cast<void*>(reinterpret_cast<char*>(inst) + sizeof(Il2CppObject));
-        }
-        if constexpr (type_check::wrapper_type<T>) {
-            return T(inst);
-        } else if constexpr (type_check::value_type<T>) {
-            return *reinterpret_cast<T*>(inst);
-        } else {
-            return reinterpret_cast<T>(inst);
-        }
-    }
-
     // The purpose of the separate implementation and overloads is to preserve the compile time type of class_or_inst,
     // while still allowing for the elegant construction of find_class_info with multiple parameters (namepace + name)
     template <type_check::full_type T = void, type_check::has_type... TArgs>

@@ -155,6 +155,71 @@ namespace i2c {
         return get_system_type(class_of<T>());
     }
 
+    // Finds the C# type of a C++ value
+    // Will use the macro-defined type for T in all cases unless it is an Il2CppObject*,
+    // in which case it will find the real type of the argument at runtime
+    template <typename T>
+    Il2CppType const* extract_type(T const& arg) noexcept {
+        if constexpr (std::is_same_v<T, Il2CppObject*>) {
+            if (arg != nullptr) {
+                functions::initialize();
+                return functions::class_get_type(functions::object_get_class(arg));
+            }
+        }
+        return type_of<T>();
+    }
+
+    // Converts a C++ value to a C# object or pointer
+    // If Box is true, the returned value will be an Il2CppObject, otherwise a void*
+    // If fake_box is also true, and the instance is a value type, it will appear boxed without actually
+    // having its Il2CppObject fields set, avoiding a copy but being invalid in all but a few cases
+    template <bool Box, typename T>
+    auto to_object(T& class_or_inst, bool fake_box = true) noexcept {
+        using R = std::conditional_t<Box, Il2CppObject*, void*>;
+
+        void* inst;
+        if constexpr (type_check::wrapper_type<T>) {
+            inst = class_or_inst.convert();
+        } else if constexpr (type_check::ref_type<T>) {
+            inst = reinterpret_cast<void*>(class_or_inst);
+        } else if constexpr (type_check::value_type<T>) {
+            inst = reinterpret_cast<void*>(&class_or_inst);
+        } else if constexpr (std::is_same_v<T, Il2CppClass*> || std::is_same_v<T, nullptr_t>) {
+            return static_cast<R>(nullptr);
+        } else {
+            static_assert(false, "Invalid type passed to to_object");
+        }
+
+        if constexpr (Box && type_check::value_type<T>) {
+            // Real boxing by necessity copies the struct into the boxed object, in addition to having higher overhead,
+            // so modifications would have to be copied back to the original object
+            if (fake_box) {
+                return reinterpret_cast<R>(reinterpret_cast<char*>(inst) - sizeof(Il2CppObject));
+            } else {
+                functions::initialize();
+                return reinterpret_cast<R>(functions::value_box(class_of<T>(), inst));
+            }
+        }
+        return reinterpret_cast<R>(inst);
+    }
+
+    // Converts a C# object or pointer back to a C++ value
+    // If Boxed is true, the instance is assumed to be an Il2CppObject*, even if T is a value type
+    // This always copies the data of value types
+    template <type_check::full_type T, bool Boxed>
+    auto from_object(void* inst) noexcept {
+        if constexpr (Boxed && type_check::value_type<T>) {
+            inst = reinterpret_cast<void*>(reinterpret_cast<char*>(inst) + sizeof(Il2CppObject));
+        }
+        if constexpr (type_check::wrapper_type<T>) {
+            return T(inst);
+        } else if constexpr (type_check::value_type<T>) {
+            return *reinterpret_cast<T*>(inst);
+        } else {
+            return reinterpret_cast<T>(inst);
+        }
+    }
+
     /// @brief Performs an il2cpp type checked cast from T to U.
     /// This function will throw an exception if the cast fails, see try_cast for a version that does not.
     /// @tparam T The type to cast from.
