@@ -13,7 +13,7 @@ namespace i2c {
         T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) {
             MethodInfo const* method_info;
             bool types_checked = method.type_checked();
-            if (auto name = method.only_name()) {
+            if (std::optional<std::string_view> name = method.only_name()) {
                 types_checked = true;
                 method_info = find_method(klass, {*name, {class_of<TArgs>()...}, {extract_type(args)...}});
             } else {
