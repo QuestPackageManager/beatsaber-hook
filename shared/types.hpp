@@ -111,17 +111,6 @@ namespace i2c {
             static inline Il2CppType const* get() { return no_arg_type<T>::get(); }
         };
 
-        // template <typename T>
-        // struct BS_HOOK_HIDDEN arg_type<T&> {
-        //     static inline Il2CppType const* get(T& arg) {
-        //         // Pure reference type is not the same as ByRef<T>. Thus, use the byval version.
-        //         // Therefore, the only way to get the byref type match for any expression is to use a ByRef.
-        //         // Why is this different from no_arg_type?
-        //         Il2CppClass* klass = arg_class<T>::get(arg);
-        //         return &klass->byval_arg;
-        //     }
-        // };
-
         template <typename T>
         concept has_type = has_get<no_arg_class<T>>;
 
@@ -386,10 +375,6 @@ namespace System {
 template <typename T>
 struct Array : public Il2CppArray {
     static_assert(i2c::type_check::full_type<T>, "T must be a valid C# type!");
-    // static_assert(
-    //     (std::is_arithmetic_v<T> || std::is_enum_v<T> || std::is_pointer_v<T> || std::is_standard_layout_v<T>) && !std::is_base_of_v<Il2CppObject,
-    //     T>, "T must be a C# value type! (primitive, pointer or Struct)"
-    // );
     ALIGN_TYPE(8) T _values[IL2CPP_ZERO_LEN_ARRAY];
 };
 
