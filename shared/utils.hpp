@@ -55,7 +55,7 @@ namespace i2c {
     // From https://www.boost.org/doc/libs/1_55_0/doc/html/hash/reference.html#boost.hash_combine
     template <typename T>
     size_t hash_combine(T const& val, size_t seed = 0) {
-        return seed ^ std::hash<std::decay_t<T>>{}(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        return seed ^ std::hash<T>{}(val) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
     template <typename... TArgs>
     size_t hash_combine(TArgs const&... vals) {

@@ -110,10 +110,7 @@ namespace i2c {
     template <type_check::full_type T = void, type_check::has_type... TArgs>
     T run_method(auto&& class_or_inst, find_method_info method, auto&&... args) {
         return run_method_impl<T, TArgs...>(
-            {class_or_inst},
-            std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst),
-            std::move(method),
-            std::forward<std::decay_t<decltype(args)>>(args)...
+            {class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(method), std::forward<decltype(args)>(args)...
         );
     }
 
@@ -125,11 +122,11 @@ namespace i2c {
         if (!is_convertible_from(type_of<T>(), getter->return_type, false)) {
             throw i2c::trace_exception("Property type for getter does not match");
         }
-        return run_method_impl<T>(std::move(klass), std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), getter);
+        return run_method_impl<T>(std::move(klass), std::forward<decltype(class_or_inst)>(class_or_inst), getter);
     }
     template <type_check::full_type T>
     T get_property(auto&& class_or_inst, find_property_info prop) {
-        return get_property_impl<T>({class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(prop));
+        return get_property_impl<T>({class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(prop));
     }
 
     template <type_check::full_type T>
@@ -140,13 +137,11 @@ namespace i2c {
         if (setter->parameters_count != 1 || !is_convertible_from(setter->parameters[0], type_of<T>(), true)) {
             throw i2c::trace_exception("Property type for setter does not match");
         }
-        run_method_impl<T>(std::move(klass), std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), setter, std::forward<T>(value));
+        run_method_impl<T>(std::move(klass), std::forward<decltype(class_or_inst)>(class_or_inst), setter, std::forward<T>(value));
     }
     template <type_check::full_type T>
     void set_property(auto&& class_or_inst, find_property_info prop, T&& value) {
-        set_property_impl<T>(
-            {class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(prop), std::forward<T>(value)
-        );
+        set_property_impl<T>({class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(prop), std::forward<T>(value));
     }
 
     template <type_check::full_type T>
@@ -167,7 +162,7 @@ namespace i2c {
     }
     template <type_check::full_type T>
     T get_field(auto&& class_or_inst, find_field_info field) {
-        return get_field_impl<T>({class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(field));
+        return get_field_impl<T>({class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(field));
     }
 
     template <type_check::full_type T>
@@ -187,9 +182,7 @@ namespace i2c {
     }
     template <type_check::full_type T>
     void set_field(auto&& class_or_inst, find_field_info field, T&& value) {
-        set_field_impl<T>(
-            {class_or_inst}, std::forward<std::decay_t<decltype(class_or_inst)>>(class_or_inst), std::move(field), std::forward<T>(value)
-        );
+        set_field_impl<T>({class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(field), std::forward<T>(value));
     }
 
     // Below can be considered the true APIs for the functions in this file, noting that find_x_info structs can be implicitly constructed
@@ -215,7 +208,7 @@ namespace i2c {
         if (!obj) {
             throw i2c::trace_exception("Failed to allocate object!");
         }
-        run_method(obj, ".ctor", std::forward<std::decay_t<decltype(args)>>(args)...);
+        run_method(obj, ".ctor", std::forward<decltype(args)>(args)...);
         return obj;
     }
 
@@ -224,7 +217,7 @@ namespace i2c {
     // Can either allocate the object normally with the GC, or manually, guaranteeing its lifetime until explicitly freed.
     template <type_check::ref_type T, bool Manual = false>
     T new_ctor(auto&&... args) {
-        Il2CppObject* inst = new_ctor<Manual>(class_of<T>(), std::forward<std::decay_t<decltype(args)>>(args)...);
+        Il2CppObject* inst = new_ctor<Manual>(class_of<T>(), std::forward<decltype(args)>(args)...);
         return from_object<T, false>(reinterpret_cast<void*>(inst));
     }
 
@@ -233,7 +226,7 @@ namespace i2c {
     template <type_check::value_type T>
     T new_ctor(auto&&... args) {
         T ret;
-        run_method(ret, ".ctor", std::forward<std::decay_t<decltype(args)>>(args)...);
+        run_method(ret, ".ctor", std::forward<decltype(args)>(args)...);
         return ret;
     }
 
@@ -244,7 +237,7 @@ namespace i2c {
     // If a MethodInfo is provided that is generic but not instantiated, it will be instantiated using TArgs.
     template <type_check::full_type T = void, type_check::has_type... TArgs>
     T run_method(find_class_info klass, find_method_info method, auto&&... args) {
-        return run_method_impl<T, TArgs...>(std::move(klass), nullptr, std::move(method), std::forward<std::decay_t<decltype(args)>>(args)...);
+        return run_method_impl<T, TArgs...>(std::move(klass), nullptr, std::move(method), std::forward<decltype(args)>(args)...);
     }
 
     // Gets a property value from an instance or static class.

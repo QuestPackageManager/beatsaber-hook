@@ -83,9 +83,9 @@ struct il2cpp_thread : public std::thread {
     /// @param args The arguments to pass to the thread (& predicate)
     /// @return created thread, which is the same as you creating a default one
     template <typename F, typename... TArgs>
-    requires(std::is_invocable_v<F, std::decay_t<TArgs>...>)
+    requires(std::is_invocable_v<F, TArgs...>)
     explicit il2cpp_thread(F&& pred, TArgs&&... args) :
-        std::thread(&i2c::threading::attached_invoke<F, std::decay_t<TArgs>...>, std::forward<F>(pred), std::forward<TArgs>(args)...) {}
+        std::thread(&i2c::threading::attached_invoke<F, TArgs...>, std::forward<F>(pred), std::forward<TArgs>(args)...) {}
 
     // Default move ctor
     il2cpp_thread(il2cpp_thread&&) = default;
