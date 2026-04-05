@@ -94,12 +94,12 @@ namespace UnityEngine {
 }
 namespace i2c::detail {
     template <typename T, bool U = false>
-    concept unity_guess = std::derived_from<T, UnityEngine::Object>;
+    constexpr bool unity_guess = std::derived_from<T, UnityEngine::Object>;
 }
 #else
 namespace i2c::detail {
     template <typename T, bool U = false>
-    concept unity_guess = U;
+    constexpr bool unity_guess = U;
 }
 #endif
 
@@ -177,7 +177,7 @@ struct safe_ptr {
     /// @brief Performs an il2cpp type checked cast from T to U.
     /// This function may throw an exception if the cast fails, see try_cast for a version that does not.
     /// @tparam T2 The type to cast to.
-    /// @tparam U2 Whether the casted safe_ptr is a unity object.
+    /// @tparam U2 Explicitly specify if the casted safe_ptr is a unity object.
     /// @return A new safe_ptr of the cast value.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
     [[nodiscard]] inline safe_ptr<T2, U2> cast() const {
@@ -194,8 +194,8 @@ struct safe_ptr {
     }
 
     /// @brief Performs an il2cpp type checked cast from T to U, returning a default constructed safe_ptr if it fails.
-    /// @tparam U The type to cast to.
-    /// @tparam AllowUnityPrime Whether the casted safe_ptr should allow unity conversions.
+    /// @tparam T2 The type to cast to.
+    /// @tparam U2 Explicitly specify if the casted safe_ptr is a unity object.
     /// @return A new safe_ptr of the cast value, if successful.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
     [[nodiscard]] inline safe_ptr<T2, U2> try_cast() const noexcept {
