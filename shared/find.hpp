@@ -14,8 +14,9 @@ namespace i2c {
         std::variant<by_name, by_instance, Il2CppClass*> data;
 
         find_class_info() = delete;
-        find_class_info(find_class_info&&) = default;
         find_class_info(find_class_info const&) = delete;
+
+        find_class_info(find_class_info&&) = default;
 
         // Finds a class by namespace and name.
         find_class_info(std::convertible_to<std::string_view> auto const& namespaze, std::convertible_to<std::string_view> auto const& name) :
@@ -54,8 +55,9 @@ namespace i2c {
         std::variant<by_name, by_args, by_types, by_slot, by_vtable, MethodInfo const*> data;
 
         find_method_info() = delete;
-        find_method_info(find_method_info&&) = default;
         find_method_info(find_method_info const&) = delete;
+
+        find_method_info(find_method_info&&) = default;
 
         // Finds the first method with a given name.
         find_method_info(std::convertible_to<std::string_view> auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
@@ -92,8 +94,9 @@ namespace i2c {
         std::variant<by_name, PropertyInfo const*> data;
 
         find_property_info() = delete;
-        find_property_info(find_property_info&&) = default;
         find_property_info(find_property_info const&) = delete;
+
+        find_property_info(find_property_info&&) = default;
 
         // Finds the property with a given name.
         find_property_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
@@ -108,8 +111,9 @@ namespace i2c {
         std::variant<by_name, FieldInfo*> data;
 
         find_field_info() = delete;
-        find_field_info(find_field_info&&) = default;
         find_field_info(find_field_info const&) = delete;
+
+        find_field_info(find_field_info&&) = default;
 
         // Finds the field with a given name.
         find_field_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
