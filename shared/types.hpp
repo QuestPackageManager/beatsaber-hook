@@ -25,8 +25,10 @@ namespace i2c {
     // Returns if a type can be converted to another, optionally ignoring byrefs if not as args
     bool is_convertible_from(Il2CppType const* to, Il2CppType const* from, bool args = false);
 
-    // Checks if all given parameters can be converted to the parameters of a method - [convertible, exact match]
-    std::pair<bool, bool> param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types);
+    enum struct match { none, convertible, exact };
+
+    // Checks if all given parameters can be converted to the parameters of a method
+    match param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types);
 
     // Instantiates a generic MethodInfo* from the provided Il2CppClasses
     MethodInfo const* make_generic(MethodInfo const* method, i2c::view<Il2CppClass const*> types);

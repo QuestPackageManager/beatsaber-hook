@@ -284,21 +284,21 @@ MethodInfo const* i2c::find_method(find_class_info const& class_info, find_metho
                 if (by_types->name != method->name) {
                     return std::make_pair(false, std::numeric_limits<int>::max());
                 }
-                auto [matches, exact] = param_match(method, by_types->generics, by_types->params);
-                if (!matches) {
-                    return std::make_pair(false, std::numeric_limits<int>::max());
+                switch (param_match(method, by_types->generics, by_types->params)) {
+                    case match::exact:
+                        return std::make_pair(true, std::numeric_limits<int>::max());
+                    case match::none:
+                        return std::make_pair(false, std::numeric_limits<int>::max());
+                    case match::convertible:
+                        // Is this overload resolution even necessay?
+                        int weight = 0;
+                        for (size_t i = 0; i < by_types->params.size(); i++) {
+                            auto method_class = i2c::functions::type_get_class_or_element_class(method->parameters[i]);
+                            auto passed_class = i2c::functions::type_get_class_or_element_class(by_types->params[i]);
+                            weight += param_distance(method_class, passed_class);
+                        }
+                        return std::make_pair(false, weight);
                 }
-                if (exact) {
-                    return std::make_pair(true, std::numeric_limits<int>::max());
-                }
-                // Is this overload resolution even necessay?
-                int weight = 0;
-                for (size_t i = 0; i < by_types->params.size(); i++) {
-                    auto method_class = i2c::functions::type_get_class_or_element_class(method->parameters[i]);
-                    auto passed_class = i2c::functions::type_get_class_or_element_class(by_types->params[i]);
-                    weight += param_distance(method_class, passed_class);
-                }
-                return std::make_pair(false, weight);
             },
             types_cache,
             by_types->name,

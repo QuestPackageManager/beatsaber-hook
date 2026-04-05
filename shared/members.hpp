@@ -26,7 +26,7 @@ namespace i2c {
                 throw i2c::trace_exception("Method pointer cannot be null (did you call an abstract method directly?)");
             }
             if (!types_checked) {
-                if (!param_match(method_info, {class_of<TArgs>()...}, {extract_type(args)...}).first) {
+                if (param_match(method_info, {class_of<TArgs>()...}, {extract_type(args)...}) == match::none) {
                     throw i2c::trace_exception("Parameters do not match");
                 }
                 if (!is_convertible_from(type_of<T>(), method_info->return_type, false)) {

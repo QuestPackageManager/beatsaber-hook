@@ -261,11 +261,10 @@ static Il2CppGenericContainer const* get_generic_container(MethodInfo const* met
     }
 }
 
-std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types) {
-    functions::initialize();
+i2c::match i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass const*> gen_types, i2c::view<Il2CppType const*> arg_types) {
     if (method->parameters_count != arg_types.size()) {
         // logger.warn("Potential method match had wrong number of parameters {} (expected {})", method->parameters_count, arg_types.size());
-        return {false, false};
+        return match::none;
     }
 
     Il2CppGenericContainer const* container;
@@ -278,10 +277,9 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
     if ((size_t) gen_count != gen_types.size()) {
         // logger.warn("Potential method match had wrong number of generics {} (expected {})", gen_count, gen_types.size());
         // logger.warn("is generic {} is inflated {}", method->is_generic, method->is_inflated);
-        return {false, false};
+        return match::none;
     }
     bool identical = true;
-    bool matches = true;
     // TODO: supply boolStrictMatch and use type_equals instead of is_convertible_from if supplied?
     for (decltype(method->parameters_count) i = 0; i < method->parameters_count; i++) {
         auto param_type = method->parameters[i];
@@ -295,6 +293,7 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
                 logger.warn("No generic args to extract paramIdx {}", i);
                 continue;
             }
+            functions::initialize();
             auto gen_idx = functions::MetadataCache_GetGenericParameterIndexFromParameter(param_type->data.genericParameterHandle) -
                            container->genericParameterStart;
             if (gen_idx < 0) {
@@ -320,11 +319,10 @@ std::pair<bool, bool> i2c::param_match(MethodInfo const* method, i2c::view<Il2Cp
 
         // TODO: just because two parameter lists match doesn't necessarily mean this is the best match...
         if (!is_convertible_from(param_type, arg_types[i], true)) {
-            matches = false;
-            break;
+            return match::none;
         }
     }
-    return {matches, identical};
+    return identical ? match::exact : match::convertible;
 }
 
 MethodInfo const* i2c::make_generic(MethodInfo const* method, i2c::view<Il2CppClass const*> types) {
