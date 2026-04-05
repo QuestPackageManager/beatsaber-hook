@@ -1,6 +1,8 @@
 #pragma once
 
+#include "exceptions.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 /// @brief An Array wrapper type that is responsible for holding an (ideally valid) pointer to an array on the GC heap.
 /// Allows for C++ array semantics. Ex, [], begin(), end(), etc...

@@ -1,6 +1,9 @@
 #pragma once
 
 #include "api.hpp"
+#include "config.hpp"
+#include "exceptions.hpp"
+#include "utils.hpp"
 
 namespace i2c {
     // Returns the first matching class from the given namespace and type_name by searching through all assemblies that are loaded. (Cached)

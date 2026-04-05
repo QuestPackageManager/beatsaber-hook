@@ -1,5 +1,7 @@
 #pragma once
 
+#include "api.hpp"
+#include "config.hpp"
 #include "types.hpp"
 
 #include <future>

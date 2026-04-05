@@ -1,7 +1,9 @@
 #pragma once
 
+#include "api.hpp"
 #include "exceptions.hpp"
 #include "find.hpp"
+#include "types.hpp"
 
 namespace i2c {
     template <typename T>

@@ -1,6 +1,8 @@
 #pragma once
 
+#include "config.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 namespace i2c {
     struct find_class_info {

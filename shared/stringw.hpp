@@ -1,5 +1,6 @@
 #pragma once
 
+#include "api.hpp"
 #include "types.hpp"
 
 namespace i2c::strs {

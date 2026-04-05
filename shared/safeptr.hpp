@@ -1,5 +1,7 @@
 #pragma once
 
+#include "api.hpp"
+#include "exceptions.hpp"
 #include "types.hpp"
 
 namespace i2c::detail {

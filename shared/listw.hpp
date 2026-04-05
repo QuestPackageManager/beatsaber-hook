@@ -1,6 +1,9 @@
 #pragma once
 
 #include "arrayw.hpp"
+#include "exceptions.hpp"
+#include "types.hpp"
+#include "utils.hpp"
 
 #ifdef HAS_CODEGEN
 #include "System/Collections/Generic/List_1.hpp"
