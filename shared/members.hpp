@@ -11,7 +11,7 @@ namespace i2c {
     namespace detail {
         template <typename T = void, type_check::has_class... TArgs>
         requires(type_check::full_type<remove_result_t<T>>)
-        T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) {
+        T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) noexcept(i2c::is_result_v<T>) {
             MethodInfo const* method_info;
             bool types_checked = method.type_checked();
             if (std::optional<std::string_view> name = method.only_name()) {
@@ -61,7 +61,7 @@ namespace i2c {
 
         template <typename T>
         requires(type_check::full_type<remove_result_t<T>>)
-        T get_property_impl(find_class_info klass, auto&& class_or_inst, find_property_info prop) {
+        T get_property_impl(find_class_info klass, auto&& class_or_inst, find_property_info prop) noexcept(i2c::is_result_v<T>) {
             auto prop_info = RES_OR_THROW_UNLESS(T, logger, find_property(klass, prop));
             functions::initialize();
             auto getter = RES_OR_THROW_UNLESS(T, logger, functions::property_get_get_method(prop_info));
@@ -72,7 +72,7 @@ namespace i2c {
         }
 
         template <maybe_result R = void, type_check::full_type T>
-        R set_property_impl(find_class_info klass, auto&& class_or_inst, find_property_info prop, T&& value) {
+        R set_property_impl(find_class_info klass, auto&& class_or_inst, find_property_info prop, T&& value) noexcept(i2c::is_result_v<R>) {
             auto prop_info = RES_OR_THROW_UNLESS(R, logger, find_property(klass, prop));
             functions::initialize();
             auto setter = RES_OR_THROW_UNLESS(R, logger, functions::property_get_set_method(prop_info));
@@ -84,7 +84,7 @@ namespace i2c {
 
         template <typename T>
         requires(type_check::full_type<remove_result_t<T>>)
-        T get_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field) {
+        T get_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field) noexcept(i2c::is_result_v<T>) {
             auto field_info = find_field(klass, field);
             if (!is_convertible_from(type_of<remove_result_t<T>>(), field_info->type, false)) {
                 return result_or_throw<T>("Field type does not match");
@@ -101,7 +101,7 @@ namespace i2c {
         }
 
         template <maybe_result R = void, type_check::full_type T>
-        R set_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field, T&& value) {
+        R set_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field, T&& value) noexcept(i2c::is_result_v<R>) {
             auto field_info = find_field(klass, field);
             if (!is_convertible_from(field_info->type, type_of<T>(), false)) {
                 return result_or_throw<R>("Field type does not match");
@@ -124,7 +124,7 @@ namespace i2c {
     // Scroll down a bit for the documentation and API.
     template <typename T = void, type_check::has_type... TArgs>
     requires(type_check::full_type<remove_result_t<T>>)
-    T run_method(auto&& class_or_inst, find_method_info method, auto&&... args) {
+    T run_method(auto&& class_or_inst, find_method_info method, auto&&... args) noexcept(i2c::is_result_v<T>) {
         return detail::run_method_impl<T, TArgs...>(
             {class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(method), std::forward<decltype(args)>(args)...
         );
@@ -132,12 +132,12 @@ namespace i2c {
 
     template <typename T>
     requires(type_check::full_type<remove_result_t<T>>)
-    T get_property(auto&& class_or_inst, find_property_info prop) {
+    T get_property(auto&& class_or_inst, find_property_info prop) noexcept(i2c::is_result_v<T>) {
         return detail::get_property_impl<T>({class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(prop));
     }
 
     template <maybe_result R = void, type_check::full_type T>
-    R set_property(auto&& class_or_inst, find_property_info prop, T&& value) {
+    R set_property(auto&& class_or_inst, find_property_info prop, T&& value) noexcept(i2c::is_result_v<R>) {
         return detail::set_property_impl<R, T>(
             {class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(prop), std::forward<T>(value)
         );
@@ -145,12 +145,12 @@ namespace i2c {
 
     template <typename T>
     requires(type_check::full_type<remove_result_t<T>>)
-    T get_field(auto&& class_or_inst, find_field_info field) {
+    T get_field(auto&& class_or_inst, find_field_info field) noexcept(i2c::is_result_v<T>) {
         return detail::get_field_impl<T>({class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(field));
     }
 
     template <maybe_result R = void, type_check::full_type T>
-    R set_field(auto&& class_or_inst, find_field_info field, T&& value) {
+    R set_field(auto&& class_or_inst, find_field_info field, T&& value) noexcept(i2c::is_result_v<R>) {
         return detail::set_field_impl<R, T>(
             {class_or_inst}, std::forward<decltype(class_or_inst)>(class_or_inst), std::move(field), std::forward<T>(value)
         );
@@ -166,7 +166,7 @@ namespace i2c {
     // If a MethodInfo is provided that is generic but not instantiated, it will be instantiated using TArgs.
     template <typename T = void, type_check::has_class... TArgs>
     requires(type_check::full_type<remove_result_t<T>>)
-    T run_method(find_class_info klass, find_method_info method, auto&&... args) {
+    T run_method(find_class_info klass, find_method_info method, auto&&... args) noexcept(i2c::is_result_v<T>) {
         return detail::run_method_impl<T, TArgs...>(std::move(klass), nullptr, std::move(method), std::forward<decltype(args)>(args)...);
     }
 
@@ -175,7 +175,7 @@ namespace i2c {
     // i2c::result<T> can be used as the return type to capture errors instead.
     template <typename T>
     requires(type_check::full_type<remove_result_t<T>>)
-    T get_property(find_class_info klass, find_property_info prop) {
+    T get_property(find_class_info klass, find_property_info prop) noexcept(i2c::is_result_v<T>) {
         return detail::get_property_impl<T>(std::move(klass), nullptr, std::move(prop));
     }
 
@@ -183,7 +183,7 @@ namespace i2c {
     // Will throw on error, including a mismatch between T and the property type.
     // i2c::result<> can be used as the return type to capture errors instead.
     template <maybe_result R = void, type_check::full_type T>
-    R set_property(find_class_info klass, find_property_info prop, T&& value) {
+    R set_property(find_class_info klass, find_property_info prop, T&& value) noexcept(i2c::is_result_v<R>) {
         return detail::set_property_impl<R, T>(std::move(klass), nullptr, std::move(prop), std::forward<T>(value));
     }
 
@@ -192,7 +192,7 @@ namespace i2c {
     // i2c::result<T> can be used as the return type to capture errors instead.
     template <typename T>
     requires(type_check::full_type<remove_result_t<T>>)
-    T get_field(find_class_info klass, find_field_info field) {
+    T get_field(find_class_info klass, find_field_info field) noexcept(i2c::is_result_v<T>) {
         return detail::get_field_impl<T>(std::move(klass), nullptr, std::move(field));
     }
 
@@ -200,7 +200,7 @@ namespace i2c {
     // Will throw on error, including a mismatch between T and the field type.
     // i2c::result<> can be used as the return type to capture errors instead.
     template <maybe_result R = void, type_check::full_type T>
-    R set_field(find_class_info klass, find_field_info field, T&& value) {
+    R set_field(find_class_info klass, find_field_info field, T&& value) noexcept(i2c::is_result_v<R>) {
         return detail::set_field_impl<R, T>(std::move(klass), nullptr, std::move(field), std::forward<T>(value));
     }
 
@@ -210,7 +210,7 @@ namespace i2c {
     // Result can be set to true to capture errors in the return type instead.
     // Can either allocate the object normally with the GC, or manually, guaranteeing its lifetime until explicitly freed.
     template <bool Result = false, bool Manual = false>
-    auto new_ctor(find_class_info class_info, auto&&... args) {
+    auto new_ctor(find_class_info class_info, auto&&... args) noexcept(Result) {
         using T = std::conditional_t<Result, result<Il2CppObject*>, Il2CppObject*>;
         auto klass = find_class(class_info);
         if (!klass) {
@@ -242,7 +242,7 @@ namespace i2c {
     // Can either allocate the object normally with the GC, or manually, guaranteeing its lifetime until explicitly freed.
     template <typename T, bool Manual = false>
     requires(type_check::ref_type<remove_result_t<T>>)
-    T new_ctor(auto&&... args) {
+    T new_ctor(auto&&... args) noexcept(i2c::is_result_v<T>) {
         Il2CppObject* inst;
         if constexpr (is_result_v<T>) {
             auto res = new_ctor<true, Manual>(class_of<remove_result_t<T>>(), std::forward<decltype(args)>(args)...);
@@ -262,7 +262,7 @@ namespace i2c {
     // i2c::result<T> can be used as the return type to capture errors instead.
     template <typename T>
     requires(type_check::value_type<remove_result_t<T>>)
-    T new_ctor(auto&&... args) {
+    T new_ctor(auto&&... args) noexcept(i2c::is_result_v<T>) {
         T ret;
         if constexpr (is_result_v<T>) {
             if (auto res = run_method<result<void>>(ret.value(), ".ctor", std::forward<decltype(args)>(args)...); !res) {

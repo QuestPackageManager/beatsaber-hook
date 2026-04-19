@@ -30,7 +30,7 @@ namespace i2c {
     };
 
     template <typename T>
-    T result_or_throw(std::string msg) {
+    T result_or_throw(std::string msg) noexcept(i2c::is_result_v<T>) {
         if constexpr (is_result_v<T>) {
             return T(std::unexpect, std::move(msg));
         } else {

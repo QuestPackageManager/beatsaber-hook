@@ -177,22 +177,27 @@ struct safe_ptr {
     }
 
     /// @brief Performs an il2cpp type checked cast from T to U.
-    /// This function may throw an exception if the cast fails, see try_cast for a version that does not.
+    /// This function will throw an exception if the cast fails. i2c::result<T2> can be used to capture errors instead.
     /// @tparam T2 The type to cast to.
     /// @tparam U2 Explicitly specify if the casted safe_ptr is a unity object.
     /// @return A new safe_ptr of the cast value.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
-    [[nodiscard]] inline safe_ptr<T2, U2> cast() const {
-        auto* k1 = i2c::class_of<T2*>();
-        auto* k2 = *reinterpret_cast<Il2CppClass**>(ptr());
+    requires(i2c::type_check::has_class<i2c::remove_result_t<T2>>)
+    [[nodiscard]] inline auto cast() const noexcept(i2c::is_result_v<T2>) {
+        using R = i2c::change_result_t<T2, safe_ptr<i2c::remove_result_t<T2>, U2>>;
+        if (!this) {
+            return i2c::result_or_throw<R>("A safe_ptr<T> instance is holding a null handle!");
+        }
+        auto* k1 = i2c::class_of<i2c::remove_result_t<T2>*>();
+        auto* k2 = *reinterpret_cast<Il2CppClass**>(handle->inst);
         if (!k1 || !k2) {
-            throw i2c::trace_exception("Invalid class in safe_ptr cast!");
+            return i2c::result_or_throw<R>("Invalid class in safe_ptr cast!");
         }
         i2c::functions::initialize();
         if (k1 == k2 || i2c::functions::class_is_assignable_from(k1, k2)) {
-            return safe_ptr<T2, U2>(reinterpret_cast<T2*>(handle->inst));
+            return R(reinterpret_cast<i2c::remove_result_t<T2>*>(handle->inst));
         }
-        throw i2c::trace_exception("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
+        throw i2c::result_or_throw<R>("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
     }
 
     /// @brief Performs an il2cpp type checked cast from T to U, returning a default constructed safe_ptr if it fails.
@@ -201,19 +206,7 @@ struct safe_ptr {
     /// @return A new safe_ptr of the cast value, if successful.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
     [[nodiscard]] inline safe_ptr<T2, U2> try_cast() const noexcept {
-        if (!(*this)) {
-            return {};
-        }
-        auto* k1 = i2c::class_of<T2*>();
-        auto* k2 = *reinterpret_cast<Il2CppClass**>(handle->inst);
-        if (!k1 || !k2) {
-            return {};
-        }
-        i2c::functions::initialize();
-        if (k1 == k2 || i2c::functions::class_is_assignable_from(k1, k2)) {
-            return safe_ptr<T2, U2>(reinterpret_cast<T2*>(handle->inst));
-        }
-        return {};
+        return cast<i2c::result<T2>, U2>().value_or({});
     }
 
     T* ptr() {
