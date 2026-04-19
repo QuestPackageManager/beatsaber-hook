@@ -35,9 +35,6 @@ namespace i2c {
             return T(std::unexpect, std::move(msg));
         } else {
             throw trace_exception(msg);
-            if constexpr (!std::is_void_v<T>) {
-                return T{};
-            }
         }
     }
 }
