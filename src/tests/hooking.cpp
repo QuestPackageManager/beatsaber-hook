@@ -3,9 +3,14 @@
 #include "members.hpp"
 #include "tests.hpp"
 
-MAKE_HOOK(test1, ({"System.Collections", "Queue"}, "GetElement", true), void*, void* self, int i) {
-    LOG_OK("Hook run, self -> {} | item -> {} | orig -> {}", fmt::ptr(self), i, test1(self, i));
+MAKE_HOOK(queue_test, ({"System.Collections", "Queue"}, "GetElement", true), void*, void* self, int i) {
+    LOG_OK("Hook run, self -> {} | item -> {} | orig -> {}", fmt::ptr(self), i, queue_test(self, i));
     return reinterpret_cast<void*>(uintptr_t(5));
+}
+
+MAKE_HOOK(queue_minfo_test, ({"System.Collections", "Queue"}, "GetElement", true), void*, void* self, int i, MethodInfo* method) {
+    LOG_OK("Hook with MethodInfo run, self -> {} | item -> {} | orig -> {}", fmt::ptr(self), i, queue_minfo_test(self, i, method));
+    return reinterpret_cast<void*>(uintptr_t(10));
 }
 
 TEST(queue_hook) {
@@ -19,17 +24,26 @@ TEST(queue_hook) {
         Il2CppObject* element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
         LOG_OK("Queue GetElement before hook -> {}", fmt::ptr(element));
 
-        INSTALL_HOOK(i2c::logger, test1);
+        INSTALL_HOOK(i2c::logger, queue_test);
         LOG_OK("Hook installed");
 
         element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
         LOG_OK("Queue GetElement after hook install -> {}", fmt::ptr(element));
 
-        UNINSTALL_HOOK(i2c::logger, test1);
+        UNINSTALL_HOOK(i2c::logger, queue_test);
         LOG_OK("Hook uninstalled");
 
         element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
         LOG_OK("Queue GetElement after hook uninstall -> {}", fmt::ptr(element));
+
+        INSTALL_HOOK(i2c::logger, queue_minfo_test);
+        LOG_OK("MethodInfo hook installed");
+
+        element = i2c::run_method<Il2CppObject*>(queue, "GetElement", 0);
+        LOG_OK("Queue GetElement after MethodInfo hook install -> {}", fmt::ptr(element));
+
+        UNINSTALL_HOOK(i2c::logger, queue_minfo_test);
+        LOG_OK("MethodInfo hook uninstalled");
     } catch (std::exception const& e) {
         LOG_FAIL("Error during hook test: {}", e.what());
         return;
@@ -52,7 +66,11 @@ struct i2c::metadata_getter<&foo> {
     static constexpr uintptr_t addrs = 0x1234;
 };
 
-MAKE_HOOK_MATCH(test2, &foo, int, bool) {
+MAKE_HOOK_MATCH(match_test, &foo, int, bool) {
+    return 1;
+}
+
+MAKE_HOOK_MATCH(match_minfo_test, &foo, int, bool, MethodInfo*) {
     return 1;
 }
 
@@ -71,7 +89,7 @@ struct i2c::metadata_getter<static_cast<function_ptr_t<int, bool, float>>(&bar)>
     static constexpr uintptr_t addrs = 0x5678;
 };
 
-MAKE_HOOK_MATCH(test3, &bar, int, bool, float) {
+MAKE_HOOK_MATCH(match_overload_test, &bar, int, bool, float) {
     return 1;
 }
 
@@ -88,6 +106,19 @@ struct i2c::metadata_getter<static_cast<method_ptr_t<struct_a, int, int>>(&struc
     static constexpr uintptr_t addrs = 0x999;
 };
 
-MAKE_HOOK_MATCH(test4, &struct_a::foo, int, struct_a*, int) {
+MAKE_HOOK_MATCH(match_inst_overload_test, &struct_a::foo, int, struct_a*, int) {
     return 1;
 }
+
+MAKE_HOOK_MATCH(match_inst_overload_minfo_test, &struct_a::foo, int, struct_a*, int, MethodInfo*) {
+    return 1;
+}
+
+// Test other hook constructions
+MAKE_HOOK(test_addr_hook, (&foo), void, bool) {}
+MAKE_HOOK(test_minfo_hook, (i2c::metadata_getter<&foo>::method_info()), void, int*) {}
+
+static_assert(std::is_same_v<void*, std::invoke_result_t<decltype(hook_test_addr_hook::addr)>>);
+static_assert(std::is_same_v<MethodInfo const*, std::invoke_result_t<decltype(hook_test_minfo_hook::addr)>>);
+
+MAKE_HOOK(test_nullptr_hook, (nullptr), void, int*) {}

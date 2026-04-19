@@ -9,81 +9,114 @@
 #error Hooking is only supported on ARM64 platforms!
 #endif
 
-namespace i2c::hooking {
-    template <typename T>
-    concept logger = requires(T& l) {
-        l.info("");
-        l.debug("");
-        l.error("");
-        l.warn("");
-        l.critical("");
-    };
-
-    template <typename T>
-    concept hook_struct =
-        requires {
-            // Must have a name
-            { T::name() } -> std::same_as<char const*>;
-            // Must have a trampoline that returns the func_t
-            { T::trampoline() } -> std::same_as<typename T::func_t*>;
-            // Must have a hook that returns the func_t
-            { T::hook() } -> std::same_as<typename T::func_t>;
-            // Must have an installation handle
-            { T::install_handle } -> std::same_as<flamingo::HookHandle&>;
-            // Must have installation priority
-            { T::install_priority } -> std::same_as<flamingo::HookPriority&>;
-        } &&
-        (
-            // Must have an address
-            requires {
-                { T::addr() } -> std::same_as<void*>;
-            } ||
-            requires {
-                { T::addr() } -> std::same_as<MethodInfo const*>;
-            }
-        );
-
-    template <typename T>
-    struct resolve_addr;
-
-    template <typename R>
-    struct resolve_addr<R (*)()> {
+namespace i2c {
+    namespace detail {
         template <typename T>
-        auto operator()(T* addr) {
-            return reinterpret_cast<void*>(addr);
-        }
-        auto operator()(MethodInfo const* addr) { return addr; }
-        auto operator()(find_class_info klass, std::string_view name) { return find_method(klass, {name, 0}); }
-    };
+        concept is_logger = requires(T& l) {
+            l.info("");
+            l.debug("");
+            l.error("");
+            l.warn("");
+            l.critical("");
+        };
 
-    template <typename R, typename T1, typename... TArgs>
-    struct resolve_addr<R (*)(T1, TArgs...)> {
-        auto operator()(find_class_info klass, std::string_view name, bool instance = std::is_pointer_v<T1> && type_check::full_type<T1>) {
-            return find_method(klass, {name, int(instance ? sizeof...(TArgs) : sizeof...(TArgs) + 1)});
-        }
-    };
+        template <typename T>
+        concept hook_struct =
+            requires {
+                // Must have a name
+                { T::name() } -> std::same_as<char const*>;
+                // Must have a trampoline that returns the func_t
+                { T::trampoline() } -> std::same_as<typename T::func_t*>;
+                // Must have a hook that returns the func_t
+                { T::hook() } -> std::same_as<typename T::func_t>;
+                // Must have an installation handle
+                { T::install_handle } -> std::same_as<flamingo::HookHandle&>;
+                // Must have installation priority
+                { T::install_priority } -> std::same_as<flamingo::HookPriority&>;
+            } &&
+            (
+                // Must have an address
+                requires {
+                    { T::addr() } -> std::same_as<void*>;
+                } ||
+                requires {
+                    { T::addr() } -> std::same_as<MethodInfo const*>;
+                }
+            );
 
-    // Used to check overloaded match hooks against the parameter list
-    template <auto C, typename T>
-    // Default fallback to static method type
-    struct method_check {
-        using type = T;
-    };
-    template <auto C, typename R, typename T, typename... Ts>
-    // Uses C (a constexpr verification function) to see if an instance method (and a particular overload) can be used
-    requires(C.template operator()<method_ptr_t<T, R, Ts...>>())
-    struct method_check<C, R (*)(T*, Ts...)> {
-        using type = R (T::*)(Ts...);
-    };
+        template <typename T, typename... TArgs>
+        using last_t = std::tuple_element_t<sizeof...(TArgs), std::tuple<T, TArgs...>>;
 
-    template <auto M>
+        // A struct to remove the last parameter from a function if it is a specific type
+        // https://godbolt.org/z/eT98hxo17
+        template <typename D, typename T>
+        struct remove_last_param {
+            using type = T;
+        };
+        template <typename D, typename R, typename T, typename... TArgs>
+        struct remove_last_param<D, function_ptr_t<R, T, TArgs...>> {
+            using type = std::conditional_t<
+                std::is_same_v<last_t<T, TArgs...>, D>,
+                decltype([]<size_t... Is>(std::index_sequence<Is...>) {
+                    return function_ptr_t<R, std::tuple_element_t<Is, std::tuple<T, TArgs...>>...>{};
+                }(std::index_sequence_for<TArgs...>{})),
+                function_ptr_t<R, T, TArgs...>>;
+        };
+        template <typename D, typename R, typename I, typename T, typename... TArgs>
+        struct remove_last_param<D, method_ptr_t<I, R, T, TArgs...>> {
+            using type = std::conditional_t<
+                std::is_same_v<last_t<T, TArgs...>, D>,
+                decltype([]<size_t... Is>(std::index_sequence<Is...>) {
+                    return method_ptr_t<I, R, std::tuple_element_t<Is, std::tuple<T, TArgs...>>...>{};
+                }(std::index_sequence_for<TArgs...>{})),
+                method_ptr_t<I, R, T, TArgs...>>;
+        };
+        template <typename D, typename T>
+        using remove_last_param_t = remove_last_param<D, T>::type;
+
+        // A struct to find methods for hooks based on their function type and user-specified parameters
+        template <typename T>
+        struct resolve_addr;
+
+        template <typename R>
+        struct resolve_addr<R (*)()> {
+            auto operator()(auto addr) { return (void*) addr; }
+            auto operator()(MethodInfo const* addr) { return addr; }
+            auto operator()(find_class_info klass, std::string_view name) { return find_method(klass, {name, 0}); }
+        };
+
+        template <typename R, typename T1, typename... TArgs>
+        struct resolve_addr<R (*)(T1, TArgs...)> {
+            auto operator()(auto addr) { return (void*) addr; }
+            auto operator()(MethodInfo const* addr) { return addr; }
+            auto operator()(find_class_info klass, std::string_view name, bool instance = std::is_pointer_v<T1> && type_check::full_class<T1>) {
+                int args = sizeof...(TArgs) + int(!instance) - int(std::is_same_v<last_t<T1, TArgs...>, MethodInfo*>);
+                return find_method(klass, {name, args});
+            }
+        };
+
+        // Used to check overloaded match hooks against the parameter list
+        template <auto C, typename T>
+        // Default fallback to static method type
+        struct method_check {
+            using type = remove_last_param_t<MethodInfo*, T>;
+        };
+        template <auto C, typename R, typename T, typename... Ts>
+        // Uses C (a constexpr verification function) to see if an instance method (and a particular overload) can be used
+        requires(C.template operator()<remove_last_param_t<MethodInfo*, method_ptr_t<T, R, Ts...>>>())
+        struct method_check<C, R (*)(T*, Ts...)> {
+            using type = remove_last_param_t<MethodInfo*, method_ptr_t<T, R, Ts...>>;
+        };
+
+        template <auto M>
 #ifndef BS_HOOK_MATCH_UNSAFE
-    concept match_hookable = metadata_getter<M>::size >= 0x5 * sizeof(uint32_t) && metadata_getter<M>::addrs != 0x0;
+        constexpr bool match_hookable = metadata_getter<M>::size >= 0x5 * sizeof(uint32_t) && metadata_getter<M>::addrs != 0x0;
 #else
-    concept match_hookable = true;
+        constexpr bool match_hookable = true;
 #endif
+    }
 
-    template <hook_struct T, logger L>
+    template <detail::hook_struct T, detail::is_logger L>
     void install_hook(L& logger = ::i2c::logger, void* addr = nullptr) {
         if (!addr) {
             auto info_or_addr = T::addr();
@@ -120,13 +153,13 @@ namespace i2c::hooking {
         }
     }
 
-    template <hook_struct T, logger L>
+    template <detail::hook_struct T, detail::is_logger L>
     void install_hook_orig(L& logger = ::i2c::logger, void* addr = nullptr) {
         T::install_priority.is_final = true;
         install_hook<T>(logger, addr);
     }
 
-    template <hook_struct T, logger L>
+    template <detail::hook_struct T, detail::is_logger L>
     void uninstall_hook(L& logger = ::i2c::logger) {
         MACRO_LOG(logger, info, "Uninstalling hook: {}", T::name());
         auto uninstall_result = flamingo::Uninstall(T::install_handle);
@@ -156,9 +189,9 @@ namespace i2c::hooking {
 // or a find_class_info, method name, and boolean flag if an instance method.
 // If given an il2cpp method, it will search for one that matches the given return type and parameters.
 #define MAKE_HOOK(name_, addr_info, ret_type, ...)                                                             \
-    struct hook_##name_ {                                                                                      \
+    struct BS_HOOK_HIDDEN hook_##name_ {                                                                       \
         using func_t = ret_type (*)(__VA_ARGS__);                                                              \
-        __INTERNAL_HOOK_STRUCT(name_, ::i2c::hooking::resolve_addr<func_t>{} addr_info, ret_type, __VA_ARGS__) \
+        __INTERNAL_HOOK_STRUCT(name_, ::i2c::detail::resolve_addr<func_t>{} addr_info, ret_type, __VA_ARGS__) \
     };                                                                                                         \
     ret_type hook_##name_::hook_m_##name_(__VA_ARGS__)
 
@@ -166,12 +199,12 @@ namespace i2c::hooking {
 // Will automatically cast overloads, check types, and detect static/instance methods, based on the given return type and parameters.
 // Generic methods cannot be hooked with this macro.
 #define MAKE_HOOK_MATCH(name_, method, ret_type, ...)                                                                            \
-    struct hook_##name_ {                                                                                                        \
+    struct BS_HOOK_HIDDEN hook_##name_ {                                                                                         \
         static constexpr auto cast_test = []<typename T>() { return requires { static_cast<T>(method); }; };                     \
         using func_t = ret_type (*)(__VA_ARGS__);                                                                                \
-        using cast_t = ::i2c::hooking::method_check<cast_test, func_t>::type;                                                    \
+        using cast_t = ::i2c::detail::method_check<cast_test, func_t>::type;                                                    \
         static_assert(cast_test.operator()<cast_t>(), "Hook method signature does not match!");                                  \
-        static_assert(::i2c::hooking::match_hookable<static_cast<cast_t>(method)>, "Method cannot be hooked!");                  \
+        static_assert(::i2c::detail::match_hookable<static_cast<cast_t>(method)>, "Method cannot be hooked!");                  \
         __INTERNAL_HOOK_STRUCT(name_, ::i2c::metadata_getter<static_cast<cast_t>(method)>::method_info(), ret_type, __VA_ARGS__) \
     };                                                                                                                           \
     ret_type hook_##name_::hook_m_##name_(__VA_ARGS__)
@@ -197,15 +230,15 @@ namespace i2c::hooking {
 // Installs the provided hook using the logger provided, and optionally directly to an address.
 // Name must be from either a MAKE_HOOK or MAKE_HOOK_MATCH macro.
 #define INSTALL_HOOK(logger, name, ...) \
-    ::i2c::hooking::install_hook<hook_##name>(logger __VA_OPT__(,) __VA_ARGS__);
+    ::i2c::install_hook<hook_##name>(logger __VA_OPT__(,) __VA_ARGS__);
 
 // Installs the provided hook using the logger provided, and optionally directly to an address.
 // The hook will be forced to be the final hook if multiple are installed to the same target.
 // Name must be from either a MAKE_HOOK or MAKE_HOOK_MATCH macro.
 #define INSTALL_HOOK_ORIG(logger, name, ...) \
-    ::i2c::hooking::install_hook_orig<hook_##name>(logger __VA_OPT__(,) __VA_ARGS__);
+    ::i2c::install_hook_orig<hook_##name>(logger __VA_OPT__(,) __VA_ARGS__);
 
 // Uninstalls a previously installed hook.
 // Name must be from either a MAKE_HOOK or MAKE_HOOK_MATCH macro.
 #define UNINSTALL_HOOK(logger, name) \
-    ::i2c::hooking::uninstall_hook<hook_##name>(logger);
+    ::i2c::uninstall_hook<hook_##name>(logger);
