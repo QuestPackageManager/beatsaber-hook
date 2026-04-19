@@ -49,6 +49,12 @@ namespace i2c {
         struct ref_type_trait {
             static constexpr bool value = false;
         };
+        // Don't specialize for just any pointer, but pointers to value types can be ref types
+        template <typename T>
+        requires(value_type_trait<T>::value)
+        struct ref_type_trait<T*> {
+            static constexpr bool value = true;
+        };
     }
 
     namespace type_check {
@@ -114,7 +120,13 @@ namespace i2c {
         };
 
         template <typename T>
-        concept has_type = has_get<no_arg_class<T>>;
+        concept has_class = has_get<no_arg_class<T>>;
+
+        template <typename T>
+        concept full_class = has_class<T> && has_mark<T>;
+
+        template <typename T>
+        concept has_type = has_get<no_arg_type<T>>;
 
         template <typename T>
         concept full_type = has_type<T> && has_mark<T>;
@@ -197,7 +209,7 @@ namespace i2c {
     // Converts a C# object or pointer back to a C++ value
     // If Boxed is true, the instance is assumed to be an Il2CppObject*, even if T is a value type
     // This always copies the data of value types
-    template <type_check::full_type T, bool Boxed>
+    template <type_check::has_mark T, bool Boxed>
     auto from_object(void* inst) noexcept {
         if constexpr (Boxed && type_check::value_type<T>) {
             inst = reinterpret_cast<void*>(reinterpret_cast<char*>(inst) + sizeof(Il2CppObject));
@@ -363,14 +375,6 @@ namespace System {
     }
 
     class ICloneable;
-}
-#else
-namespace System {
-    typedef Il2CppArray Array;
-    typedef Il2CppDelegate Delegate;
-    typedef Il2CppObject Object;
-    typedef Il2CppString String;
-    typedef Il2CppReflectionType Type;
 }
 #endif
 

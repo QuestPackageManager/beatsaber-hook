@@ -24,7 +24,7 @@ MARK_GEN_REF_T_PTR(System::Collections::Generic::List_1);
 
 template <typename T>
 struct ListW {
-    static_assert(i2c::type_check::full_type<T>, "T must be a valid C# type!");
+    static_assert(i2c::type_check::full_class<T>, "T must be a valid C# type!");
 
     using ptr = System::Collections::Generic::List_1<T>*;
     using const_ptr = System::Collections::Generic::List_1<T> const*;
@@ -47,9 +47,6 @@ struct ListW {
     constexpr ListW(void* inst) noexcept : val(static_cast<ptr>(inst)) {}
     /// @brief Create an ListW from a pointer
     constexpr ListW(ptr inst) noexcept : val(inst) {}
-
-    constexpr ListW(ListW const&) noexcept = default;
-    constexpr ListW(ListW&&) noexcept = default;
 
     // Empty with size
     ListW(il2cpp_array_size_t size) {
@@ -75,10 +72,10 @@ struct ListW {
     requires(std::is_convertible_v<U, T>)
     ListW(std::vector<U> vals) : ListW(i2c::view{vals}) {}
 
-    constexpr bool operator==(ListW const&) const noexcept = default;
+    constexpr ListW(ListW const&) noexcept = default;
+    constexpr ListW(ListW&&) noexcept = default;
 
     constexpr ListW& operator=(ListW const&) noexcept = default;
-    constexpr ListW& operator=(ListW&&) noexcept = default;
 
     constexpr ListW& operator=(ptr rhs) noexcept {
         val = rhs;
@@ -102,6 +99,8 @@ struct ListW {
     const_ptr operator->() const noexcept { return val; }
 
     operator bool() const noexcept { return val != nullptr; }
+    constexpr bool operator==(ListW const&) const noexcept = default;
+    constexpr bool operator==(std::nullptr_t) const noexcept { return !val; }
 
     [[nodiscard]] inline il2cpp_array_size_t size() const noexcept { return val->_size; }
     inline bool empty() const noexcept { return size() == 0; }

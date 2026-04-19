@@ -10,7 +10,7 @@ struct ValueW {
     constexpr ValueW(ValueW&&) = default;
 
     constexpr explicit ValueW(std::array<std::byte, S> data) noexcept : instance(std::move(data)) {}
-    constexpr ValueW(void* data) noexcept { std::copy_n(reinterpret_cast<char*>(data), S, instance.data()); }
+    constexpr ValueW(void* data) noexcept { std::copy_n(reinterpret_cast<std::byte*>(data), S, instance.data()); }
 
     void* convert() const noexcept { return const_cast<void*>(static_cast<void const*>(instance.data())); }
 

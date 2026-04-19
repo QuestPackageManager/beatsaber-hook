@@ -29,10 +29,10 @@ struct ArrayW {
     constexpr ArrayW(void* inst) noexcept : val(static_cast<ptr>(inst)) {}
     /// @brief Create an ArrayW from a pointer
     constexpr ArrayW(ptr inst) noexcept : val(inst) {}
-    constexpr ArrayW(System::Array* inst) noexcept : val(inst) {}
 
-    constexpr ArrayW(ArrayW const&) noexcept = default;
-    constexpr ArrayW(ArrayW&&) noexcept = default;
+#ifdef HAS_CODEGEN
+    constexpr ArrayW(System::Array* inst) noexcept : val(static_cast<ptr>(static_cast<void*>(inst))) {}
+#endif
 
     // Empty with size
     ArrayW(il2cpp_array_size_t size) {
@@ -57,7 +57,8 @@ struct ArrayW {
     requires(std::is_convertible_v<U, T>)
     ArrayW(std::vector<U> vals) : ArrayW(i2c::view{vals}) {}
 
-    constexpr bool operator==(ArrayW const&) const noexcept = default;
+    constexpr ArrayW(ArrayW const&) noexcept = default;
+    constexpr ArrayW(ArrayW&&) noexcept = default;
 
     constexpr ArrayW& operator=(ArrayW const&) noexcept = default;
     constexpr ArrayW& operator=(ArrayW&&) noexcept = default;
@@ -73,6 +74,8 @@ struct ArrayW {
     }
 
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(val)); }
+    constexpr bool operator==(ArrayW const&) const noexcept = default;
+    constexpr bool operator==(std::nullptr_t) const noexcept { return !val; }
 
     operator std::span<value>() { return ref_to(); }
     operator std::span<const_value> const() const { return ref_to(); }

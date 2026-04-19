@@ -2,10 +2,10 @@
 
 #include "tests.hpp"
 
-static_assert(i2c::type_check::full_type<System::String*>);
-static_assert(i2c::type_check::ptr_ref_type<System::String*>);
+static_assert(i2c::type_check::full_class<Il2CppString*>);
+static_assert(i2c::type_check::ptr_ref_type<Il2CppString*>);
 
-static_assert(i2c::type_check::full_type<StringW>);
+static_assert(i2c::type_check::full_class<StringW>);
 static_assert(i2c::type_check::wrapper_ref_type<StringW>);
 
 TEST(stringw) {
@@ -74,4 +74,10 @@ TEST(stringw) {
     // Test nullptr
     StringW null_str(nullptr);
     LOG_OK("null_str is null: {}", !null_str);
+
+    // Test assignment
+    null_str = empty;
+    null_str = const_s;
+    null_str = std::move(empty);
+    null_str = nullptr;
 }

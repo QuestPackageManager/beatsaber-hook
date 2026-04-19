@@ -2,10 +2,10 @@
 
 #include "tests.hpp"
 
-static_assert(i2c::type_check::full_type<System::Collections::Generic::List_1<int>*>);
+static_assert(i2c::type_check::full_class<System::Collections::Generic::List_1<int>*>);
 static_assert(i2c::type_check::ptr_ref_type<System::Collections::Generic::List_1<int>*>);
 
-static_assert(i2c::type_check::full_type<ListW<int>>);
+static_assert(i2c::type_check::full_class<ListW<int>>);
 static_assert(i2c::type_check::wrapper_ref_type<ListW<int>>);
 
 TEST(listw) {

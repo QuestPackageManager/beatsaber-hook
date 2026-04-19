@@ -33,14 +33,14 @@ std::size_t i2c::strs::convstr(char16_t const* inp, char* outp, int isz, int osz
     return static_cast<size_t>(to_next - reinterpret_cast<char8_t*>(outp));
 }
 
-System::String* i2c::strs::alloc_str(std::string_view str) {
+Il2CppString* i2c::strs::alloc_str(std::string_view str) {
     functions::initialize();
     if (str.data() == nullptr) {
         return functions::string_new_len("", 0);
     }
     return functions::string_new_len(str.data(), str.size());
 }
-System::String* i2c::strs::alloc_str(std::u16string_view str) {
+Il2CppString* i2c::strs::alloc_str(std::u16string_view str) {
     functions::initialize();
     if (str.data() == nullptr) {
         return functions::string_new_len("", 0);
@@ -48,12 +48,12 @@ System::String* i2c::strs::alloc_str(std::u16string_view str) {
     return functions::string_new_utf16((Il2CppChar const*) str.data(), str.size());
 }
 
-static System::String* create_string(int length) {
+static Il2CppString* create_string(int length) {
     // Why run this method here instead of using string_new_len?
-    return i2c::run_method<System::String*>(i2c::class_of<System::String*>(), "CreateString", Il2CppChar('\0'), length);
+    return i2c::run_method<Il2CppString*>(i2c::class_of<Il2CppString*>(), "CreateString", Il2CppChar('\0'), length);
 }
 
-System::String* i2c::strs::strappend(std::string_view const lhs, System::String const* rhs) noexcept {
+Il2CppString* i2c::strs::strappend(std::string_view const lhs, Il2CppString const* rhs) noexcept {
     if (rhs) {
         int full_length = rhs->length + lhs.size();
         auto result = create_string(full_length);
@@ -65,7 +65,7 @@ System::String* i2c::strs::strappend(std::string_view const lhs, System::String 
         return alloc_str(lhs);
     }
 }
-System::String* i2c::strs::strappend(std::u16string_view const lhs, System::String const* rhs) noexcept {
+Il2CppString* i2c::strs::strappend(std::u16string_view const lhs, Il2CppString const* rhs) noexcept {
     if (rhs) {
         int full_length = rhs->length + lhs.size();
         auto result = create_string(full_length);
@@ -78,7 +78,7 @@ System::String* i2c::strs::strappend(std::u16string_view const lhs, System::Stri
         return alloc_str(lhs);
     }
 }
-System::String* i2c::strs::strappend(System::String const* lhs, std::string_view const rhs) noexcept {
+Il2CppString* i2c::strs::strappend(Il2CppString const* lhs, std::string_view const rhs) noexcept {
     if (lhs) {
         int full_length = lhs->length + rhs.size();
         auto result = create_string(full_length);
@@ -90,7 +90,7 @@ System::String* i2c::strs::strappend(System::String const* lhs, std::string_view
         return alloc_str(rhs);
     }
 }
-System::String* i2c::strs::strappend(System::String const* lhs, std::u16string_view const rhs) noexcept {
+Il2CppString* i2c::strs::strappend(Il2CppString const* lhs, std::u16string_view const rhs) noexcept {
     if (lhs) {
         int full_length = lhs->length + rhs.size();
         auto result = create_string(full_length);
@@ -103,7 +103,7 @@ System::String* i2c::strs::strappend(System::String const* lhs, std::u16string_v
         return alloc_str(rhs);
     }
 }
-System::String* i2c::strs::strappend(System::String const* lhs, System::String const* rhs) noexcept {
+Il2CppString* i2c::strs::strappend(Il2CppString const* lhs, Il2CppString const* rhs) noexcept {
     if (!lhs && !rhs) {
         return nullptr;
     }
@@ -123,15 +123,15 @@ System::String* i2c::strs::strappend(System::String const* lhs, System::String c
 }
 
 struct i2cstr_view {
-    constexpr i2cstr_view(System::String const* str) : val(str) {}
+    constexpr i2cstr_view(Il2CppString const* str) : val(str) {}
 
     constexpr Il2CppChar const* data() const { return val->chars; }
     constexpr size_t size() const { return static_cast<size_t>(val->length); }
 
-    System::String const* val;
+    Il2CppString const* val;
 };
 
-static inline bool strcomp_impl(System::String const* lhs, auto const& rhs) noexcept {
+static inline bool strcomp_impl(Il2CppString const* lhs, auto const& rhs) noexcept {
     if (!lhs || static_cast<size_t>(lhs->length) != rhs.size()) {
         return false;
     }
@@ -152,13 +152,13 @@ static inline bool strcomp_impl(System::String const* lhs, auto const& rhs) noex
     return first == first_end && second == second_end;
 }
 
-bool i2c::strs::strcomp(System::String const* lhs, std::string_view const rhs) noexcept {
+bool i2c::strs::strcomp(Il2CppString const* lhs, std::string_view const rhs) noexcept {
     return strcomp_impl(lhs, rhs);
 }
-bool i2c::strs::strcomp(System::String const* lhs, std::u16string_view const rhs) noexcept {
+bool i2c::strs::strcomp(Il2CppString const* lhs, std::u16string_view const rhs) noexcept {
     return strcomp_impl(lhs, rhs);
 }
-bool i2c::strs::strcomp(System::String const* lhs, System::String const* rhs) noexcept {
+bool i2c::strs::strcomp(Il2CppString const* lhs, Il2CppString const* rhs) noexcept {
     if (lhs == rhs) {
         return true;
     } else if (!rhs) {
@@ -167,7 +167,7 @@ bool i2c::strs::strcomp(System::String const* lhs, System::String const* rhs) no
     return strcomp_impl(lhs, i2cstr_view(rhs));
 }
 
-static inline bool strless_impl(System::String const* lhs, auto const& rhs) noexcept {
+static inline bool strless_impl(Il2CppString const* lhs, auto const& rhs) noexcept {
     if (!lhs) {
         return true;
     }
@@ -189,20 +189,20 @@ static inline bool strless_impl(System::String const* lhs, auto const& rhs) noex
     return second != second_end;
 }
 
-bool i2c::strs::strless(System::String const* lhs, std::string_view const rhs) noexcept {
+bool i2c::strs::strless(Il2CppString const* lhs, std::string_view const rhs) noexcept {
     return strless_impl(lhs, rhs);
 }
-bool i2c::strs::strless(System::String const* lhs, std::u16string_view const rhs) noexcept {
+bool i2c::strs::strless(Il2CppString const* lhs, std::u16string_view const rhs) noexcept {
     return strless_impl(lhs, rhs);
 }
-bool i2c::strs::strless(System::String const* lhs, System::String const* rhs) noexcept {
+bool i2c::strs::strless(Il2CppString const* lhs, Il2CppString const* rhs) noexcept {
     if (!rhs) {
         return false;
     }
     return strless_impl(lhs, i2cstr_view(rhs));
 }
 
-bool strstart_impl(System::String const* lhs, auto const& rhs) noexcept {
+bool strstart_impl(Il2CppString const* lhs, auto const& rhs) noexcept {
     if (!lhs || static_cast<size_t>(lhs->length) < rhs.size()) {
         return false;
     }
@@ -222,20 +222,20 @@ bool strstart_impl(System::String const* lhs, auto const& rhs) noexcept {
     return true;
 }
 
-bool i2c::strs::strstart(System::String const* lhs, std::string_view const rhs) noexcept {
+bool i2c::strs::strstart(Il2CppString const* lhs, std::string_view const rhs) noexcept {
     return strstart_impl(lhs, rhs);
 }
-bool i2c::strs::strstart(System::String const* lhs, std::u16string_view const rhs) noexcept {
+bool i2c::strs::strstart(Il2CppString const* lhs, std::u16string_view const rhs) noexcept {
     return strstart_impl(lhs, rhs);
 }
-bool i2c::strs::strstart(System::String const* lhs, System::String const* rhs) noexcept {
+bool i2c::strs::strstart(Il2CppString const* lhs, Il2CppString const* rhs) noexcept {
     if (!rhs) {
         return false;
     }
     return strstart_impl(lhs, i2cstr_view(rhs));
 }
 
-static inline bool strend_impl(System::String const* lhs, auto const& rhs) noexcept {
+static inline bool strend_impl(Il2CppString const* lhs, auto const& rhs) noexcept {
     if (!lhs || static_cast<size_t>(lhs->length) < rhs.size()) {
         return false;
     }
@@ -255,13 +255,13 @@ static inline bool strend_impl(System::String const* lhs, auto const& rhs) noexc
     return true;
 }
 
-bool i2c::strs::strend(System::String const* lhs, std::string_view const rhs) noexcept {
+bool i2c::strs::strend(Il2CppString const* lhs, std::string_view const rhs) noexcept {
     return strend_impl(lhs, rhs);
 }
-bool i2c::strs::strend(System::String const* lhs, std::u16string_view const rhs) noexcept {
+bool i2c::strs::strend(Il2CppString const* lhs, std::u16string_view const rhs) noexcept {
     return strend_impl(lhs, rhs);
 }
-bool i2c::strs::strend(System::String const* lhs, System::String const* rhs) noexcept {
+bool i2c::strs::strend(Il2CppString const* lhs, Il2CppString const* rhs) noexcept {
     if (!rhs) {
         return false;
     }

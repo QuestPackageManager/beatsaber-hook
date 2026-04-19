@@ -351,7 +351,7 @@ namespace i2c::functions {
     API_FUNC(Il2CppClass*, GenericClass_GetClass, (Il2CppGenericClass * gclass));
     API_FUNC(Il2CppClass*, GenericClass_CreateClass, (Il2CppGenericClass * gclass, bool throwOnError));
 #if defined(UNITY_2019) || defined(UNITY_2021)
-    API_FUNC(AssemblyVector*, Assembly_GetAllAssemblies, ());
+    API_FUNC(Il2CppAssemblyVector*, Assembly_GetAllAssemblies, ());
 #endif
     extern bool has_gc_funcs;
 

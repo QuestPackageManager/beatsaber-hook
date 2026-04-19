@@ -6,54 +6,54 @@
 namespace i2c::strs {
     template <typename T>
     concept convertible_to_il2cpp =
-        std::is_constructible_v<std::string_view, T> || std::is_constructible_v<std::u16string_view, T> || std::is_same_v<System::String*, T>;
+        std::is_constructible_v<std::string_view, T> || std::is_constructible_v<std::u16string_view, T> || std::is_same_v<Il2CppString*, T>;
 
     void convstr(char const* inp, char16_t* outp, int sz);
     std::size_t convstr(char16_t const* inp, char* outp, int isz, int osz);
 
-    inline std::string to_string(System::String* str) {
+    inline std::string to_string(Il2CppString* str) {
         std::string val(str->length * sizeof(wchar_t) + 1, '\0');
         auto resSize = convstr(str->chars, val.data(), str->length, val.size());
         val.resize(resSize);
         return val;
     }
-    inline std::u16string to_u16string(System::String* str) {
+    inline std::u16string to_u16string(Il2CppString* str) {
         return {str->chars, static_cast<std::size_t>(str->length)};
     }
-    inline std::wstring to_wstring(System::String* str) {
+    inline std::wstring to_wstring(Il2CppString* str) {
         return {str->chars, str->chars + str->length};
     }
-    inline std::u16string_view to_u16string_view(System::String* inst) {
+    inline std::u16string_view to_u16string_view(Il2CppString* inst) {
         return {inst->chars, inst->chars + inst->length};
     }
-    inline std::u16string_view to_u16string_view(System::String const* inst) {
+    inline std::u16string_view to_u16string_view(Il2CppString const* inst) {
         return {inst->chars, inst->chars + inst->length};
     }
 
-    System::String* alloc_str(std::string_view str);
-    System::String* alloc_str(std::u16string_view str);
+    Il2CppString* alloc_str(std::string_view str);
+    Il2CppString* alloc_str(std::u16string_view str);
 
-    System::String* strappend(std::string_view const lhs, System::String const* rhs) noexcept;
-    System::String* strappend(std::u16string_view const lhs, System::String const* rhs) noexcept;
-    System::String* strappend(System::String const* lhs, std::string_view const rhs) noexcept;
-    System::String* strappend(System::String const* lhs, std::u16string_view const rhs) noexcept;
-    System::String* strappend(System::String const* lhs, System::String const* rhs) noexcept;
+    Il2CppString* strappend(std::string_view const lhs, Il2CppString const* rhs) noexcept;
+    Il2CppString* strappend(std::u16string_view const lhs, Il2CppString const* rhs) noexcept;
+    Il2CppString* strappend(Il2CppString const* lhs, std::string_view const rhs) noexcept;
+    Il2CppString* strappend(Il2CppString const* lhs, std::u16string_view const rhs) noexcept;
+    Il2CppString* strappend(Il2CppString const* lhs, Il2CppString const* rhs) noexcept;
 
-    bool strcomp(System::String const* lhs, std::string_view const rhs) noexcept;
-    bool strcomp(System::String const* lhs, std::u16string_view const rhs) noexcept;
-    bool strcomp(System::String const* lhs, System::String const* rhs) noexcept;
+    bool strcomp(Il2CppString const* lhs, std::string_view const rhs) noexcept;
+    bool strcomp(Il2CppString const* lhs, std::u16string_view const rhs) noexcept;
+    bool strcomp(Il2CppString const* lhs, Il2CppString const* rhs) noexcept;
 
-    bool strless(System::String const* lhs, std::string_view const rhs) noexcept;
-    bool strless(System::String const* lhs, std::u16string_view const rhs) noexcept;
-    bool strless(System::String const* lhs, System::String const* rhs) noexcept;
+    bool strless(Il2CppString const* lhs, std::string_view const rhs) noexcept;
+    bool strless(Il2CppString const* lhs, std::u16string_view const rhs) noexcept;
+    bool strless(Il2CppString const* lhs, Il2CppString const* rhs) noexcept;
 
-    bool strstart(System::String const* lhs, std::string_view const rhs) noexcept;
-    bool strstart(System::String const* lhs, std::u16string_view const rhs) noexcept;
-    bool strstart(System::String const* lhs, System::String const* rhs) noexcept;
+    bool strstart(Il2CppString const* lhs, std::string_view const rhs) noexcept;
+    bool strstart(Il2CppString const* lhs, std::u16string_view const rhs) noexcept;
+    bool strstart(Il2CppString const* lhs, Il2CppString const* rhs) noexcept;
 
-    bool strend(System::String const* lhs, std::string_view const rhs) noexcept;
-    bool strend(System::String const* lhs, std::u16string_view const rhs) noexcept;
-    bool strend(System::String const* lhs, System::String const* rhs) noexcept;
+    bool strend(Il2CppString const* lhs, std::string_view const rhs) noexcept;
+    bool strend(Il2CppString const* lhs, std::u16string_view const rhs) noexcept;
+    bool strend(Il2CppString const* lhs, Il2CppString const* rhs) noexcept;
 }
 
 // C# strings can only have 'int' max length.
@@ -73,21 +73,21 @@ struct ConstString {
 
     void init() noexcept { klass = i2c::functions::defaults->string_class; }
 
-    constexpr operator System::String*() {
+    constexpr operator Il2CppString*() {
         if (!klass) {
             klass = i2c::functions::defaults->string_class;
         }
         return unsafe_cast();
     }
 
-    constexpr operator System::String const*() const {
+    constexpr operator Il2CppString const*() const {
         if (!klass) {
             const_cast<ConstString<sz>*>(this)->klass = i2c::functions::defaults->string_class;
         }
         return unsafe_cast();
     }
 
-    constexpr System::String* operator->() { return operator System::String*(); }
+    constexpr Il2CppString* operator->() { return operator Il2CppString*(); }
 
     operator std::string() const { return i2c::strs::to_string(unsafe_cast()); }
     operator std::u16string() const { return i2c::strs::to_u16string(unsafe_cast()); }
@@ -101,13 +101,13 @@ struct ConstString {
     int length = sz - 1;
     char16_t chars[sz] = {};
 
-    System::String* unsafe_cast() { return reinterpret_cast<System::String*>(&klass); }
-    System::String const* unsafe_cast() const { return reinterpret_cast<System::String const*>(&klass); }
+    Il2CppString* unsafe_cast() { return reinterpret_cast<Il2CppString*>(&klass); }
+    Il2CppString const* unsafe_cast() const { return reinterpret_cast<Il2CppString const*>(&klass); }
 };
 
 struct StringW {
-    using ptr = System::String*;
-    using const_ptr = System::String const*;
+    using ptr = Il2CppString*;
+    using const_ptr = Il2CppString const*;
 
     using value = Il2CppChar;
     using const_value = Il2CppChar const;
@@ -129,8 +129,14 @@ struct StringW {
     template <i2c::strs::convertible_to_il2cpp T>
     StringW(T str) : inst(i2c::strs::alloc_str(str)) {}
 
+#ifdef HAS_CODEGEN
+    constexpr StringW(System::String* ins) noexcept : inst(static_cast<ptr>(static_cast<void*>(ins))) {}
+#endif
+
     constexpr StringW(StringW const&) noexcept = default;
     constexpr StringW(StringW&&) noexcept = default;
+
+    constexpr StringW& operator=(StringW const&) noexcept = default;
 
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(inst)); }
 
@@ -141,7 +147,13 @@ struct StringW {
     constexpr const_ptr operator->() const noexcept { return inst; }
 
     constexpr operator bool() const noexcept { return inst != nullptr; }
-    constexpr bool operator==(std::nullptr_t rhs) const noexcept { return inst == rhs; }
+    constexpr bool operator==(std::nullptr_t) const noexcept { return !inst; }
+
+    template <i2c::strs::convertible_to_il2cpp T>
+    bool operator==(T const& rhs) const noexcept {
+        return i2c::strs::strcomp(inst, rhs);
+    }
+    bool operator==(StringW const& rhs) const noexcept { return this->operator==(rhs.inst); }
 
     template <i2c::strs::convertible_to_il2cpp T>
     StringW& operator+=(T const& rhs) noexcept {
@@ -161,12 +173,6 @@ struct StringW {
         return i2c::strs::strless(inst, rhs);
     }
     bool operator<(StringW const& rhs) const noexcept { return this->operator<(rhs.inst); }
-
-    template <i2c::strs::convertible_to_il2cpp T>
-    bool operator==(T const& rhs) const noexcept {
-        return i2c::strs::strcomp(inst, rhs);
-    }
-    bool operator==(StringW const& rhs) const noexcept { return this->operator==(rhs.inst); }
 
     template <i2c::strs::convertible_to_il2cpp T>
     bool starts_with(T const& rhs) const noexcept {
@@ -203,7 +209,7 @@ struct StringW {
 
 template <i2c::strs::convertible_to_il2cpp T>
 StringW operator+(T const lhs, StringW const& rhs) noexcept {
-    return i2c::strs::strappend(lhs, static_cast<System::String const*>(rhs));
+    return i2c::strs::strappend(lhs, static_cast<Il2CppString const*>(rhs));
 }
 
 DEFINE_IL2CPP_DEFAULT_CLASS_REF(StringW, string);

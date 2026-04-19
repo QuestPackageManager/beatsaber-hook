@@ -2,10 +2,10 @@
 
 #include "tests.hpp"
 
-static_assert(i2c::type_check::full_type<Array<int>*>);
+static_assert(i2c::type_check::full_class<Array<int>*>);
 static_assert(i2c::type_check::ptr_ref_type<Array<int>*>);
 
-static_assert(i2c::type_check::full_type<ArrayW<int>>);
+static_assert(i2c::type_check::full_class<ArrayW<int>>);
 static_assert(i2c::type_check::wrapper_ref_type<ArrayW<int>>);
 
 TEST(arrayw) {

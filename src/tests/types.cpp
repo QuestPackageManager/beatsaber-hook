@@ -56,7 +56,7 @@ TEST(class_of_checks) {
         }
 
         // Il2CppString* and StringW equality
-        auto* k_str_raw = i2c::class_of<System::String*>();
+        auto* k_str_raw = i2c::class_of<Il2CppString*>();
         auto* k_str_w = i2c::class_of<StringW>();
         auto expected_str = i2c::find_class({"System", "String"});
         if (k_str_raw == expected_str && k_str_w == expected_str) {

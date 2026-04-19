@@ -306,7 +306,7 @@ MethodInfo const* i2c::find_method(find_class_info const& class_info, find_metho
             span_vec_w(by_types->params)
         );
     }
-    // Should the slot finds also be cached?
+    // Don't cache slot finds
     if (auto by_slot = std::get_if<find_method_info::by_slot>(&info.data)) {
         auto klass = RET_DEF_UNLESS(logger, find_class(class_info));
         if (!klass->initialized_and_no_error) {

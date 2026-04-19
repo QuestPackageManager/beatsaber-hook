@@ -115,7 +115,7 @@ Il2CppClass* i2c::make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass c
     auto class_type = RET_DEF_UNLESS(logger, get_system_type(klass));
 
     // Call Type.MakeGenericType on it
-    ArrayW<System::Type*> arg_types(args.size());
+    ArrayW<Il2CppReflectionType*> arg_types(args.size());
 
     for (size_t i = 0; i < args.size(); i++) {
         if (auto arg_type = get_system_type(args[i])) {
@@ -127,7 +127,7 @@ Il2CppClass* i2c::make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass c
     }
 
     auto reflection_type =
-        RET_DEF_UNLESS(logger, run_method<System::Type*>(reinterpret_cast<Il2CppObject*>(class_type), "MakeGenericType", arg_types));
+        RET_DEF_UNLESS(logger, run_method<Il2CppReflectionType*>(reinterpret_cast<Il2CppObject*>(class_type), "MakeGenericType", arg_types));
     auto ret = RET_DEF_UNLESS(logger, functions::class_from_system_type(reflection_type));
     return ret;
 }
@@ -336,7 +336,7 @@ MethodInfo const* i2c::make_generic(MethodInfo const* method, i2c::view<Il2CppCl
         THROW_UNLESS(logger, method_object);
     }
     // Populate generic parameters into array
-    ArrayW<System::Type*> types_array(types.size());
+    ArrayW<Il2CppReflectionType*> types_array(types.size());
     int i = 0;
     for (auto klass : types) {
         types_array[i] = get_system_type(klass);

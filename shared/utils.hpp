@@ -91,6 +91,19 @@ namespace i2c {
         constexpr str_lit(char const (&str)[N]) { std::copy_n(str, N, data); }
         char data[N] = {};
     };
+
+    struct no_logger {
+        template <typename... TArgs>
+        void debug(Paper::FmtStrSrcLoc<TArgs...> const&, TArgs&&...) const {}
+        template <typename... TArgs>
+        void info(Paper::FmtStrSrcLoc<TArgs...> const&, TArgs&&...) const {}
+        template <typename... TArgs>
+        void warn(Paper::FmtStrSrcLoc<TArgs...> const&, TArgs&&...) const {}
+        template <typename... TArgs>
+        void error(Paper::FmtStrSrcLoc<TArgs...> const&, TArgs&&...) const {}
+        template <typename... TArgs>
+        void critical(Paper::FmtStrSrcLoc<TArgs...> const&, TArgs&&...) const {}
+    };
 }
 
 // function_ptr_t courtesy of DaNike
@@ -146,12 +159,12 @@ inline std::string get_config_path(modloader::ModInfo const& info) {
 #define CONCAT(x, y) CONCAT_WRAPPED(x, y)
 
 // Thank god for this GCC ({}) extension which "evaluates to the last statement"
-#define BS_HOOK_DO_UNLESS(err, logger, ...) ({                     \
-    auto&& __temp__ = (__VA_ARGS__);                               \
-    if (!__temp__) {                                               \
-        MACRO_LOG(logger, error, #__VA_ARGS__ " returned false!"); \
-        err;                                                       \
-    }                                                              \
+#define BS_HOOK_DO_UNLESS(err, logger, ...) ({                           \
+    auto&& __temp__ = (__VA_ARGS__);                                     \
+    if (!__temp__) {                                                     \
+        MACRO_LOG(logger, error, "{}", #__VA_ARGS__ " returned false!"); \
+        err;                                                             \
+    }                                                                    \
     ::i2c::unwrap_optionals(__temp__); })
 
 #define THROW_UNLESS(logger, ...) \

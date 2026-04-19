@@ -9,7 +9,7 @@ namespace i2c {
     // The purpose of the separate implementation and overloads is to preserve the compile time type of class_or_inst,
     // while still allowing for the elegant construction of find_class_info with multiple parameters (namepace + name)
     namespace detail {
-        template <type_check::full_type T = void, type_check::has_type... TArgs>
+        template <type_check::full_type T = void, type_check::has_class... TArgs>
         T run_method_impl(find_class_info klass, auto&& class_or_inst, find_method_info method, auto&&... args) {
             MethodInfo const* method_info;
             bool types_checked = method.type_checked();
@@ -149,7 +149,7 @@ namespace i2c {
     // (todo?) Will by default catch, log, and rethrow exceptions. i2c::result<T> can be used as the return type to capture them instead.
     // Will check types by default. A MethodInfo const* can be passed directly to the find_method_info to disable this.
     // If a MethodInfo is provided that is generic but not instantiated, it will be instantiated using TArgs.
-    template <type_check::full_type T = void, type_check::has_type... TArgs>
+    template <type_check::full_type T = void, type_check::has_class... TArgs>
     T run_method(find_class_info klass, find_method_info method, auto&&... args) {
         return detail::run_method_impl<T, TArgs...>(std::move(klass), nullptr, std::move(method), std::forward<decltype(args)>(args)...);
     }
