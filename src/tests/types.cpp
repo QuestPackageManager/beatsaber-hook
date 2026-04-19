@@ -2,6 +2,7 @@
 
 #include "arrayw.hpp"
 #include "find.hpp"
+#include "listw.hpp"
 #include "members.hpp"
 #include "stringw.hpp"
 #include "tests.hpp"
@@ -138,6 +139,16 @@ TEST(arrays_and_generics) {
         LOG_OK("Set List<int>._size = 1 (success)");
         auto new_size = i2c::get_field<int>(list_instance, "_size");
         LOG_OK("List<int> _size after set -> {}", new_size);
+
+        // Try casting to ListW
+        auto list_cast = i2c::cast<ListW<int>>(list_instance);
+        LOG_OK("ListW after cast -> {}", list_cast);
+
+        auto invalid_cast = i2c::cast<i2c::result<StringW>>(list_instance);
+        LOG_OK("Cast to string result -> {}", invalid_cast);
+
+        auto invalid_try_cast = i2c::try_cast<Il2CppString*>(list_instance);
+        LOG_OK("try_cast to string -> {}", fmt::ptr(invalid_try_cast));
     } catch (std::exception const& e) {
         LOG_FAIL("List<int> test failed: {}", e.what());
     }

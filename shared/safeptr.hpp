@@ -182,10 +182,10 @@ struct safe_ptr {
     /// @tparam U2 Explicitly specify if the casted safe_ptr is a unity object.
     /// @return A new safe_ptr of the cast value.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
-    requires(i2c::type_check::has_class<i2c::remove_result_t<T2>>)
+    requires(i2c::type_check::has_class<i2c::remove_result_t<T2>*>)
     [[nodiscard]] inline auto cast() const noexcept(i2c::is_result_v<T2>) {
         using R = i2c::change_result_t<T2, safe_ptr<i2c::remove_result_t<T2>, U2>>;
-        if (!this) {
+        if (!(*this)) {
             return i2c::result_or_throw<R>("A safe_ptr<T> instance is holding a null handle!");
         }
         auto* k1 = i2c::class_of<i2c::remove_result_t<T2>*>();
@@ -197,7 +197,7 @@ struct safe_ptr {
         if (k1 == k2 || i2c::functions::class_is_assignable_from(k1, k2)) {
             return R(reinterpret_cast<i2c::remove_result_t<T2>*>(handle->inst));
         }
-        throw i2c::result_or_throw<R>("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
+        return i2c::result_or_throw<R>("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
     }
 
     /// @brief Performs an il2cpp type checked cast from T to U, returning a default constructed safe_ptr if it fails.
@@ -206,7 +206,7 @@ struct safe_ptr {
     /// @return A new safe_ptr of the cast value, if successful.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
     [[nodiscard]] inline safe_ptr<T2, U2> try_cast() const noexcept {
-        return cast<i2c::result<T2>, U2>().value_or({});
+        return cast<i2c::result<T2>, U2>().value_or(safe_ptr<T2, U2>{});
     }
 
     T* ptr() {
