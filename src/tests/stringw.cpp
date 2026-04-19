@@ -20,12 +20,12 @@ TEST(stringw) {
 
     // concatenation with std::string
     StringW s4 = s3 + std::string("!");
-    LOG_OK("s4 -> {}", static_cast<std::string>(s4));
+    LOG_OK("s4 -> {}", s4);
 
     // Test operator+=
     StringW s5 = "test";
     s5 += "ing";
-    LOG_OK("s5 after += 'ing' -> {}", static_cast<std::string>(s5));
+    LOG_OK("s5 after += 'ing' -> {}", s5);
 
     // Test comparisons
     StringW s6("abc");

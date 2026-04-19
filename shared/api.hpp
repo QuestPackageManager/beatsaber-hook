@@ -437,13 +437,14 @@ namespace i2c {
     /// @tparam TArgs The arguments of the function to resolve
     /// @param name The name of the icall to resolve
     /// @return The resolved function pointer, will always be valid or throws an i2c::trace_exceptionon.
-    template <typename R, typename... TArgs>
-    function_ptr_t<R, TArgs...> resolve_icall(std::string_view name) {
+    template <typename R, typename... TArgs, bool Result = false>
+    auto resolve_icall(std::string_view name) {
+        using T = std::conditional_t<Result, result<function_ptr_t<R, TArgs...>>, function_ptr_t<R, TArgs...>>;
         functions::initialize();
         if (auto out = reinterpret_cast<function_ptr_t<R, TArgs...>>(functions::resolve_icall(name.data()))) {
-            return out;
+            return static_cast<T>(out);
         }
-        throw i2c::trace_exception(fmt::format("Failed to resolve_icall for: {}!", name.data()));
+        return result_or_throw<T>(fmt::format("Failed to resolve_icall for: {}!", name.data()));
     }
 }
 

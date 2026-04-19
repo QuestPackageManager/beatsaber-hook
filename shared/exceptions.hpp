@@ -1,8 +1,6 @@
 #pragma once
 
-#include "config.hpp"
-
-#include <source_location>
+#include "utils.hpp"
 
 // Forward declare so this can be included before Il2Cpp includes
 struct Il2CppException;
@@ -30,4 +28,16 @@ namespace i2c {
             return std::runtime_error::what();
         }
     };
+
+    template <typename T>
+    T result_or_throw(std::string msg) {
+        if constexpr (is_result_v<T>) {
+            return T(std::unexpect, std::move(msg));
+        } else {
+            throw trace_exception(msg);
+            if constexpr (!std::is_void_v<T>) {
+                return T{};
+            }
+        }
+    }
 }

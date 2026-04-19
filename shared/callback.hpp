@@ -2,6 +2,7 @@
 
 #include <set>
 #include <unordered_set>
+#include <functional>
 
 namespace detail {
     template <template <typename...> typename C, typename T>

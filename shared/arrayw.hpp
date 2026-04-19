@@ -237,9 +237,7 @@ static_assert(sizeof(ArrayW<int>) == sizeof(void*));
 static_assert(i2c::type_check::wrapper_ref_type<ArrayW<int>>);
 
 template <typename T, typename Char>
-struct fmt::is_range<ArrayW<T>, Char> {
-    static constexpr bool value = false;
-};
+struct fmt::is_range<ArrayW<T>, Char> : std::false_type {};
 
 template <typename T>
 inline std::string format_as(ArrayW<T> array) {

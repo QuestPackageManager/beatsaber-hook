@@ -6,8 +6,8 @@ include(qpm_defines.cmake)
 project(${COMPILE_ID})
 
 # C++ standard
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED 20)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED 23)
 
 # Provide compile commands so they can be used for intellisense
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -21,15 +21,15 @@ add_compile_options(-Wall -Wextra -Werror -Wno-extra-qualification -Wno-vla-cxx-
 add_compile_options(-Wno-pragma-pack)
 # add_compile_options(-Wno-vla-cxx-extension)
 # Expose definitions from qpm_defines.cmake
-add_compile_definitions(VERSION=\"${MOD_VERSION}\")
-add_compile_definitions(MOD_ID=\"${MOD_ID}\")
+add_compile_definitions(VERSION="${MOD_VERSION}")
+add_compile_definitions(MOD_ID="${MOD_ID}")
 
 add_compile_definitions(VERSION_NUMBER=300150000)
 add_compile_definitions(UNITY_6)
 
 # Trim source folder in logcat messages
 string(LENGTH "${CMAKE_CURRENT_SOURCE_DIR}/" FOLDER_LENGTH)
-add_compile_definitions("PAPER_ROOT_FOLDER_LENGTH=${FOLDER_LENGTH}")
+add_compile_definitions(PAPER_ROOT_FOLDER_LENGTH=${FOLDER_LENGTH})
 
 # Define the code directories
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)

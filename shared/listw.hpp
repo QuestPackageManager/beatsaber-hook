@@ -372,9 +372,7 @@ static_assert(sizeof(ListW<int>) == sizeof(void*));
 static_assert(i2c::type_check::wrapper_ref_type<ListW<int>>);
 
 template <typename T, typename Char>
-struct fmt::is_range<ListW<T>, Char> {
-    static constexpr bool value = false;
-};
+struct fmt::is_range<ListW<T>, Char> : std::false_type {};
 
 template <typename T>
 inline std::string format_as(ListW<T> list) {

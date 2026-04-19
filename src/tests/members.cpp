@@ -16,6 +16,13 @@ TEST(basic_creation_and_methods) {
         LOG_FAIL("Object.ToString() test failed: {}", e.what());
     }
 
+    auto res = i2c::new_ctor<i2c::result<Il2CppObject*>>();
+    if (res) {
+        LOG_OK("Created System.Object (with result): {}", fmt::ptr(res.value()));
+    } else {
+        LOG_FAIL("System.Object creation failed (with result): {}", res.error());
+    }
+
     // String.Concat test
     try {
         StringW s1("Hello ");
@@ -41,6 +48,19 @@ TEST(runmethodrethrow_on_throwing_method) {
     }
 }
 
+// Test invoking a C# method that will throw and using result ypetype
+TEST(runmethod_with_result_on_throwing_method) {
+    LOG_OK("Starting exception handling tests (invoke C# method that throws)");
+
+    // System.Int32.Parse will throw FormatException for non-numeric input
+    auto val = i2c::run_method<i2c::result<int>>({"System", "Int32"}, "Parse", StringW("notanint"));
+    if (val) {
+        LOG_FAIL("Unexpected valid result from Int32.Parse, value: {}", val.value());
+    } else {
+        LOG_OK("Got error from Int32.Parse: {}", val.error());
+    }
+}
+
 TEST(get_set_field_on_non_generic) {
     LOG_OK("Starting non-generic get/set field test");
 
@@ -56,7 +76,7 @@ TEST(get_set_field_on_non_generic) {
                 auto val = i2c::get_field<int>(instance, f_name);
                 LOG_OK("Read field '{}' -> {}", f_name, val);
                 // Try setting it to val+1 (defensive)
-                i2c::set_field<int>(instance, f_name, val + 1);
+                i2c::set_field(instance, f_name, val + 1);
                 LOG_OK("Successfully set field '{}' -> {}", f_name, val + 1);
                 auto new_val = i2c::get_field<int>(instance, f_name);
                 LOG_OK("Read back field '{}' -> {}", f_name, new_val);
@@ -81,13 +101,25 @@ TEST(property_get_set) {
         // Test System.Text.StringBuilder.Length getter/setter
         auto sb = i2c::new_ctor({"System.Text", "StringBuilder"});
 
+        auto len_res = i2c::get_property<i2c::result<int>>(sb, "Length");
+        LOG_OK("StringBuilder.Length result -> {}", len_res);
+
         auto len = i2c::get_property<int>(sb, "Length");
         LOG_OK("StringBuilder.Length initial -> {}", len);
 
-        i2c::set_property<int>(sb, "Length", 5);
+        i2c::set_property(sb, "Length", 5);
         LOG_OK("Called set_Length(5) on StringBuilder");
         auto new_len = i2c::get_property<int>(sb, "Length");
         LOG_OK("StringBuilder.Length after set -> {}", new_len);
+
+        auto set_res = i2c::set_property<i2c::result<>>(sb, "Length", 5);
+        if (!set_res) {
+            LOG_FAIL("Error calling set_Length(10) on StringBuilder with result! {}", set_res.error());
+        } else {
+            LOG_OK("Called set_Length(10) on StringBuilder");
+            auto new_len_res = i2c::get_property<i2c::result<int>>(sb, "Length");
+            LOG_OK("StringBuilder.Length after set -> {}", new_len_res);
+        }
     } catch (std::exception const& e) {
         LOG_FAIL("StringBuilder property tests failed: {}", e.what());
     }

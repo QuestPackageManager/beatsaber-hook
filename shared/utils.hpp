@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "paper2_scotland2/shared/backtrace.hpp"
 
+#include <expected>
 #include <optional>
 #include <string_view>
 #include <thread>
@@ -104,6 +105,38 @@ namespace i2c {
         template <typename... TArgs>
         void critical(Paper::FmtStrSrcLoc<TArgs...> const&, TArgs&&...) const {}
     };
+
+    template <typename T = void>
+    using result = std::expected<T, std::string>;
+
+    template <typename T, typename R = void>
+    concept maybe_result = std::is_same_v<T, R> || std::is_same_v<T, result<R>>;
+
+    template <typename T>
+    struct remove_result {
+        using type = T;
+    };
+    template <typename T>
+    struct remove_result<result<T>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using remove_result_t = remove_result<T>::type;
+
+    template <typename T>
+    constexpr bool is_result_v = !std::is_same_v<T, remove_result_t<T>>;
+
+    template <typename T, typename R>
+    using change_result_t = std::conditional_t<is_result_v<T>, result<R>, R>;
+}
+
+// fmt is weird - this needs to be in the std namespace because the underlying type for result is in std
+namespace std {
+    template <typename T>
+    std::string format_as(i2c::result<T> res) {
+        return res ? fmt::format("{}", res.value()) : res.error();
+    }
 }
 
 // function_ptr_t courtesy of DaNike
@@ -168,7 +201,10 @@ inline std::string get_config_path(modloader::ModInfo const& info) {
     ::i2c::unwrap_optionals(__temp__); })
 
 #define THROW_UNLESS(logger, ...) \
-    BS_HOOK_DO_UNLESS(throw i2c::trace_exception(#__VA_ARGS__ " returned false!"), logger, __VA_ARGS__)
+    BS_HOOK_DO_UNLESS(throw ::i2c::trace_exception(#__VA_ARGS__ " returned false!"), logger, __VA_ARGS__)
+
+#define RES_OR_THROW_UNLESS(type, logger, ...) \
+    BS_HOOK_DO_UNLESS(return ::i2c::result_or_throw<type>(#__VA_ARGS__ " returned false!"), logger, __VA_ARGS__)
 
 // Logs error and RETURNS argument 1 IFF argument 2 boolean evaluates as false; else EVALUATES to argument 2
 #define RET_UNLESS(retval, logger, ...) \

@@ -134,7 +134,7 @@ TEST(arrays_and_generics) {
         LOG_OK("List<int> _size before set -> {}", size);
 
         // Try setting the _size field to 1 and read back
-        i2c::set_field<int>(list_instance, "_size", 1);
+        i2c::set_field(list_instance, "_size", 1);
         LOG_OK("Set List<int>._size = 1 (success)");
         auto new_size = i2c::get_field<int>(list_instance, "_size");
         LOG_OK("List<int> _size after set -> {}", new_size);
