@@ -86,6 +86,7 @@ struct ArrayW {
     ptr operator->() noexcept { return val; }
     const_ptr operator->() const noexcept { return val; }
 
+    operator bool() noexcept { return val != nullptr; }
     operator bool() const noexcept { return val != nullptr; }
 
     [[nodiscard]] il2cpp_array_size_t size() const noexcept { return val->max_length; }
@@ -164,7 +165,10 @@ struct ArrayW {
     template <typename... TArgs>
     requires(std::is_default_constructible_v<value> && std::is_copy_constructible_v<value>)
     value front_or_default(TArgs&&... args) const {
-        auto itr = std::find_if(begin(), end(), std::forward<TArgs>(args)...);
+        auto itr = begin();
+        if constexpr (sizeof...(TArgs) > 0) {
+            itr = find_if(std::forward<TArgs>(args)...);
+        }
         if (itr == end()) {
             return {};
         }
@@ -179,7 +183,10 @@ struct ArrayW {
     template <typename... TArgs>
     requires(std::is_default_constructible_v<value> && std::is_copy_constructible_v<value>)
     value back_or_default(TArgs&&... args) const {
-        auto itr = std::find_if(rbegin(), rend(), std::forward<TArgs>(args)...);
+        auto itr = rbegin();
+        if constexpr (sizeof...(TArgs) > 0) {
+            itr = rfind_if(std::forward<TArgs>(args)...);
+        }
         if (itr == rend()) {
             return {};
         }

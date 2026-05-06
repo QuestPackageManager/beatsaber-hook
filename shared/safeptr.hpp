@@ -83,6 +83,7 @@ namespace i2c::detail {
         T* operator->() noexcept { return ptr; }
         T* const operator->() const noexcept { return ptr; }
 
+        constexpr operator bool() noexcept { return ptr != nullptr; }
         constexpr operator bool() const noexcept { return ptr != nullptr; }
 
        private:
@@ -223,6 +224,16 @@ struct safe_ptr {
     }
 
     /// @brief Returns false if this is a defaultly constructed safe_ptr or if the held pointer evaluates to false.
+    operator bool() noexcept {
+        if (!handle || !handle->inst) {
+            return false;
+        }
+        // If Unity, check m_CachedPtr, which is the first field in UnityEngine.Object with an offset of 0x10
+        if (U && !*reinterpret_cast<void* const*>(reinterpret_cast<char const*>(ptr()) + 0x10)) {
+            return false;
+        }
+        return true;
+    }
     operator bool() const noexcept {
         if (!handle || !handle->inst) {
             return false;

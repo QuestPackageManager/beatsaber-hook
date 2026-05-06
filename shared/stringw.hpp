@@ -139,6 +139,7 @@ struct StringW {
     constexpr StringW& operator=(StringW const&) noexcept = default;
 
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(inst)); }
+    constexpr bool operator==(std::nullptr_t) const noexcept { return !inst; }
 
     constexpr operator ptr() const noexcept { return inst; }
     constexpr operator const_ptr() const noexcept { return inst; }
@@ -146,8 +147,8 @@ struct StringW {
     constexpr ptr operator->() noexcept { return inst; }
     constexpr const_ptr operator->() const noexcept { return inst; }
 
+    constexpr operator bool() noexcept { return inst != nullptr; }
     constexpr operator bool() const noexcept { return inst != nullptr; }
-    constexpr bool operator==(std::nullptr_t) const noexcept { return !inst; }
 
     template <i2c::strs::convertible_to_il2cpp T>
     bool operator==(T const& rhs) const noexcept {

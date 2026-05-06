@@ -88,6 +88,9 @@ TEST(arrayw) {
     auto front_def = d.front_or_default([](int x) { return x == 2; });
     LOG_OK("d.front_or_default(x == 2) -> {}", front_def);
 
+    auto front_def2 = d.front_or_default();
+    LOG_OK("d.front_or_default() -> {}", front_def2);
+
     auto back_def = d.back_or_default([](int x) { return x == 4; });
     LOG_OK("d.back_or_default(x == 4) -> {}", back_def);
 

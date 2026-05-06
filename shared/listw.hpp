@@ -88,6 +88,8 @@ struct ListW {
     }
 
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(val)); }
+    constexpr bool operator==(ListW const&) const noexcept = default;
+    constexpr bool operator==(std::nullptr_t) const noexcept { return !val; }
 
     operator std::span<value>() { return ref_to(); }
     operator std::span<const_value> const() const { return ref_to(); }
@@ -98,9 +100,8 @@ struct ListW {
     ptr operator->() noexcept { return val; }
     const_ptr operator->() const noexcept { return val; }
 
+    operator bool() noexcept { return val != nullptr; }
     operator bool() const noexcept { return val != nullptr; }
-    constexpr bool operator==(ListW const&) const noexcept = default;
-    constexpr bool operator==(std::nullptr_t) const noexcept { return !val; }
 
     [[nodiscard]] inline il2cpp_array_size_t size() const noexcept { return val->_size; }
     inline bool empty() const noexcept { return size() == 0; }
@@ -178,7 +179,10 @@ struct ListW {
     template <typename... TArgs>
     requires(std::is_default_constructible_v<value> && std::is_copy_constructible_v<value>)
     value front_or_default(TArgs&&... args) const {
-        auto itr = find_if(std::forward<TArgs>(args)...);
+        auto itr = begin();
+        if constexpr (sizeof...(TArgs) > 0) {
+            itr = find_if(std::forward<TArgs>(args)...);
+        }
         if (itr == end()) {
             return {};
         }
@@ -193,7 +197,10 @@ struct ListW {
     template <typename... TArgs>
     requires(std::is_default_constructible_v<value> && std::is_copy_constructible_v<value>)
     value back_or_default(TArgs&&... args) const {
-        auto itr = rfind_if(std::forward<TArgs>(args)...);
+        auto itr = rbegin();
+        if constexpr (sizeof...(TArgs) > 0) {
+            itr = rfind_if(std::forward<TArgs>(args)...);
+        }
         if (itr == rend()) {
             return {};
         }
