@@ -15,10 +15,17 @@ namespace i2c {
     auto&& unwrap_optionals(T&& arg) noexcept {
         return arg;
     }
-
     template <typename T>
     auto&& unwrap_optionals(std::optional<T>&& arg) {
         return *arg;
+    }
+    template <typename T>
+    auto&& unwrap_optionals(std::expected<T, std::string>&& arg) {
+        if constexpr (std::is_void_v<T>) {
+            return arg;
+        } else {
+            return *arg;
+        }
     }
 
     template <typename... TArgs>
@@ -198,7 +205,7 @@ inline std::string get_config_path(modloader::ModInfo const& info) {
         MACRO_LOG(logger, error, "{}", #__VA_ARGS__ " returned false!"); \
         err;                                                             \
     }                                                                    \
-    ::i2c::unwrap_optionals(__temp__); })
+    ::i2c::unwrap_optionals(std::move(__temp__)); })
 
 #define THROW_UNLESS(logger, ...) \
     BS_HOOK_DO_UNLESS(throw ::i2c::trace_exception(#__VA_ARGS__ " returned false!"), logger, __VA_ARGS__)
