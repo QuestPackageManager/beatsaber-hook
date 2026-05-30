@@ -3,10 +3,24 @@
 #include "api.hpp"
 #include "types.hpp"
 
+#ifdef HAS_CODEGEN
+namespace System {
+    class String;
+}
+#endif
+
 namespace i2c::strs {
+#ifdef HAS_CODEGEN
+    using str_t = System::String*;
+    using const_str_t = System::String const*;
+#else
+    using str_t = Il2CppString*;
+    using const_str_t = Il2CppString const*;
+#endif
+
     template <typename T>
     concept convertible_to_il2cpp =
-        std::is_constructible_v<std::string_view, T> || std::is_constructible_v<std::u16string_view, T> || std::is_same_v<Il2CppString*, T>;
+        std::is_constructible_v<std::string_view, T> || std::is_constructible_v<std::u16string_view, T> || std::is_same_v<str_t, T>;
 
     void convstr(char const* inp, char16_t* outp, int sz);
     std::size_t convstr(char16_t const* inp, char* outp, int isz, int osz);
@@ -54,11 +68,42 @@ namespace i2c::strs {
     bool strend(Il2CppString const* lhs, std::string_view const rhs) noexcept;
     bool strend(Il2CppString const* lhs, std::u16string_view const rhs) noexcept;
     bool strend(Il2CppString const* lhs, Il2CppString const* rhs) noexcept;
+
+#ifdef HAS_CODEGEN
+    inline Il2CppString* strappend(std::string_view const lhs, System::String const* rhs) noexcept {
+        return strappend(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+    inline Il2CppString* strappend(std::u16string_view const lhs, System::String const* rhs) noexcept {
+        return strappend(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+    inline Il2CppString* strappend(Il2CppString const* lhs, System::String const* rhs) noexcept {
+        return strappend(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+
+    inline bool strcomp(Il2CppString const* lhs, System::String const* rhs) noexcept {
+        return strcomp(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+
+    inline bool strless(Il2CppString const* lhs, System::String const* rhs) noexcept {
+        return strless(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+
+    inline bool strstart(Il2CppString const* lhs, System::String const* rhs) noexcept {
+        return strstart(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+
+    inline bool strend(Il2CppString const* lhs, System::String const* rhs) noexcept {
+        return strend(lhs, reinterpret_cast<Il2CppString const*>(rhs));
+    }
+#endif
 }
 
 // C# strings can only have 'int' max length.
 template <int sz>
 struct ConstString {
+    using ptr = i2c::strs::str_t;
+    using const_ptr = i2c::strs::const_str_t;
+
     // Manually allocated string, dtor destructs in place
     ConstString(char const (&st)[sz]) { i2c::strs::convstr(st, chars, length); }
     constexpr ConstString(char16_t const (&st)[sz]) noexcept {
@@ -73,21 +118,21 @@ struct ConstString {
 
     void init() noexcept { klass = i2c::functions::defaults->string_class; }
 
-    constexpr operator Il2CppString*() {
+    constexpr operator ptr() {
         if (!klass) {
             klass = i2c::functions::defaults->string_class;
         }
         return unsafe_cast();
     }
 
-    constexpr operator Il2CppString const*() const {
+    constexpr operator const_ptr() const {
         if (!klass) {
             const_cast<ConstString<sz>*>(this)->klass = i2c::functions::defaults->string_class;
         }
         return unsafe_cast();
     }
 
-    constexpr Il2CppString* operator->() { return operator Il2CppString*(); }
+    constexpr ptr operator->() { return operator ptr(); }
 
     operator std::string() const { return i2c::strs::to_string(unsafe_cast()); }
     operator std::u16string() const { return i2c::strs::to_u16string(unsafe_cast()); }
@@ -101,13 +146,13 @@ struct ConstString {
     int length = sz - 1;
     char16_t chars[sz] = {};
 
-    Il2CppString* unsafe_cast() { return reinterpret_cast<Il2CppString*>(&klass); }
-    Il2CppString const* unsafe_cast() const { return reinterpret_cast<Il2CppString const*>(&klass); }
+    ptr unsafe_cast() { return reinterpret_cast<ptr>(&klass); }
+    const_ptr unsafe_cast() const { return reinterpret_cast<const_ptr>(&klass); }
 };
 
 struct StringW {
-    using ptr = Il2CppString*;
-    using const_ptr = Il2CppString const*;
+    using ptr = i2c::strs::str_t;
+    using const_ptr = i2c::strs::const_str_t;
 
     using value = Il2CppChar;
     using const_value = Il2CppChar const;
@@ -121,16 +166,16 @@ struct StringW {
 
     constexpr StringW() noexcept : inst(nullptr) {}
     constexpr StringW(std::nullptr_t npt) noexcept : inst(npt) {}
-    constexpr StringW(void* ins) noexcept : inst(static_cast<ptr>(ins)) {}
-    constexpr StringW(ptr ins) noexcept : inst(ins) {}
+    constexpr StringW(void* ins) noexcept : inst(static_cast<Il2CppString*>(ins)) {}
+    constexpr StringW(Il2CppString* ins) noexcept : inst(ins) {}
     template <int sz>
-    constexpr StringW(ConstString<sz>& str) noexcept : inst(static_cast<ptr>(str)) {}
+    constexpr StringW(ConstString<sz>& str) noexcept : StringW(static_cast<ptr>(str)) {}
     // Dynamically allocated string
     template <i2c::strs::convertible_to_il2cpp T>
     StringW(T str) : inst(i2c::strs::alloc_str(str)) {}
 
 #ifdef HAS_CODEGEN
-    constexpr StringW(System::String* ins) noexcept : inst(static_cast<ptr>(static_cast<void*>(ins))) {}
+    constexpr StringW(System::String* ins) noexcept : inst(static_cast<Il2CppString*>(static_cast<void*>(ins))) {}
 #endif
 
     constexpr StringW(StringW const&) noexcept = default;
@@ -141,11 +186,11 @@ struct StringW {
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(inst)); }
     constexpr bool operator==(std::nullptr_t) const noexcept { return !inst; }
 
-    constexpr operator ptr() const noexcept { return inst; }
-    constexpr operator const_ptr() const noexcept { return inst; }
+    constexpr operator ptr() const noexcept { return static_cast<ptr>(static_cast<void*>(inst)); }
+    constexpr operator const_ptr() const noexcept { return static_cast<const_ptr>(static_cast<void*>(inst)); }
 
-    constexpr ptr operator->() noexcept { return inst; }
-    constexpr const_ptr operator->() const noexcept { return inst; }
+    constexpr ptr operator->() noexcept { return static_cast<ptr>(static_cast<void*>(inst)); }
+    constexpr const_ptr operator->() const noexcept { return static_cast<const_ptr>(static_cast<void*>(inst)); }
 
     constexpr operator bool() noexcept { return inst != nullptr; }
     constexpr operator bool() const noexcept { return inst != nullptr; }
@@ -205,13 +250,18 @@ struct StringW {
     operator std::u16string_view() { return i2c::strs::to_u16string_view(inst); }
 
    private:
-    ptr inst;
+    Il2CppString* inst;
 };
 
 template <i2c::strs::convertible_to_il2cpp T>
 StringW operator+(T const lhs, StringW const& rhs) noexcept {
-    return i2c::strs::strappend(lhs, static_cast<Il2CppString const*>(rhs));
+    return i2c::strs::strappend(lhs, static_cast<Il2CppString const*>(rhs.convert()));
 }
+#ifdef HAS_CODEGEN
+inline StringW operator+(System::String const* lhs, StringW const& rhs) noexcept {
+    return i2c::strs::strappend(static_cast<Il2CppString const*>(static_cast<void const*>(lhs)), static_cast<Il2CppString const*>(rhs.convert()));
+}
+#endif
 
 DEFINE_IL2CPP_DEFAULT_CLASS_REF(StringW, string);
 
