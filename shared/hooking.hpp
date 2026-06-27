@@ -117,7 +117,7 @@ namespace i2c {
     }
 
     template <detail::hook_struct T, detail::is_logger L>
-    void install_hook(L& logger = ::i2c::logger, void* addr = nullptr) {
+    void install_hook(L&& logger = ::i2c::logger, void* addr = nullptr) {
         if (!addr) {
             auto info_or_addr = T::addr();
             if constexpr (std::is_same_v<decltype(info_or_addr), void*>) {
@@ -154,13 +154,13 @@ namespace i2c {
     }
 
     template <detail::hook_struct T, detail::is_logger L>
-    void install_hook_orig(L& logger = ::i2c::logger, void* addr = nullptr) {
+    void install_hook_orig(L&& logger = ::i2c::logger, void* addr = nullptr) {
         T::install_priority.is_final = true;
         install_hook<T>(logger, addr);
     }
 
     template <detail::hook_struct T, detail::is_logger L>
-    void uninstall_hook(L& logger = ::i2c::logger) {
+    void uninstall_hook(L&& logger = ::i2c::logger) {
         MACRO_LOG(logger, info, "Uninstalling hook: {}", T::name());
         auto uninstall_result = flamingo::Uninstall(T::install_handle);
         if (uninstall_result.has_value()) {
