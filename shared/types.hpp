@@ -5,7 +5,29 @@
 #include "exceptions.hpp"
 #include "utils.hpp"
 
+#ifdef HAS_CODEGEN
+namespace System {
+    class Type;
+}
+#endif
+
 namespace i2c {
+    // A simple wrapper for get_system_type and cs_type_of for easier use with cordl
+    struct cs_type_wrapper {
+        constexpr inline cs_type_wrapper(void* t) noexcept : val(t) {}
+        constexpr inline void* convert() const noexcept { return const_cast<void*>(val); }
+
+        constexpr cs_type_wrapper(Il2CppReflectionType* t) : val(t) {}
+        constexpr operator Il2CppReflectionType*() const noexcept { return static_cast<Il2CppReflectionType*>(convert()); }
+
+#ifdef HAS_CODEGEN
+        constexpr cs_type_wrapper(System::Type* t) : val(t) {}
+        constexpr operator System::Type*() const noexcept { return static_cast<System::Type*>(convert()); }
+#endif
+
+        void* val;
+    };
+
     // Returns the first matching class from the given namespace and type_name by searching through all assemblies that are loaded. (Cached)
     Il2CppClass* get_class_from_name(std::string_view namespaze, std::string_view type_name) noexcept;
 
@@ -154,7 +176,7 @@ namespace i2c {
     }
 
     template <typename T>
-    inline Il2CppReflectionType* cs_type_of() {
+    inline cs_type_wrapper cs_type_of() {
         return get_system_type(class_of<T>());
     }
 
