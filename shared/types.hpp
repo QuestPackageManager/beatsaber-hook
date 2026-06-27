@@ -66,6 +66,10 @@ namespace i2c {
         struct value_type_trait {
             static constexpr bool value = false;
         };
+        template <typename T>
+        struct value_type_trait<T&> {
+            static constexpr bool value = value_type_trait<T>::value;
+        };
 
         template <typename T>
         struct ref_type_trait {
@@ -76,6 +80,10 @@ namespace i2c {
         requires(value_type_trait<T>::value)
         struct ref_type_trait<T*> {
             static constexpr bool value = true;
+        };
+        template <typename T>
+        struct ref_type_trait<T&> {
+            static constexpr bool value = ref_type_trait<T>::value;
         };
     }
 
