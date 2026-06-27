@@ -97,7 +97,7 @@ namespace UnityEngine {
 }
 namespace i2c::detail {
     template <typename T, bool U = false>
-    constexpr bool unity_guess = std::derived_from<T, UnityEngine::Object>;
+    constexpr bool unity_guess = std::derived_from<std::remove_pointer_t<T>, UnityEngine::Object>;
 }
 #else
 namespace i2c::detail {
@@ -112,25 +112,19 @@ namespace i2c::detail {
 /// @tparam T The type of the instance to wrap (without a pointer).
 /// @tparam U Explicitly specify if the wrapped type is a Unity object.
 template <typename T, bool U = i2c::detail::unity_guess<T>>
-requires(i2c::type_check::ref_type<T*>)
+requires(i2c::type_check::ref_type<T>)
 struct safe_ptr {
     /// @brief Default constructor. Should be paired with emplace or = to ensure validity.
     safe_ptr() = default;
-    /// @brief Default move constructor. Moves the internal handle and keeps reference count the same.
-    safe_ptr(safe_ptr&& other) = default;
     /// @brief Copy constructor copies the HANDLE, that is, the held pointer remains the same.
     /// Note that this means if you modify one safe_ptr's held instance, all others that point to the same location will also reflect this change.
     /// Has a small performance overhead due to updating the reference count.
     safe_ptr(safe_ptr const& other) : handle(other.handle) {}
-    /// @brief Construct a safe_ptr<T> with the provided instance pointer (which may be nullptr).
+    /// @brief Default move constructor. Moves the internal handle and keeps reference count the same.
+    safe_ptr(safe_ptr&& other) = default;
+    /// @brief Construct a safe_ptr<T> with the provided instance pointer or wrapper (which may be null).
     /// If you wish to wrap a non-existent pointer (ex, use as a default constructor) see the 0 arg constructor instead.
-    safe_ptr(T* wrappable_inst)
-    requires(!i2c::type_check::wrapper_type<T>)
-        : handle(wrapper::allocate(wrappable_inst)) {}
-    /// @brief Construct a safe_ptr<T> with the provided wrapper
-    safe_ptr(T&& wrappable_inst)
-    requires(i2c::type_check::wrapper_type<T>)
-        : handle(wrapper::allocate(wrappable_inst.convert())) {}
+    safe_ptr(T const& inst) : handle(wrapper::allocate(inst)) {}
     /// @brief Destructor. Destroys the internal wrapper type, if necessary.
     ~safe_ptr() { clear(); }
 
@@ -156,26 +150,21 @@ struct safe_ptr {
 
     /// @brief Emplace a new value into this safe_ptr, freeing an existing one, if it exists.
     /// @param other The instance to emplace.
-    inline void emplace(T& other) {
-        clear();
-        handle = wrapper::allocate(std::addressof(other));
-    }
-
-    /// @brief Emplace a new value into this safe_ptr, freeing an existing one, if it exists.
-    /// @param other The instance to emplace.
-    inline void emplace(T* other) {
+    inline void emplace(T const& other) {
         clear();
         handle = wrapper::allocate(other);
     }
 
-    inline safe_ptr& operator=(T* other) {
+    inline safe_ptr& operator=(T const& other) {
         emplace(other);
         return *this;
     }
-    inline safe_ptr& operator=(T& other) {
-        emplace(other);
+    inline safe_ptr& operator=(safe_ptr const& other) {
+        handle = other.handle;
         return *this;
     }
+
+    constexpr void* convert() const noexcept { return const_cast<void*>(handle->inst); }
 
     /// @brief Performs an il2cpp type checked cast from T to U.
     /// This function will throw an exception if the cast fails. i2c::result<T2> can be used to capture errors instead.
@@ -183,20 +172,24 @@ struct safe_ptr {
     /// @tparam U2 Explicitly specify if the casted safe_ptr is a unity object.
     /// @return A new safe_ptr of the cast value.
     template <typename T2, bool U2 = i2c::detail::unity_guess<T2, U>>
-    requires(i2c::type_check::has_class<i2c::remove_result_t<T2>*>)
+    requires(i2c::type_check::has_class<i2c::remove_result_t<T2>>)
     [[nodiscard]] inline auto cast() const noexcept(i2c::is_result_v<T2>) {
         using R = i2c::change_result_t<T2, safe_ptr<i2c::remove_result_t<T2>, U2>>;
         if (!(*this)) {
             return i2c::result_or_throw<R>("A safe_ptr<T> instance is holding a null handle!");
         }
-        auto* k1 = i2c::class_of<i2c::remove_result_t<T2>*>();
+        auto* k1 = i2c::class_of<i2c::remove_result_t<T2>>();
         auto* k2 = *reinterpret_cast<Il2CppClass**>(handle->inst);
         if (!k1 || !k2) {
             return i2c::result_or_throw<R>("Invalid class in safe_ptr cast!");
         }
         i2c::functions::initialize();
         if (k1 == k2 || i2c::functions::class_is_assignable_from(k1, k2)) {
-            return R(reinterpret_cast<i2c::remove_result_t<T2>*>(handle->inst));
+            if constexpr (i2c::type_check::wrapper_type<i2c::remove_result_t<T2>>) {
+                return R(i2c::remove_result_t<T2>(handle->inst));
+            } else {
+                return R(reinterpret_cast<i2c::remove_result_t<T2>>(handle->inst));
+            }
         }
         return i2c::result_or_throw<R>("The type could not be cast safely! Check your safe_ptr/count_ptr cast calls!");
     }
@@ -210,36 +203,25 @@ struct safe_ptr {
         return cast<i2c::result<T2>, U2>().value_or(safe_ptr<T2, U2>{});
     }
 
-    T* ptr() {
+    T ptr() { return const_cast<T>(reinterpret_cast<safe_ptr const*>(this)->ptr()); }
+    T const ptr() const {
         if (!handle) {
             throw i2c::trace_exception("A safe_ptr<T> instance is holding a null handle!");
         }
-        return handle->inst;
-    }
-    T* const ptr() const {
-        if (!handle) {
-            throw i2c::trace_exception("A safe_ptr<T> instance is holding a null handle!");
+        if constexpr (i2c::type_check::wrapper_type<T>) {
+            return T(handle->inst);
+        } else {
+            return reinterpret_cast<T>(handle->inst);
         }
-        return handle->inst;
     }
 
     /// @brief Returns false if this is a defaultly constructed safe_ptr or if the held pointer evaluates to false.
-    operator bool() noexcept {
-        if (!handle || !handle->inst) {
-            return false;
-        }
-        // If Unity, check m_CachedPtr, which is the first field in UnityEngine.Object with an offset of 0x10
-        if (U && !*reinterpret_cast<void* const*>(reinterpret_cast<char const*>(ptr()) + 0x10)) {
-            return false;
-        }
-        return true;
-    }
     operator bool() const noexcept {
         if (!handle || !handle->inst) {
             return false;
         }
         // If Unity, check m_CachedPtr, which is the first field in UnityEngine.Object with an offset of 0x10
-        if (U && !*reinterpret_cast<void* const*>(reinterpret_cast<char const*>(ptr()) + 0x10)) {
+        if (U && !*reinterpret_cast<void* const*>(reinterpret_cast<char const*>(convert()) + 0x10)) {
             return false;
         }
         return true;
@@ -251,27 +233,29 @@ struct safe_ptr {
         if (!other || !(*this)) {
             return static_cast<bool>(other) == static_cast<bool>(*this);
         }
-        return reinterpret_cast<T const*>(other.ptr()) == handle->inst;
+        return other.convert() == convert();
     }
 
     template <typename T2 = T>
     requires(std::is_convertible_v<T2, T> || std::is_same_v<T2, T>)
-    bool operator==(T2 const* other) const {
+    bool operator==(T2 const other) const {
         if (!other || !(*this)) {
             return static_cast<bool>(other) == static_cast<bool>(*this);
         }
-        return reinterpret_cast<T const*>(other) == handle->inst;
+        if constexpr (i2c::type_check::wrapper_type<T2>) {
+            return other.convert() == convert();
+        } else {
+            return reinterpret_cast<void const* const>(other) == handle->inst;
+        }
     }
 
     /// @brief Dereferences the instance pointer to a reference type of the held instance.
-    [[nodiscard]] T& operator*() { return *ptr(); }
-    [[nodiscard]] T& operator*() const { return *ptr(); }
-    [[nodiscard]] T* operator->() { return ptr(); }
-    [[nodiscard]] T* const operator->() const { return ptr(); }
-    /// @brief Explicitly cast this instance to a T*.
-    /// Note, however, that the lifetime of this returned T* is not longer than the lifetime of this instance.
+    [[nodiscard]] T operator->() { return ptr(); }
+    [[nodiscard]] T const operator->() const { return ptr(); }
+    /// @brief Explicitly cast this instance to a T.
+    /// Note, however, that the lifetime of this returned T is not longer than the lifetime of this instance.
     /// Consider passing a safe_ptr reference or copy instead.
-    [[nodiscard]] explicit operator T* const() const { return ptr(); }
+    [[nodiscard]] explicit operator T const() const { return ptr(); }
 
    private:
     struct wrapper {
@@ -279,17 +263,21 @@ struct safe_ptr {
         wrapper() = delete;
         ~wrapper() = delete;
 
-        static wrapper* allocate(T* instance) {
+        static wrapper* allocate(T const& instance) {
             // It should be safe to assume that gc_alloc_fixed returns a non-null pointer. If it does return null, we have a pretty big issue.
             i2c::functions::initialize();
             if (!i2c::functions::has_gc_funcs) {
                 throw i2c::trace_exception("A safe_ptr<T> instance was created too early or a necessary GC function was not found!");
             }
             auto allocated = CRASH_UNLESS(reinterpret_cast<wrapper*>(i2c::functions::gc_alloc_fixed(sizeof(wrapper))));
-            allocated->inst = instance;
+            if constexpr (i2c::type_check::wrapper_type<T>) {
+                allocated->inst = instance.convert();
+            } else {
+                allocated->inst = reinterpret_cast<void*>(instance);
+            }
             return allocated;
         }
-        T* inst;
+        void* inst;
     };
 
     i2c::detail::count_ptr<wrapper> handle;

@@ -12,10 +12,10 @@ TEST(safeptr_and_countpointer) {
     LOG_OK("Created stack Il2CppObject inst at {}", fmt::ptr(&inst));
 
     // Default constructed safe_ptr
-    safe_ptr<Il2CppObject> a;
+    safe_ptr<Il2CppObject*> a;
     LOG_OK("Created default safe_ptr<Il2CppObject> a (bool: {})", static_cast<bool>(a));
 
-    safe_ptr<Il2CppObject> b(&inst);
+    safe_ptr<Il2CppObject*> b(&inst);
     LOG_OK("Created safe_ptr<Il2CppObject> b(&inst). Counter for &inst -> {}", i2c::detail::get_count(&inst));
 
     {
@@ -31,22 +31,26 @@ TEST(safeptr_and_countpointer) {
     // Log pointer addresses rather than treating object as a value
     LOG_OK("b.ptr() -> {}", fmt::ptr(b.ptr()));
 
+    // Test assignment
+    a = b.ptr();
+    LOG_OK("a.ptr() -> {}", fmt::ptr(a.ptr()));
+
     // Create a temporary copy
     {
-        safe_ptr<Il2CppObject> c(b);
+        safe_ptr<Il2CppObject*> c(b);
         LOG_OK("Copied safe_ptr c(b). Counter for &inst -> {} | c.ptr() -> {}", i2c::detail::get_count(&inst), fmt::ptr(c.ptr()));
     }
     LOG_OK("After destroying copy, Counter for &inst -> {}", i2c::detail::get_count(&inst));
 
     // Pass by reference-like usage
-    auto test_ref = [&](safe_ptr<Il2CppObject>& ref) {
+    auto test_ref = [&](safe_ptr<Il2CppObject*>& ref) {
         LOG_OK("In test_ref, received ref.ptr() -> {}", fmt::ptr(ref.ptr()));
     };
     test_ref(b);
     LOG_OK("After test_ref, Counter for &inst -> {}", i2c::detail::get_count(&inst));
 
     // Pass by value (copy)
-    auto test_copy = [&](safe_ptr<Il2CppObject> copy) {
+    auto test_copy = [&](safe_ptr<Il2CppObject*> copy) {
         LOG_OK("In test_copy, received copy.ptr() -> {}", fmt::ptr(copy.ptr()));
     };
     test_copy(b);
@@ -69,8 +73,8 @@ TEST(safeptr_casts) {
     LOG_OK("Starting safe_ptr cast tests (reference types only)");
 
     // Reference-type cast example
-    safe_ptr<Il2CppObject> a(i2c::new_ctor<Il2CppObject*>());
-    auto maybe_ref = a.try_cast<Il2CppReflectionType>();
+    safe_ptr<Il2CppObject*> a(i2c::new_ctor<Il2CppObject*>());
+    auto maybe_ref = a.try_cast<Il2CppReflectionType*>();
     LOG_OK("safe_ptr<Il2CppObject>.try_cast<Il2CppReflectionType> -> {}", static_cast<bool>(maybe_ref));
     if (maybe_ref) {
         LOG_FAIL("Cast succeeded (unexpected)");
@@ -99,7 +103,7 @@ TEST(safeptr_unity_gameobject) {
     LOG_OK("Created GameObject -> {}", fmt::ptr(game_obj));
 
     // Test safe_ptr with GameObject reference type
-    safe_ptr<Il2CppObject, true> go_ptr(game_obj);
+    safe_ptr<Il2CppObject*, true> go_ptr(game_obj);
     LOG_OK("GameObject safe_ptr -> {}", static_cast<bool>(go_ptr));
 
     try {
@@ -120,10 +124,10 @@ TEST(safeptr_unity_gameobject) {
     }
     LOG_OK("GameObject.get_transform -> {}", fmt::ptr(transform));
 
-    safe_ptr<Il2CppObject, true> transform_ptr(transform);
+    safe_ptr<Il2CppObject*, true> transform_ptr(transform);
     LOG_OK("Transform safe_ptr -> {}", static_cast<bool>(transform_ptr));
 
-    auto rect_cast = transform_ptr.try_cast<UnityEngine::RectTransform>();
+    auto rect_cast = transform_ptr.try_cast<UnityEngine::RectTransform*>();
     LOG_OK("Transform safe_ptr.try_cast<RectTransform> -> {}", static_cast<bool>(rect_cast));
 
     try {
