@@ -1,8 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <set>
 #include <unordered_set>
-#include <functional>
 
 namespace detail {
     template <template <typename...> typename C, typename T>
@@ -150,6 +150,8 @@ struct std::hash<detail::thin_virtual_layer<R(T*, TArgs...)>> {
 template <template <typename...> typename C, typename... TArgs>
 requires(detail::valid_container<C, detail::thin_virtual_layer<void(void*, TArgs...)>>)
 struct basic_event_callback {
+    using callback_t = detail::thin_virtual_layer<void(void*, TArgs...)>;
+
     void invoke(TArgs... args) const {
 #ifndef NO_EVENT_CALLBACK_INVOKE_SAFETY
         // copy the callbacks so an unsubscribe during invoke of the container doesn't cause UB
@@ -171,7 +173,7 @@ struct basic_event_callback {
     void add(void (T::*callback)(TArgs...), T* inst) {
         callbacks.emplace(callback, inst);
     }
-    void add(detail::thin_virtual_layer<void(void*, TArgs...)> callback) { callbacks.emplace(std::move(callback)); }
+    void add(callback_t callback) { callbacks.emplace(std::move(callback)); }
 
     template <typename T>
     void remove(void (T::*callback)(TArgs...)) {
@@ -189,19 +191,19 @@ struct basic_event_callback {
             }
         }
     }
-    void remove(detail::thin_virtual_layer<void(void*, TArgs...)> callback) { callbacks.erase(callback); }
+    void remove(callback_t callback) { callbacks.erase(callback); }
 
-    basic_event_callback& operator+=(auto callback) {
+    basic_event_callback& operator+=(callback_t callback) {
         add(callback);
         return *this;
     }
-    basic_event_callback& operator-=(auto callback) {
+    basic_event_callback& operator-=(callback_t callback) {
         remove(callback);
         return *this;
     }
 
    private:
-    C<detail::thin_virtual_layer<void(void*, TArgs...)>> callbacks;
+    C<callback_t> callbacks;
 };
 
 // Good default for most
