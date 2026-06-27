@@ -195,6 +195,9 @@ struct StringW {
     constexpr operator bool() noexcept { return inst != nullptr; }
     constexpr operator bool() const noexcept { return inst != nullptr; }
 
+    [[nodiscard]] inline il2cpp_array_size_t size() const noexcept { return inst->length; }
+    inline bool empty() const noexcept { return size() == 0; }
+
     template <i2c::strs::convertible_to_il2cpp T>
     bool operator==(T const& rhs) const noexcept {
         return i2c::strs::strcomp(inst, rhs);
