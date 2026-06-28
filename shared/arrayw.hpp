@@ -57,6 +57,8 @@ struct ArrayW {
     requires(std::is_convertible_v<U, T>)
     ArrayW(std::vector<U> vals) : ArrayW(i2c::view{vals}) {}
 
+    static ArrayW New(il2cpp_array_size_t size = 0) { return ArrayW(size); }
+
     constexpr ArrayW(ArrayW const&) noexcept = default;
     constexpr ArrayW(ArrayW&&) noexcept = default;
 

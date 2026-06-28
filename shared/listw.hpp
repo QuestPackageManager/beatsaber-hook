@@ -87,6 +87,8 @@ struct ListW {
         return operator=(static_cast<ptr>(rhs.val));
     }
 
+    static ListW New(il2cpp_array_size_t size = 0) { return ListW(size); }
+
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void*>(val)); }
     constexpr bool operator==(ListW const&) const noexcept = default;
     constexpr bool operator==(std::nullptr_t) const noexcept { return !val; }

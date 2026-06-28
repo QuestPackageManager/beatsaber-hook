@@ -13,7 +13,7 @@ TEST(listw) {
 
     try {
         // Create a managed List<int> and wrap it
-        ListW<int> arr(int(0));
+        auto arr = ListW<int>::New();
         arr.push_back(7);
         arr.push_back(13);
         LOG_OK("Created ListW<int> arr (ptr {})", fmt::ptr(arr.convert()));

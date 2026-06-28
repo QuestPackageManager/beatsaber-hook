@@ -14,8 +14,8 @@ struct ValueW {
 
     void* convert() const noexcept { return const_cast<void*>(static_cast<void const*>(instance.data())); }
 
-    constexpr ValueW& operator=(ValueW&& o) = default;
-    constexpr ValueW& operator=(ValueW const& o) = default;
+    constexpr ValueW& operator=(ValueW&&) = default;
+    constexpr ValueW& operator=(ValueW const&) = default;
 
     std::array<std::byte, S> instance;
 };
