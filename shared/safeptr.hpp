@@ -203,8 +203,7 @@ struct safe_ptr {
         return cast<i2c::result<T2>, U2>().value_or(safe_ptr<T2, U2>{});
     }
 
-    T ptr() { return const_cast<T>(reinterpret_cast<safe_ptr const*>(this)->ptr()); }
-    T const ptr() const {
+    T ptr() const {
         if (!handle) {
             throw i2c::trace_exception("A safe_ptr<T> instance is holding a null handle!");
         }
