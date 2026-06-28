@@ -238,7 +238,7 @@ struct ListW {
 
     void insert_at(il2cpp_array_size_t index, value item) {
         if (index > size()) {
-            throw i2c::trace_exception(val, "Capacity size too small");
+            throw i2c::trace_exception("Capacity size too small");
         }
         if (size() == val->_items.size()) {
             ensure_capacity(size() + 1);

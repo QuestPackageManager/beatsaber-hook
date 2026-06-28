@@ -37,6 +37,10 @@ TEST(listw) {
         arr.push_back(x);
         LOG_OK("After push_back: size -> {}, elements -> {}", arr.size(), arr);
 
+        // Test insert_at
+        arr.insert_at(1, 3);
+        LOG_OK("After insert_at: size -> {}, elements -> {}", arr.size(), arr);
+
         // Test const variants
         ListW<int> const const_arr = arr;  // Copy
         LOG_OK("const_arr size -> {}", const_arr.size());
