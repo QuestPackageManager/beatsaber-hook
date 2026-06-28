@@ -74,7 +74,7 @@ namespace i2c {
         // Finds the method with the given vtable slot in the class.
         find_method_info(int slot) : data(by_slot{slot}) {}
         // Finds the method corresponding to the vtable slot in the given declaring class.
-        find_method_info(find_class_info&& declaring_class, int slot) : data(by_vtable{std::move(declaring_class), slot}) {}
+        find_method_info(find_class_info declaring_class, int slot) : data(by_vtable{std::move(declaring_class), slot}) {}
         // Passes an already found method through.
         find_method_info(MethodInfo const* method) : data(method) {}
 

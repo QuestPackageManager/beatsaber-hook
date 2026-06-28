@@ -33,7 +33,8 @@ TEST(listw) {
 
         // Test push_back
         arr.push_back(1);
-        arr.push_back(2);
+        int x = 2;
+        arr.push_back(x);
         LOG_OK("After push_back: size -> {}, elements -> {}", arr.size(), arr);
 
         // Test const variants

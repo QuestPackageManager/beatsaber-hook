@@ -234,7 +234,7 @@ struct ListW {
         val->_size = 0;
     }
 
-    void insert_at(il2cpp_array_size_t index, value&& item) {
+    void insert_at(il2cpp_array_size_t index, value item) {
         if (index > size()) {
             throw i2c::trace_exception(val, "Capacity size too small");
         }
@@ -249,7 +249,7 @@ struct ListW {
         val->_size++;
     }
 
-    void push_back(value&& item) {
+    void push_back(value item) {
         val->_version++;
         ensure_capacity(size() + 1);
         *end() = std::move(item);
