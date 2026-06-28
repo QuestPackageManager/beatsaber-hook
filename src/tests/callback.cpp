@@ -76,6 +76,28 @@ TEST(event_callback_member_func) {
     }
 }
 
+// Test += member function callback
+TEST(event_pluseq_callback_member_func) {
+    LOG_OK("Testing event_callback with member function");
+
+    event_callback<int> cb;
+    TestClass obj;
+    reset_test_state();
+
+    // Add member function
+    cb += {&TestClass::member_func, &obj};
+
+    // Invoke
+    cb.invoke(321);
+
+    // Check results
+    if (member_func_call_count == 1 && call_log.size() == 1 && call_log[0] == "member:321") {
+        LOG_OK("Member function += worked correctly");
+    } else {
+        LOG_FAIL("Member function += failed: count=%d, log_size=%d", member_func_call_count, call_log.size());
+    }
+}
+
 // Test std::function callback
 TEST(event_callback_std_function) {
     LOG_OK("Testing event_callback with std::function");
