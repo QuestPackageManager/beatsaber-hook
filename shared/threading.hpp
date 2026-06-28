@@ -87,7 +87,7 @@ struct il2cpp_thread : public std::thread {
     template <typename F, typename... TArgs>
     requires(std::is_invocable_v<F, TArgs...>)
     explicit il2cpp_thread(F&& pred, TArgs&&... args) :
-        std::thread(&i2c::threading::attached_invoke<F, TArgs...>, std::forward<F>(pred), std::forward<TArgs>(args)...) {}
+        std::thread(&i2c::threading::attached_invoke<F, std::decay_t<TArgs>...>, std::forward<F>(pred), std::forward<TArgs>(args)...) {}
 
     // Default move ctor
     il2cpp_thread(il2cpp_thread&&) = default;
