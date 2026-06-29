@@ -33,13 +33,13 @@ namespace detail {
 
     template <typename R, typename... TArgs>
     struct func_wrapper<R (*)(TArgs...)> : abstract_func<R(TArgs...)> {
-        func_wrapper(auto&& f) : held(f) {}
+        func_wrapper(auto&& f) : held(std::forward<decltype(f)>(f)) {}
 
         void* instance() const override { return nullptr; }
         void* ptr() const override { return reinterpret_cast<void*>(held); }
 
         R operator()(TArgs... args) const noexcept override {
-            if constexpr (std::is_same_v<R, void>) {
+            if constexpr (std::is_void_v<R>) {
                 held(args...);
             } else {
                 return held(args...);
@@ -51,7 +51,7 @@ namespace detail {
 
     template <typename R, typename T, typename... TArgs>
     struct func_wrapper<R (T::*)(TArgs...)> : abstract_func<R(TArgs...)> {
-        func_wrapper(auto&& f, T* inst) : held(f), _instance(inst) {}
+        func_wrapper(auto&& f, T* inst) : held(std::forward<decltype(f)>(f)), _instance(inst) {}
 
         void* instance() const override { return _instance; }
         void* ptr() const override {
@@ -64,7 +64,7 @@ namespace detail {
         }
 
         R operator()(TArgs... args) const noexcept override {
-            if constexpr (std::is_same_v<R, void>) {
+            if constexpr (std::is_void_v<R>) {
                 (_instance->*held)(args...);
             } else {
                 return (_instance->*held)(args...);
@@ -83,7 +83,7 @@ namespace detail {
         void* ptr() const override { return handle; }
 
         R operator()(TArgs... args) const noexcept override {
-            if constexpr (std::is_same_v<R, void>) {
+            if constexpr (std::is_void_v<R>) {
                 held(args...);
             } else {
                 return held(args...);
@@ -110,16 +110,25 @@ namespace detail {
     template <typename R, typename... TArgs>
     struct thin_virtual_layer<R(TArgs...)> {
         thin_virtual_layer(R (*ptr)(TArgs...)) : func(new func_wrapper<R (*)(TArgs...)>(ptr)) {}
-        thin_virtual_layer(auto const& f) : func(new func_wrapper<std::function<R(TArgs...)>>(f)) {}
         template <typename T>
-        thin_virtual_layer(auto const& f, T* inst) : func(new func_wrapper<R (T::*)(TArgs...)>(f, inst)) {}
+        thin_virtual_layer(R (T::*f)(TArgs...), T* inst) : func(new func_wrapper<R (T::*)(TArgs...)>(std::move(f), inst)) {}
+        template <typename F>
+        requires(!std::is_same_v<std::remove_cvref_t<F>, thin_virtual_layer>)
+        thin_virtual_layer(F&& f) : func(new func_wrapper<std::function<R(TArgs...)>>(std::forward<F>(f))) {}
 
         void* instance() const { return func->instance(); }
         void* ptr() const { return func->ptr(); }
 
-        R operator()(TArgs... args) const noexcept { (*func)(args...); }
-        bool operator==(thin_virtual_layer<R(TArgs...)> const other) const { return *func == *other.func; }
-        bool operator<(thin_virtual_layer<R(TArgs...)> const other) const { return *func < *other.func; }
+        R operator()(TArgs... args) const noexcept {
+            if constexpr (std::is_void_v<R>) {
+                (*func)(args...);
+            } else {
+                return (*func)(args...);
+            }
+        }
+
+        bool operator==(thin_virtual_layer<R(TArgs...)> const& other) const { return *func == *other.func; }
+        bool operator<(thin_virtual_layer<R(TArgs...)> const& other) const { return *func < *other.func; }
 
         friend struct std::hash<thin_virtual_layer<R(TArgs...)>>;
 
