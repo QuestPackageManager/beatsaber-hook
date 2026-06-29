@@ -19,8 +19,8 @@ namespace i2c::strs {
 #endif
 
     template <typename T>
-    concept convertible_to_il2cpp =
-        std::is_constructible_v<std::string_view, T> || std::is_constructible_v<std::u16string_view, T> || std::is_same_v<str_t, T>;
+    concept convertible_to_il2cpp = std::is_constructible_v<std::string_view, T> || std::is_constructible_v<std::u16string_view, T> ||
+                                    std::is_same_v<Il2CppString*, T> || std::is_same_v<str_t, T>;
 
     void convstr(char const* inp, char16_t* outp, int sz);
     std::size_t convstr(char16_t const* inp, char* outp, int isz, int osz);
@@ -172,7 +172,7 @@ struct StringW {
     constexpr StringW(ConstString<sz>& str) noexcept : StringW(static_cast<ptr>(str)) {}
     // Dynamically allocated string
     template <i2c::strs::convertible_to_il2cpp T>
-    StringW(T str) : inst(i2c::strs::alloc_str(str)) {}
+    StringW(T const& str) : inst(i2c::strs::alloc_str(str)) {}
 
 #ifdef HAS_CODEGEN
     constexpr StringW(System::String* ins) noexcept : inst(static_cast<Il2CppString*>(static_cast<void*>(ins))) {}
