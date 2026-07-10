@@ -21,17 +21,19 @@ namespace i2c {
         find_class_info(find_class_info&&) = default;
 
         // Finds a class by namespace and name.
-        find_class_info(std::convertible_to<std::string_view> auto const& namespaze, std::convertible_to<std::string_view> auto const& name) :
+        constexpr find_class_info(
+            std::convertible_to<std::string_view> auto const& namespaze, std::convertible_to<std::string_view> auto const& name
+        ) :
             data(by_name{static_cast<std::string_view>(namespaze), static_cast<std::string_view>(name)}) {}
         // Gets the class from an instance.
-        find_class_info(Il2CppObject* instance) : data(by_instance{instance}) {}
+        constexpr find_class_info(Il2CppObject* instance) : data(by_instance{instance}) {}
         // Passes an already found class through.
-        find_class_info(Il2CppClass* klass) : data(klass) {}
+        constexpr find_class_info(Il2CppClass* klass) : data(klass) {}
         // Passes a null class through.
-        find_class_info(std::nullptr_t) : data(nullptr) {}
+        constexpr find_class_info(std::nullptr_t) : data(nullptr) {}
         // Finds a class based on C++ type.
         template <type_check::has_class T>
-        find_class_info(T const&) : data(class_of<T>()) {}
+        constexpr find_class_info(T const&) : data(class_of<T>()) {}
     };
 
     struct find_method_info {
@@ -62,26 +64,26 @@ namespace i2c {
         find_method_info(find_method_info&&) = default;
 
         // Finds the first method with a given name.
-        find_method_info(std::convertible_to<std::string_view> auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
+        constexpr find_method_info(std::convertible_to<std::string_view> auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
         // Finds the first method with a given name and number of arguments.
-        find_method_info(std::convertible_to<std::string_view> auto const& name, int args) :
+        constexpr find_method_info(std::convertible_to<std::string_view> auto const& name, int args) :
             data(by_args{static_cast<std::string_view>(name), args}) {}
         // Finds the best match of all methods with a given name, based on generics and argument types.
-        find_method_info(
+        constexpr find_method_info(
             std::convertible_to<std::string_view> auto const& name, i2c::view<Il2CppClass const*> generics, i2c::view<Il2CppType const*> params
         ) :
             data(by_types{static_cast<std::string_view>(name), generics, params}) {}
         // Finds the method with the given vtable slot in the class.
-        find_method_info(int slot) : data(by_slot{slot}) {}
+        constexpr find_method_info(int slot) : data(by_slot{slot}) {}
         // Finds the method corresponding to the vtable slot in the given declaring class.
-        find_method_info(find_class_info declaring_class, int slot) : data(by_vtable{std::move(declaring_class), slot}) {}
+        constexpr find_method_info(find_class_info declaring_class, int slot) : data(by_vtable{std::move(declaring_class), slot}) {}
         // Passes an already found method through.
-        find_method_info(MethodInfo const* method) : data(method) {}
+        constexpr find_method_info(MethodInfo const* method) : data(method) {}
 
         // Used to determine if a method does not need to be type checked again, in run_method.
-        bool type_checked() const { return std::holds_alternative<by_types>(data) || std::holds_alternative<MethodInfo const*>(data); }
+        constexpr bool type_checked() const { return std::holds_alternative<by_types>(data) || std::holds_alternative<MethodInfo const*>(data); }
 
-        std::optional<std::string_view> only_name() const {
+        constexpr std::optional<std::string_view> only_name() const {
             if (auto name = std::get_if<by_name>(&data)) {
                 return name->name;
             }
@@ -101,9 +103,9 @@ namespace i2c {
         find_property_info(find_property_info&&) = default;
 
         // Finds the property with a given name.
-        find_property_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
+        constexpr find_property_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
         // Passes an already found property through.
-        find_property_info(PropertyInfo const* prop) : data(prop) {}
+        constexpr find_property_info(PropertyInfo const* prop) : data(prop) {}
     };
 
     struct find_field_info {
@@ -118,9 +120,9 @@ namespace i2c {
         find_field_info(find_field_info&&) = default;
 
         // Finds the field with a given name.
-        find_field_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
+        constexpr find_field_info(auto const& name) : data(by_name{static_cast<std::string_view>(name)}) {}
         // Passes an already found field through.
-        find_field_info(FieldInfo* field) : data(field) {}
+        constexpr find_field_info(FieldInfo* field) : data(field) {}
     };
 
     // Forces a find_class_info to find the class of a C# object at runtime, instead of using the C++ type.

@@ -157,7 +157,6 @@ namespace i2c {
     }
 
     // Below can be considered the true APIs for the functions in this file, noting that find_x_info structs can be implicitly constructed
-    // TODO: if desired, allow a result<T> type to be used as the return type, and if so use it for errors instead of throwing
 
     // Runs an il2cpp method on an instance or static class.
     // First template parameter is the return type, and further specified template parameters are used for generic methods.

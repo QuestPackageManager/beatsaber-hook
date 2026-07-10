@@ -126,8 +126,7 @@ Il2CppClass* i2c::make_generic(Il2CppClass const* klass, i2c::view<Il2CppClass c
         }
     }
 
-    auto reflection_type =
-        RET_DEF_UNLESS(logger, run_method<Il2CppReflectionType*>(reinterpret_cast<Il2CppObject*>(class_type), "MakeGenericType", arg_types));
+    auto reflection_type = RET_DEF_UNLESS(logger, run_method<Il2CppReflectionType*>(i2c::dynamic(class_type), "MakeGenericType", arg_types));
     auto ret = RET_DEF_UNLESS(logger, functions::class_from_system_type(reflection_type));
     return ret;
 }
@@ -248,13 +247,13 @@ static Il2CppGenericContainer const* get_generic_container(MethodInfo const* met
     if (method->is_inflated) {
         auto gen_info = method->genericMethod;
 #if defined(UNITY_2021) || defined(UNITY_6)
-        return reinterpret_cast<const Il2CppGenericContainer*>(gen_info->methodDefinition->genericContainerHandle);
+        return reinterpret_cast<Il2CppGenericContainer const*>(gen_info->methodDefinition->genericContainerHandle);
 #else
         return gen_info->methodDefinition->genericContainerHandle;
 #endif
     } else {
 #if defined(UNITY_2021) || defined(UNITY_6)
-        return reinterpret_cast<const Il2CppGenericContainer*>(method->genericContainerHandle);
+        return reinterpret_cast<Il2CppGenericContainer const*>(method->genericContainerHandle);
 #else
         return = method->genericContainer;
 #endif
@@ -347,7 +346,7 @@ MethodInfo const* i2c::make_generic(MethodInfo const* method, i2c::view<Il2CppCl
         i++;
     }
     // Call instance function on method object to MakeGeneric
-    auto inflated_object = run_method<Il2CppReflectionMethod*>(reinterpret_cast<Il2CppObject*>(method_object), "MakeGenericMethod", types_array);
+    auto inflated_object = run_method<Il2CppReflectionMethod*>(i2c::dynamic(method_object), "MakeGenericMethod", types_array);
     if (!inflated_object) {
         logger.error("Failed to run MakeGenericMethod!");
         THROW_UNLESS(logger, inflated_object);

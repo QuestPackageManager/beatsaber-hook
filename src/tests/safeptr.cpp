@@ -60,7 +60,7 @@ TEST(safeptr_and_countpointer) {
     auto test_literal = [&](Il2CppObject* p) {
         LOG_OK("In test_literal, received raw ptr -> {}", fmt::ptr(p));
     };
-    test_literal((Il2CppObject*) b.ptr());
+    test_literal(b.ptr());
     LOG_OK("After test_literal, Counter for &inst -> {}", i2c::detail::get_count(&inst));
 
     // Final pointer log
