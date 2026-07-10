@@ -140,3 +140,71 @@ TEST(property_get_set) {
         LOG_FAIL("List<int> property test failed: {}", e.what());
     }
 }
+
+// Missing field tests
+TEST(missing_field) {
+    LOG_OK("Starting missing field test");
+
+    try {
+        auto obj = i2c::new_ctor({"System", "Object"});
+
+        auto get_res = i2c::get_field<i2c::result<int>>(obj, "NotReal");
+        if (get_res) {
+            LOG_FAIL("Getting field 'NotReal' somehow succeded! {}", get_res.value());
+        } else {
+            LOG_OK("Getting field 'NotReal' failed safely: {}", get_res.error());
+        }
+
+        auto set_res = i2c::set_field<i2c::result<>>(obj, "NotReal", 100);
+        if (set_res) {
+            LOG_FAIL("Setting field 'NotReal' somehow succeded!");
+        } else {
+            LOG_OK("Setting field 'NotReal' failed safely: {}", set_res.error());
+        }
+    } catch (std::exception const& e) {
+        LOG_FAIL("Missing field test failed: {}", e.what());
+    }
+}
+
+// Missing property tests
+TEST(missing_property) {
+    LOG_OK("Starting missing property test");
+
+    try {
+        auto obj = i2c::new_ctor({"System", "Object"});
+
+        auto get_res = i2c::get_property<i2c::result<int>>(obj, "NotReal");
+        if (get_res) {
+            LOG_FAIL("Getting property 'NotReal' somehow succeded! {}", get_res.value());
+        } else {
+            LOG_OK("Getting property 'NotReal' failed safely: {}", get_res.error());
+        }
+
+        auto set_res = i2c::set_property<i2c::result<>>(obj, "NotReal", 100);
+        if (set_res) {
+            LOG_FAIL("Setting property 'NotReal' somehow succeded!");
+        } else {
+            LOG_OK("Setting property 'NotReal' failed safely: {}", set_res.error());
+        }
+    } catch (std::exception const& e) {
+        LOG_FAIL("Missing property test failed: {}", e.what());
+    }
+}
+
+// Missing method test
+TEST(missing_method) {
+    LOG_OK("Starting missing method test");
+
+    try {
+        auto obj = i2c::new_ctor({"System", "Object"});
+
+        auto res = i2c::run_method<i2c::result<int>>(obj, "NotReal");
+        if (res) {
+            LOG_FAIL("Running method 'NotReal' somehow succeded! {}", res.value());
+        } else {
+            LOG_OK("Running method 'NotReal' failed safely: {}", res.error());
+        }
+    } catch (std::exception const& e) {
+        LOG_FAIL("Missing method test failed: {}", e.what());
+    }
+}

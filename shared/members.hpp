@@ -85,7 +85,7 @@ namespace i2c {
         template <typename T>
         requires(type_check::full_type<remove_result_t<T>>)
         T get_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field) noexcept(i2c::is_result_v<T>) {
-            auto field_info = find_field(klass, field);
+            auto field_info = RES_OR_THROW_UNLESS(T, logger, find_field(klass, field));
             if (!is_convertible_from(type_of<remove_result_t<T>>(), field_info->type, false)) {
                 return result_or_throw<T>("Field type does not match");
             }
@@ -102,7 +102,7 @@ namespace i2c {
 
         template <maybe_result R = void, type_check::full_type T>
         R set_field_impl(find_class_info klass, auto&& class_or_inst, find_field_info field, T&& value) noexcept(i2c::is_result_v<R>) {
-            auto field_info = find_field(klass, field);
+            auto field_info = RES_OR_THROW_UNLESS(R, logger, find_field(klass, field));
             if (!is_convertible_from(field_info->type, type_of<T>(), false)) {
                 return result_or_throw<R>("Field type does not match");
             }
