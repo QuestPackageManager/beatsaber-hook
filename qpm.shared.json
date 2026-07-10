@@ -31,7 +31,7 @@
           "qpm qmod zip"
         ],
         "tests": [
-          "pwsh ./make-tests.ps1"
+          "qpm qmod zip test-beatsaber-hook --import mod.tests.json"
         ]
       },
       "ndk": "^29.0.14206865",
