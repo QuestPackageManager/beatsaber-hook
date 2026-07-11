@@ -126,10 +126,10 @@ namespace i2c {
     };
 
     // Forces a find_class_info to find the class of a C# object at runtime, instead of using the C++ type.
-    constexpr find_class_info dynamic(i2c::type_check::ptr_ref_type auto instance) {
+    constexpr find_class_info dynamic(i2c::type_check::ptr_ref_type auto& instance) {
         return {static_cast<Il2CppObject*>(static_cast<void*>(instance))};
     }
-    constexpr find_class_info dynamic(i2c::type_check::wrapper_ref_type auto instance) {
+    constexpr find_class_info dynamic(i2c::type_check::wrapper_ref_type auto& instance) {
         return {static_cast<Il2CppObject*>(instance.convert())};
     }
 
