@@ -113,11 +113,11 @@ struct FlamingoHandle {
 
 inline std::expected<FlamingoHandle, flamingo::installation::Error> FlamingoHandleBuilder::installOrError() noexcept {
     logger.info("Installing hook: {} to offset: {}", hookInfo.metadata.name_info, fmt::ptr(hookInfo.target));
-    // Install() takes ownership of hookInfo, so keep a copy around to populate the returned handle's metadata.
-    auto info_copy = hookInfo;
     auto install_result = flamingo::Install(std::move(hookInfo));
     if (install_result.has_value()) {
-        return FlamingoHandle(logger, install_result.value().returned_handle, std::move(info_copy));
+        // hookInfo was moved, we grab it in the new location
+        auto newHookInfo = *install_result.value().returned_handle.hook_location;
+        return FlamingoHandle(logger, install_result.value().returned_handle, newHookInfo);
     } else {
         return std::unexpected(install_result.error());
     }
