@@ -72,10 +72,9 @@ struct FlamingoHandleBuilder {
 /// @brief A handle to an installed Flamingo hook, allowing for uninstalling and reinstalling with a new priority.
 struct FlamingoHandle {
     Paper::LoggerContext logger;
-    flamingo::HookInfo info;
     flamingo::HookHandle handle;
 
-    FlamingoHandle(Paper::LoggerContext logger, flamingo::HookHandle h, flamingo::HookInfo i) : logger(logger), info(i), handle(h) {}
+    FlamingoHandle(Paper::LoggerContext logger, flamingo::HookHandle h) : logger(logger),  handle(h) {}
 
     FlamingoHandle(FlamingoHandle const&) = delete;
     FlamingoHandle(FlamingoHandle&&) = default;
@@ -95,8 +94,9 @@ struct FlamingoHandle {
     }
 
     /// @brief Uninstalls the hook associated with this handle.
-    [[nodiscard]]
-    std::expected<FlamingoHandleBuilder, std::monostate> uninstall() {
+    [[nodiscard]] std::expected<FlamingoHandleBuilder, std::monostate> uninstall() {
+        // grab the hook info and copy it before uninstalling
+        auto info = *handle.hook_location;
         auto result = flamingo::Uninstall(handle);
         if (result.has_value()) {
             return FlamingoHandleBuilder(logger, info);
@@ -115,9 +115,7 @@ inline std::expected<FlamingoHandle, flamingo::installation::Error> FlamingoHand
     logger.info("Installing hook: {} to offset: {}", hookInfo.metadata.name_info, fmt::ptr(hookInfo.target));
     auto install_result = flamingo::Install(std::move(hookInfo));
     if (install_result.has_value()) {
-        // hookInfo was moved, we grab it in the new location
-        auto newHookInfo = *install_result.value().returned_handle.hook_location;
-        return FlamingoHandle(logger, install_result.value().returned_handle, newHookInfo);
+        return FlamingoHandle(logger, install_result.value().returned_handle);
     } else {
         return std::unexpected(install_result.error());
     }
