@@ -40,6 +40,30 @@ Typically, the workflow for a mod involves hooking into some existing game funct
 
 This is done simply by calling `i2c::functions::initialize()`, or by calling any `i2c` API function that uses `i2c::functions` internally.
 
+## Error Handling
+
+Rather than committing every API to one error-handling style, `beatsaber-hook` generally lets the caller pick between throwing and non-throwing forms.
+
+For member access functions (`i2c::run_method`, `i2c::get_property`/`set_property`, `i2c::get_field`/`set_field`, `i2c::new_ctor`, `cast`, ...), the convention is selected via the template return type itself:
+
+- Passing a plain type (e.g. `int`, `StringW`) throws (an `i2c::trace_exception`-derived exception) on failure.
+- Passing `i2c::result<T>` — an alias for `std::expected<T, std::string>` — instead returns a `std::expected`, and the call becomes `noexcept`.
+
+```cpp
+// Throws on failure
+auto value = i2c::run_method<int>({"System", "Int32"}, "Parse", StringW("notanint"));
+
+// Returns std::expected<int, std::string> instead, and cannot throw
+auto result = i2c::run_method<i2c::result<int>>({"System", "Int32"}, "Parse", StringW("notanint"));
+if (!result.has_value()) {
+    logger.error("Parse failed: {}", result.error());
+}
+```
+
+`i2c::result<>` (`T` defaults to `void`) is used for calls with no return value, e.g. `i2c::set_property<i2c::result<>>(instance, "Length", 5)`.
+
+Note that `std::optional<T>` is **not** interchangeable with `i2c::result<T>` here — this family only recognizes plain-`T` (throwing) or `i2c::result<T>` (expected) as the template argument.
+
 ## Building + Contributing
 
 All contributions are welcome, [license available here](./LICENSE).
