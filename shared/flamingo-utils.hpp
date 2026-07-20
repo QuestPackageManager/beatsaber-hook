@@ -33,38 +33,56 @@ struct FlamingoHandleBuilder {
     FlamingoHandleBuilder& operator=(FlamingoHandleBuilder const&) = default;
     FlamingoHandleBuilder& operator=(FlamingoHandleBuilder&&) = default;
 
+    /// @brief Marks this hook as final, meaning no other hooks may be installed after it.
     FlamingoHandleBuilder& final(bool isFinal = true) {
         hookInfo.metadata.priority.is_final = isFinal;
         return *this;
     }
 
-    FlamingoHandleBuilder& after(modloader::ModInfo const& info, std::string_view name = {}) {
-        after(info.id, name);
+    /// @brief Requires this hook to be installed after the given mod's hook.
+    /// @param info The mod whose hook this one must be installed after.
+    /// @param name Restricts the match to a specific hook name within that mod; unset matches any hook in the mod's namespace.
+    FlamingoHandleBuilder& after(modloader::ModInfo const& info, std::optional<std::string> name = {}) {
+        after(info.id, std::move(name));
         return *this;
     }
 
-    FlamingoHandleBuilder& after(std::string_view modID, std::string_view name = {}) {
-        hookInfo.metadata.priority.afters.emplace_back(flamingo::HookNameMetadata{
-            .name = std::string(name),
-            .namespaze = std::string(modID),
+    /// @brief Requires this hook to be installed after the hook identified by namespace/name.
+    /// @param namespaze The namespace to match; unset matches any namespace.
+    /// @param name The hook name to match; unset matches any name.
+    FlamingoHandleBuilder& after(std::optional<std::string> namespaze, std::optional<std::string> name = {}) {
+        hookInfo.metadata.priority.afters.emplace_back(flamingo::HookNameFilter{
+            .namespaze = std::move(namespaze),
+            .name = std::move(name),
         });
 
         return *this;
     }
 
-    FlamingoHandleBuilder& before(modloader::ModInfo const& info, std::string_view name = {}) {
-        before(info.id, name);
+    /// @brief Requires this hook to be installed before the given mod's hook.
+    /// @param info The mod whose hook this one must be installed before.
+    /// @param name Restricts the match to a specific hook name within that mod; unset matches any hook in the mod's namespace.
+    FlamingoHandleBuilder& before(modloader::ModInfo const& info, std::optional<std::string> name = {}) {
+        before(info.id, std::move(name));
         return *this;
     }
 
-    FlamingoHandleBuilder& before(std::string_view modID, std::string_view name = {}) {
-        hookInfo.metadata.priority.befores.emplace_back(flamingo::HookNameMetadata{ .name = std::string(name), .namespaze = std::string(modID) });
+    /// @brief Requires this hook to be installed before the hook identified by namespace/name.
+    /// @param namespaze The namespace to match; unset matches any namespace.
+    /// @param name The hook name to match; unset matches any name.
+    FlamingoHandleBuilder& before(std::optional<std::string> namespaze, std::optional<std::string> name = {}) {
+        hookInfo.metadata.priority.befores.emplace_back(flamingo::HookNameFilter{
+            .namespaze = std::move(namespaze),
+            .name = std::move(name),
+        });
         return *this;
     }
 
+    /// @brief Installs the hook, returning an error instead of aborting on failure.
     [[nodiscard]]
     std::expected<FlamingoHandle, flamingo::installation::Error> installOrError() noexcept;
 
+    /// @brief Installs the hook, aborting the process on failure.
     [[nodiscard]]
     FlamingoHandle install();
 };
@@ -84,10 +102,12 @@ struct FlamingoHandle {
 
     ~FlamingoHandle() = default;
 
+    /// @brief Implicit conversion to the underlying Flamingo hook handle.
     operator flamingo::HookHandle() const {
         return handle;
     }
 
+    /// @brief Returns the underlying Flamingo hook handle.
     [[nodiscard]]
     flamingo::HookHandle const& get_handle() const {
         return handle;
@@ -104,6 +124,7 @@ struct FlamingoHandle {
         return std::unexpected(std::monostate{});
     }
 
+    /// @brief Reinstalls the hook at its current target, keeping its existing priority.
     [[nodiscard]]
     auto reinstall() {
         auto result = flamingo::Reinstall({ handle.hook_location->target });
