@@ -51,10 +51,10 @@ struct FlamingoHandleBuilder {
     /// @param namespaze The namespace to match; unset matches any namespace.
     /// @param name The hook name to match; unset matches any name.
     FlamingoHandleBuilder& after(std::optional<std::string> namespaze, std::optional<std::string> name = {}) {
-        hookInfo.metadata.priority.afters.emplace_back(flamingo::HookNameFilter{
-            .namespaze = std::move(namespaze),
-            .name = std::move(name),
-        });
+        flamingo::HookNameFilter filter;
+        filter.namespaze = std::move(namespaze);
+        filter.name = std::move(name);
+        hookInfo.metadata.priority.afters.emplace_back(std::move(filter));
 
         return *this;
     }
@@ -71,10 +71,11 @@ struct FlamingoHandleBuilder {
     /// @param namespaze The namespace to match; unset matches any namespace.
     /// @param name The hook name to match; unset matches any name.
     FlamingoHandleBuilder& before(std::optional<std::string> namespaze, std::optional<std::string> name = {}) {
-        hookInfo.metadata.priority.befores.emplace_back(flamingo::HookNameFilter{
-            .namespaze = std::move(namespaze),
-            .name = std::move(name),
-        });
+        flamingo::HookNameFilter filter;
+        filter.namespaze = std::move(namespaze);
+        filter.name = std::move(name);
+        hookInfo.metadata.priority.befores.emplace_back(std::move(filter));
+
         return *this;
     }
 
