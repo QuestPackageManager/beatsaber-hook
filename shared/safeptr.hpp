@@ -21,7 +21,7 @@ namespace i2c::detail {
     template <typename T>
     struct count_ptr {
         /// @brief Default constructor for Count Pointer, defaults to a nullptr, with 0 references.
-        explicit count_ptr() : ptr(nullptr) {}
+        explicit count_ptr() noexcept : ptr(nullptr) {}
         /// @brief Construct a count pointer from the provided pointer, adding to the reference count (if non-null) for the provided pointer.
         /// @param p The pointer to provide. May be null, which does nothing.
         explicit count_ptr(T* p) : ptr(p) {
@@ -36,9 +36,25 @@ namespace i2c::detail {
             }
         }
         /// @brief Move constructor moves the pointer and keeps the reference count the same.
-        count_ptr(count_ptr&& other) {
+        count_ptr(count_ptr&& other) noexcept {
             ptr = other.ptr;
             other.ptr = nullptr;
+        }
+        /// @brief Copy assignment, emplaces the held pointer from the other instance, updating reference counts as necessary.
+        count_ptr& operator=(count_ptr const& other) {
+            emplace(other.ptr);
+            return *this;
+        }
+        /// @brief Move assignment, moves the pointer and keeps the reference count the same.
+        count_ptr& operator=(count_ptr&& other) {
+            if (this != &other) {
+                if (ptr) {
+                    remove_count(ptr);
+                }
+                ptr = other.ptr;
+                other.ptr = nullptr;
+            }
+            return *this;
         }
         /// @brief Destructor, decreases the ref count for the held non-null pointer.
         ~count_ptr() {

@@ -69,6 +69,61 @@ TEST(safeptr_and_countpointer) {
     LOG_OK("After leaving scope, Counter for &inst -> {}", i2c::detail::get_count(&inst));
 }
 
+TEST(countptr_assignment) {
+    LOG_OK("Starting count_ptr copy/move assignment tests");
+
+    Il2CppObject inst1{};
+    Il2CppObject inst2{};
+
+    i2c::detail::count_ptr<Il2CppObject> a(&inst1);
+    i2c::detail::count_ptr<Il2CppObject> b(&inst2);
+
+    // Copy assignment: a should now point at inst2, inst1's count should drop, inst2's count should rise.
+    a = b;
+    if (a.get() != &inst2) {
+        LOG_FAIL("count_ptr copy assignment did not update held pointer");
+    }
+    if (i2c::detail::get_count(&inst1) != 0) {
+        LOG_FAIL("count_ptr copy assignment did not release previous pointer's count (inst1 count -> {})", i2c::detail::get_count(&inst1));
+    }
+    if (i2c::detail::get_count(&inst2) != 2) {
+        LOG_FAIL("count_ptr copy assignment did not add to new pointer's count (inst2 count -> {})", i2c::detail::get_count(&inst2));
+    }
+
+    // Move assignment: c should take over inst1, a should be reset to null, inst2's count should stay the same overall.
+    i2c::detail::count_ptr<Il2CppObject> c(&inst1);
+    c = std::move(a);
+    if (c.get() != &inst2) {
+        LOG_FAIL("count_ptr move assignment did not transfer held pointer");
+    }
+    if (a.get() != nullptr) {
+        LOG_FAIL("count_ptr move assignment did not null out the moved-from instance");
+    }
+    if (i2c::detail::get_count(&inst1) != 0) {
+        LOG_FAIL("count_ptr move assignment did not release the overwritten pointer's count (inst1 count -> {})", i2c::detail::get_count(&inst1));
+    }
+    if (i2c::detail::get_count(&inst2) != 2) {
+        LOG_FAIL("count_ptr move assignment changed count unexpectedly (inst2 count -> {})", i2c::detail::get_count(&inst2));
+    }
+
+    LOG_OK("count_ptr copy/move assignment tests complete");
+}
+
+TEST(safeptr_copy_assignment) {
+    LOG_OK("Starting safe_ptr copy assignment tests");
+
+    Il2CppObject inst{};
+    safe_ptr<Il2CppObject*> a(&inst);
+    safe_ptr<Il2CppObject*> b;
+
+    // This exercises safe_ptr::operator=(safe_ptr const&), which relies on count_ptr's copy assignment operator.
+    b = a;
+    if (b.ptr() != a.ptr()) {
+        LOG_FAIL("safe_ptr copy assignment did not share the same held pointer");
+    }
+    LOG_OK("safe_ptr copy assignment tests complete");
+}
+
 TEST(safeptr_casts) {
     LOG_OK("Starting safe_ptr cast tests (reference types only)");
 
