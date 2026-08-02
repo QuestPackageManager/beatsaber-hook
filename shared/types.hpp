@@ -278,7 +278,11 @@ namespace i2c {
         if (from_class != to_class) {
             functions::initialize();
             if (!functions::class_is_assignable_from(to_class, from_class)) {
-                return result_or_throw<T2>("The type could not be cast safely! Check your i2c::cast calls!");
+                return result_or_throw<T2>(fmt::format(
+                    "The type could not be cast from {} to {} safely! Check your i2c::cast calls!",
+                    class_standard_name(from_class),
+                    class_standard_name(to_class)
+                ));
             }
         }
         if constexpr (type_check::wrapper_type<remove_result_t<T2>>) {
