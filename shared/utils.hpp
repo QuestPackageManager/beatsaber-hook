@@ -3,6 +3,9 @@
 #include "config.hpp"
 #include "paper2_scotland2/shared/backtrace.hpp"
 
+#include <android/log.h>
+#include <android/log_macros.h>
+
 #include <expected>
 #include <optional>
 #include <string_view>
@@ -31,9 +34,9 @@ namespace i2c {
     template <typename... TArgs>
     BS_HOOK_NO_RETURN inline void safe_abort(Paper::FmtStrSrcLoc<TArgs...> fmt, TArgs&&... args) noexcept {
         // Make sure the message appears at least once in the log
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 5; i++) {
             usleep(100000L);  // 0.1s
-            logger.critical(std::move(fmt), std::forward<TArgs>(args)...);
+            logger.critical(fmt, std::forward<TArgs>(args)...);
         }
         logger.Backtrace(512);
         Paper::Logger::WaitForFlush();
