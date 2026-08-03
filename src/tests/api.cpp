@@ -62,3 +62,34 @@ TEST(assembly_enumeration) {
         LOG_OK("Assembly enumeration completed successfully ({} entries)", names.size());
     }
 }
+
+// resolve_icall must never throw, even for a nonexistent icall - failures are reported through the
+// returned i2c::result instead (icall resolution commonly runs during static initialization, where an
+// uncaught exception would crash the whole mod at load time).
+TEST(resolve_icall_never_throws) {
+    constexpr char const* bogus_icall = "This::Icall::Does::Not::Exist";
+
+    bool threw = false;
+    i2c::result<function_ptr_t<void>> res(nullptr);
+    try {
+        res = i2c::resolve_icall<void>(bogus_icall);
+    } catch (...) {
+        threw = true;
+    }
+    if (threw) {
+        LOG_FAIL("resolve_icall threw for a nonexistent icall - it must return an error result instead");
+    } else if (!res.has_value()) {
+        LOG_OK("resolve_icall returned an error result instead of throwing: {}", res.error());
+    } else {
+        LOG_FAIL("resolve_icall unexpectedly resolved a nonexistent icall");
+    }
+
+    // Sanity check that a real, long-standing icall still resolves successfully.
+    constexpr char const* real_icall = "UnityEngine.Time::get_realtimeSinceStartup";
+    auto real_res = i2c::resolve_icall<float>(real_icall);
+    if (real_res.has_value()) {
+        LOG_OK("resolve_icall resolved a real icall successfully");
+    } else {
+        LOG_FAIL("resolve_icall failed to resolve a real icall (may be okay if it was renamed/stripped): {}", real_res.error());
+    }
+}

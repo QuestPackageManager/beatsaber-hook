@@ -430,21 +430,23 @@ namespace i2c {
     /// @return The returned GC-allocated instance.
     [[deprecated("DO NOT USE")]] void* __allocate_unsafe(std::size_t size) noexcept;
 
-    /// @brief Resolves the provided icall, throwing an i2c::trace_exception with backtrace information if failed.
+    /// @brief Resolves the provided icall, returning an i2c::result so failures can be handled without throwing.
+    /// Icall resolution commonly happens during static initialization (e.g. generated codegen), where an uncaught
+    /// exception would crash the whole mod at load time, so this never throws.
     /// Does NOT cache the resolved method pointer.
     /// Also does NOT perform any type checking of parameters, so make sure you check your parameters and return types!
-    /// @tparam R The return type of the function to resolve
-    /// @tparam TArgs The arguments of the function to resolve
-    /// @param name The name of the icall to resolve
-    /// @return The resolved function pointer, will always be valid or throws an i2c::trace_exceptionon.
-    template <typename R, typename... TArgs, bool Result = false>
-    auto resolve_icall(std::string_view name) {
-        using T = std::conditional_t<Result, result<function_ptr_t<R, TArgs...>>, function_ptr_t<R, TArgs...>>;
+    /// @tparam R The return type of the function to resolve.
+    /// @tparam TArgs The arguments of the function to resolve.
+    /// @param name The name of the icall to resolve.
+    /// @return An i2c::result holding the resolved function pointer, or an error message if it could not be resolved.
+    template <typename R, typename... TArgs>
+    [[nodiscard]] result<function_ptr_t<R, TArgs...>> resolve_icall(std::string_view name) noexcept {
+        using F = function_ptr_t<R, TArgs...>;
         functions::initialize();
-        if (auto out = reinterpret_cast<function_ptr_t<R, TArgs...>>(functions::resolve_icall(name.data()))) {
-            return static_cast<T>(out);
+        if (auto out = reinterpret_cast<F>(functions::resolve_icall(name.data()))) {
+            return out;
         }
-        return result_or_throw<T>(fmt::format("Failed to resolve_icall for: {}!", name.data()));
+        return result<F>(std::unexpect, fmt::format("Failed to resolve_icall for: {}!", name.data()));
     }
 }
 
