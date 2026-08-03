@@ -230,6 +230,18 @@ struct safe_ptr {
         }
     }
 
+    /// @brief Returns the held pointer without any handle checking.
+    T unchecked_ptr() const noexcept {
+        if (!handle) {
+            return nullptr;
+        }
+        if constexpr (i2c::type_check::wrapper_type<T>) {
+            return T(handle->inst);
+        } else {
+            return reinterpret_cast<T>(handle->inst);
+        }
+    }
+
     /// @brief Returns false if this is a defaultly constructed safe_ptr or if the held pointer evaluates to false.
     operator bool() const noexcept {
         if (!handle || !handle->inst) {
