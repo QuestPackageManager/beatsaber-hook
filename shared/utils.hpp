@@ -6,8 +6,10 @@
 #include <android/log.h>
 #include <android/log_macros.h>
 
+#include <concepts>
 #include <expected>
 #include <optional>
+#include <ranges>
 #include <string_view>
 #include <thread>
 #include <cxxabi.h>
@@ -93,7 +95,9 @@ namespace i2c {
     template <typename T>
     struct view : public std::span<T const> {
         view(std::initializer_list<T> init) : std::span<T const>(init) {}
-        view(auto const& init) : std::span<T const>({init.begin(), init.end()}) {}
+        view(auto const& init)
+        requires(std::convertible_to<std::ranges::range_value_t<decltype(init)>, T>)
+            : std::span<T const>({init.begin(), init.end()}) {}
     };
 
     // Allows literal strings as template parameters

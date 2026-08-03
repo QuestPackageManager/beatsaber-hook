@@ -8,6 +8,13 @@ static_assert(i2c::type_check::ptr_ref_type<System::Collections::Generic::List_1
 static_assert(i2c::type_check::full_class<ListW<int>>);
 static_assert(i2c::type_check::wrapper_ref_type<ListW<int>>);
 
+// ListW must not silently reinterpret element types via the view<U>/vector<U> converting constructors
+static_assert(!std::is_constructible_v<ListW<int>, i2c::view<void*>>);
+static_assert(!std::is_constructible_v<ListW<int>, std::vector<void*>>);
+static_assert(!std::is_constructible_v<ListW<int>, ListW<void*>>);
+// Arbitrary void* construction is still intentionally allowed (e.g. wrapping reflection results)
+static_assert(std::is_constructible_v<ListW<int>, void*>);
+
 TEST(listw) {
     LOG_OK("Starting ListW tests");
 
