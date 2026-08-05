@@ -91,12 +91,26 @@ namespace i2c {
     // Prints the given number of "tabs" as spaces to the given output stream.
     void tabs(std::ostream& os, int tabs, int spacesPerTab = 2);
 
+    // Whether U is ABI-equivalent to T: same representation, no value transformation, so a container of U
+    // can be reinterpreted element-wise as a container of T. True by default only for identical types.
+    // Wrapper types that just wrap a pointer/handle (e.g. StringW around Il2CppString*, ListW around
+    // List_1<T>*) opt in by specializing this for their own (pointer, wrapper) pair. This intentionally
+    // does NOT fall back to std::convertible_to, since that would also permit silently narrowing/reinterpreting
+    // conversions between unrelated types (e.g. int -> float).
+    template <typename U, typename T>
+    struct abi_convertible : std::bool_constant<std::same_as<U, T>> {};
+
+    // Also requires matching size as a sanity check against incorrect abi_convertible specializations:
+    // an ABI-equivalent type can't actually have a different representation size.
+    template <typename U, typename T>
+    concept abi_convertible_to = abi_convertible<U, T>::value && sizeof(U) == sizeof(T);
+
     // Like a span, but can be implicitly constructed from brace-enclosed lists
     template <typename T>
     struct view : public std::span<T const> {
         view(std::initializer_list<T> init) : std::span<T const>(init) {}
         view(auto const& init)
-        requires(std::convertible_to<std::ranges::range_value_t<decltype(init)>, T>)
+        requires(abi_convertible_to<std::ranges::range_value_t<decltype(init)>, T>)
             : std::span<T const>({init.begin(), init.end()}) {}
     };
 

@@ -1,4 +1,5 @@
 #include "listw.hpp"
+#include "stringw.hpp"
 
 #include "tests.hpp"
 
@@ -14,6 +15,15 @@ static_assert(!std::is_constructible_v<ListW<int>, std::vector<void*>>);
 static_assert(!std::is_constructible_v<ListW<int>, ListW<void*>>);
 // Arbitrary void* construction is still intentionally allowed (e.g. wrapping reflection results)
 static_assert(std::is_constructible_v<ListW<int>, void*>);
+
+// ListW must not silently narrow/reinterpret element types via the view<U>/vector<U> converting constructors
+static_assert(!std::is_constructible_v<ListW<float>, std::vector<int>>);
+static_assert(!std::is_constructible_v<ListW<float>, i2c::view<int>>);
+static_assert(std::is_constructible_v<ListW<int>, std::vector<int>>);
+static_assert(std::is_constructible_v<ListW<int>, i2c::view<int>>);
+// ...but ABI-equivalent wrapper conversions (opted into via i2c::abi_convertible) are still allowed
+static_assert(std::is_constructible_v<ListW<StringW>, std::vector<StringW::ptr>>);
+static_assert(std::is_constructible_v<ListW<ArrayW<int>>, std::vector<Array<int>*>>);
 
 TEST(listw) {
     LOG_OK("Starting ListW tests");
@@ -92,6 +102,37 @@ TEST(listw) {
         // Test ref_to
         auto span = arr.ref_to();
         LOG_OK("arr.ref_to() size -> {}", span.size());
+
+        // Test construction from std::vector
+        std::vector<int> vec_src = {21, 22, 23};
+        ListW<int> from_vec(vec_src);
+        LOG_OK("Constructed ListW<int> from_vec from std::vector size -> {}, elements -> {}", from_vec.size(), from_vec);
+
+        // Test construction from an ABI-equivalent wrapper's underlying pointer type
+        std::vector<StringW::ptr> str_vec_src = {static_cast<StringW::ptr>(StringW("foo")), static_cast<StringW::ptr>(StringW("bar"))};
+        ListW<StringW> from_str_vec(str_vec_src);
+        LOG_OK("Constructed ListW<StringW> from_str_vec from std::vector<StringW::ptr> size -> {}", from_str_vec.size());
+
+        // Test construction from std::span
+        std::array<int, 3> span_backing = {31, 32, 33};
+        std::span<int> span_src(span_backing);
+        ListW<int> from_span(span_src);
+        LOG_OK("Constructed ListW<int> from_span from std::span size -> {}, elements -> {}", from_span.size(), from_span);
+
+        // Test implicit conversion from std::vector when passed as ListW parameter.
+        // Note: this only works for std::vector, not std::span -- ListW's dedicated std::vector<U> constructor
+        // is a single user-defined conversion, whereas std::span would need two (span -> i2c::view -> ListW),
+        // and implicit conversions only ever apply one.
+        auto take_listw = [](ListW<int> l) { return l.size(); };
+        LOG_OK("Implicit std::vector -> ListW size -> {}", take_listw(vec_src));
+
+        // Test converting ListW to std::span implicitly
+        std::span<int> converted_span = from_vec;
+        LOG_OK("Converted ListW to std::span, size -> {} | first -> {}", converted_span.size(), converted_span.front());
+
+        // Test converting const ListW to std::span of const values
+        std::span<int const> converted_const_span = const_arr;
+        LOG_OK("Converted const ListW to std::span<const>, size -> {}", converted_const_span.size());
 
     } catch (std::exception const& e) {
         LOG_FAIL("ListW test failed: {}", e.what());

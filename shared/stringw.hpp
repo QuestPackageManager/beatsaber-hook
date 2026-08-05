@@ -271,6 +271,11 @@ DEFINE_IL2CPP_DEFAULT_CLASS_REF(StringW, string);
 static_assert(sizeof(StringW) == sizeof(void*));
 static_assert(i2c::type_check::wrapper_ref_type<StringW>);
 
+// StringW just wraps a string pointer, so it's ABI-equivalent to it (e.g. this permits constructing
+// ArrayW<StringW>/ListW<StringW> from a std::vector<Il2CppString*>, see i2c::abi_convertible).
+template <>
+struct i2c::abi_convertible<StringW::ptr, StringW> : std::true_type {};
+
 inline std::string format_as(StringW str) {
     if (!str) {
         return "StringW(null)";

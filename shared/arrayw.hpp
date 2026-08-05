@@ -45,17 +45,19 @@ struct ArrayW {
     ArrayW(std::initializer_list<U> vals) : ArrayW(vals.size()) {
         std::copy(vals.begin(), vals.end(), begin());
     }
-    // From container
+    // From container. Restricted to i2c::abi_convertible_to (not is_convertible_v), so this cannot be used to
+    // silently narrow/reinterpret elements (e.g. constructing an ArrayW<float> from a std::vector<int>), while
+    // still allowing ABI-equivalent wrapper conversions (e.g. ArrayW<StringW> from std::vector<Il2CppString*>).
     template <typename U>
-    requires(std::is_convertible_v<U, T>)
+    requires(i2c::abi_convertible_to<U, T>)
     ArrayW(i2c::view<U> vals) : ArrayW(vals.size()) {
         std::copy(vals.begin(), vals.end(), begin());
     }
     // Required because C++ cannot deduce the type inside a parameter if it also has to construct that parameter
     ArrayW(i2c::view<T> vals) : ArrayW(vals.size()) { std::copy(vals.begin(), vals.end(), begin()); }
     template <typename U>
-    requires(std::is_convertible_v<U, T>)
-    ArrayW(std::vector<U> vals) : ArrayW(i2c::view{vals}) {}
+    requires(i2c::abi_convertible_to<U, T>)
+    ArrayW(std::vector<U> vals) : ArrayW(i2c::view<U>{vals}) {}
 
     static ArrayW New(il2cpp_array_size_t size = 0) { return ArrayW(size); }
 
@@ -244,6 +246,11 @@ MARK_GEN_REF_T(ArrayW);
 
 static_assert(sizeof(ArrayW<int>) == sizeof(void*));
 static_assert(i2c::type_check::wrapper_ref_type<ArrayW<int>>);
+
+// ArrayW just wraps an Array<T>*, so it's ABI-equivalent to it (e.g. this permits constructing
+// ArrayW<ArrayW<T>>/ListW<ArrayW<T>> from a std::vector<Array<T>*>, see i2c::abi_convertible).
+template <typename T>
+struct i2c::abi_convertible<Array<T>*, ArrayW<T>> : std::true_type {};
 
 template <typename T, typename Char>
 struct fmt::is_range<ArrayW<T>, Char> : std::false_type {};
