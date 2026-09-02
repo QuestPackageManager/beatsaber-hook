@@ -196,7 +196,7 @@ namespace i2c {
         if constexpr (std::is_same_v<T, Il2CppObject*>) {
             if (arg != nullptr) {
                 functions::initialize();
-                return functions::class_get_type(functions::object_get_class(arg));
+                return functions::class_get_type(arg->klass);
             }
         }
         return type_of<T>();

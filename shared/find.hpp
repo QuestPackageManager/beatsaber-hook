@@ -125,14 +125,6 @@ namespace i2c {
         constexpr find_field_info(FieldInfo* field) : data(field) {}
     };
 
-    // Forces a find_class_info to find the class of a C# object at runtime, instead of using the C++ type.
-    constexpr find_class_info dynamic(i2c::type_check::ptr_ref_type auto& instance) {
-        return {static_cast<Il2CppObject*>(static_cast<void*>(instance))};
-    }
-    constexpr find_class_info dynamic(i2c::type_check::wrapper_ref_type auto& instance) {
-        return {static_cast<Il2CppObject*>(instance.convert())};
-    }
-
     // Finds a class based on the find_class_info. (Cached)
     Il2CppClass* find_class(find_class_info const& info) noexcept;
     // Finds a method in the given class, based on the find_method_info. (Cached)
@@ -141,6 +133,14 @@ namespace i2c {
     PropertyInfo const* find_property(find_class_info const& class_info, find_property_info const& info) noexcept;
     // Finds a field in the given class, based on the find_field_info. (Cached)
     FieldInfo* find_field(find_class_info const& class_info, find_field_info const& info) noexcept;
+
+    // Forces API functions to find the class of a C# object at runtime, instead of using the C++ type.
+    constexpr Il2CppObject* dynamic(i2c::type_check::ptr_ref_type auto& instance) {
+        return static_cast<Il2CppObject*>(static_cast<void*>(instance));
+    }
+    constexpr Il2CppObject* dynamic(i2c::type_check::wrapper_ref_type auto& instance) {
+        return static_cast<Il2CppObject*>(instance.convert());
+    }
 
     // Represents a specialization type that should be used for exposing metadata from particular values, such as methods.
     // Currently only used for MAKE_HOOK_MATCH.
