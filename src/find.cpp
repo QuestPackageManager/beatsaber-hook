@@ -91,14 +91,14 @@ template <typename K, typename V>
 using tuple_map = std::unordered_map<K, V, tup_hash, tup_eq>;
 
 Il2CppClass* i2c::find_class(find_class_info const& info) noexcept {
-    if (auto by_name = std::get_if<find_class_info::by_name>(&info.data)) {
-        return get_class_from_name(by_name->namespaze, by_name->name);
+    if (auto klass = std::get_if<Il2CppClass*>(&info.data)) {
+        return *klass;
     }
     if (auto by_inst = std::get_if<find_class_info::by_instance>(&info.data)) {
         return by_inst->instance->klass;
     }
-    if (auto klass = std::get_if<Il2CppClass*>(&info.data)) {
-        return *klass;
+    if (auto by_name = std::get_if<find_class_info::by_name>(&info.data)) {
+        return get_class_from_name(by_name->namespaze, by_name->name);
     }
     return nullptr;
 }
