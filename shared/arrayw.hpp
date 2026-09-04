@@ -3,6 +3,7 @@
 #include "exceptions.hpp"
 #include "types.hpp"
 #include "utils.hpp"
+#include <string_view>
 
 /// @brief An Array wrapper type that is responsible for holding an (ideally valid) pointer to an array on the GC heap.
 /// Allows for C++ array semantics. Ex, [], begin(), end(), etc...
@@ -29,6 +30,13 @@ struct ArrayW {
     constexpr ArrayW(void* inst) noexcept : val(static_cast<ptr>(inst)) {}
     /// @brief Create an ArrayW from a pointer
     constexpr ArrayW(ptr inst) noexcept : val(inst) {}
+
+    // @brief Create an ArrayW from a string_view, copying the contents into a new array
+    template <typename CharT = T>
+    requires(std::is_same_v<CharT, char> || std::is_same_v<CharT, wchar_t> || std::is_same_v<CharT, char16_t> || std::is_same_v<CharT, char32_t>)
+    constexpr ArrayW(std::basic_string_view<CharT> str) : ArrayW(str.size()) {
+        std::copy(str.begin(), str.end(), begin());
+    }
 
 #ifdef HAS_CODEGEN
     constexpr ArrayW(System::Array* inst) noexcept : val(static_cast<ptr>(static_cast<void*>(inst))) {}
@@ -57,7 +65,7 @@ struct ArrayW {
     ArrayW(i2c::view<T> vals) : ArrayW(vals.size()) { std::copy(vals.begin(), vals.end(), begin()); }
     template <typename U>
     requires(i2c::abi_convertible_to<U, T>)
-    ArrayW(std::vector<U> vals) : ArrayW(i2c::view<U>{vals}) {}
+    ArrayW(std::vector<U> const& vals) : ArrayW(i2c::view<U>{vals}) {}
 
     static ArrayW New(il2cpp_array_size_t size = 0) { return ArrayW(size); }
 

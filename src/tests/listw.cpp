@@ -21,6 +21,10 @@ static_assert(!std::is_constructible_v<ListW<float>, std::vector<int>>);
 static_assert(!std::is_constructible_v<ListW<float>, i2c::view<int>>);
 static_assert(std::is_constructible_v<ListW<int>, std::vector<int>>);
 static_assert(std::is_constructible_v<ListW<int>, i2c::view<int>>);
+// ListW's converting constructors only ever read from the source, so const spans/vectors/views work too
+static_assert(std::is_constructible_v<ListW<int>, std::span<int const>>);
+static_assert(std::is_constructible_v<ListW<int>, std::vector<int> const&>);
+static_assert(std::is_constructible_v<ListW<int>, i2c::view<int const>>);
 // ...but ABI-equivalent wrapper conversions (opted into via i2c::abi_convertible) are still allowed
 static_assert(std::is_constructible_v<ListW<StringW>, std::vector<StringW::ptr>>);
 static_assert(std::is_constructible_v<ListW<ArrayW<int>>, std::vector<Array<int>*>>);
@@ -118,6 +122,23 @@ TEST(listw) {
         std::span<int> span_src(span_backing);
         ListW<int> from_span(span_src);
         LOG_OK("Constructed ListW<int> from_span from std::span size -> {}, elements -> {}", from_span.size(), from_span);
+
+        // Test construction from a const std::span, const std::vector, and i2c::view -- ListW's converting
+        // constructors only ever read from the source, so none of these should require a mutable container.
+        std::span<int const> const_span_src(span_backing);
+        ListW<int> from_const_span(const_span_src);
+        LOG_OK("Constructed ListW<int> from_const_span from std::span<const> size -> {}, elements -> {}", from_const_span.size(), from_const_span);
+
+        std::vector<int> const const_vec_src = {34, 35, 36};
+        ListW<int> from_const_vec(const_vec_src);
+        LOG_OK("Constructed ListW<int> from_const_vec from std::vector<int> const size -> {}, elements -> {}", from_const_vec.size(), from_const_vec);
+
+        // i2c::view<T> is already read-only (it wraps std::span<T const>), so it's the "const view" type -- there's
+        // no separate view<T const> for this purpose (its value_type must match T exactly, so it can't be built
+        // from an ordinary container like this).
+        i2c::view<int> const_view_src(const_vec_src);
+        ListW<int> from_const_view(const_view_src);
+        LOG_OK("Constructed ListW<int> from_const_view from i2c::view<int> size -> {}, elements -> {}", from_const_view.size(), from_const_view);
 
         // Test implicit conversion from std::vector when passed as ListW parameter.
         // Note: this only works for std::vector, not std::span -- ListW's dedicated std::vector<U> constructor

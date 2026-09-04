@@ -1,7 +1,9 @@
 #include "arrayw.hpp"
-#include "stringw.hpp"
 
+#include "stringw.hpp"
 #include "tests.hpp"
+
+#include <string_view>
 
 static_assert(i2c::type_check::full_class<Array<int>*>);
 static_assert(i2c::type_check::ptr_ref_type<Array<int>*>);
@@ -15,6 +17,12 @@ static_assert(!std::is_constructible_v<ArrayW<float>, i2c::view<int>>);
 static_assert(!std::is_constructible_v<ArrayW<int>, std::vector<void*>>);
 static_assert(std::is_constructible_v<ArrayW<int>, std::vector<int>>);
 static_assert(std::is_constructible_v<ArrayW<int>, i2c::view<int>>);
+// ArrayW's converting constructors only ever read from the source, so const spans/vectors/views work too
+static_assert(std::is_constructible_v<ArrayW<int>, std::span<int const>>);
+static_assert(std::is_constructible_v<ArrayW<int>, std::vector<int> const&>);
+// (a view<int const> value converts to view<int> via its range constructor, even though view<int const> can't
+// itself be built from an ordinary container -- see the i2c::view<int> comment in TEST(arrayw) below)
+static_assert(std::is_constructible_v<ArrayW<int>, i2c::view<int const>>);
 // ...but ABI-equivalent wrapper conversions (opted into via i2c::abi_convertible) are still allowed
 static_assert(std::is_constructible_v<ArrayW<StringW>, std::vector<StringW::ptr>>);
 
@@ -33,6 +41,21 @@ TEST(arrayw) {
     // Test const variants
     ArrayW<int> const const_a = {4, 5, 6};
     LOG_OK("const_a size -> {} | front -> {} | back -> {}", const_a.size(), const_a.front(), const_a.back());
+
+    // test byte span to ArrayW conversion
+    std::vector<uint8_t> const byte_vec = {0x01, 0x02, 0x03, 0x04};
+    ArrayW<uint8_t> byte_array = byte_vec;
+    LOG_OK("byte_array size -> {} | first -> {} | last -> {}", byte_array.size(), byte_array.front(), byte_array.back());
+
+    // lets test a string now
+    std::string_view const str_view = "Hello, ArrayW!";
+    ArrayW<uint8_t> char_array = ArrayW<uint8_t>(str_view);
+    LOG_OK("char_array size -> {} | first -> {} | last -> {}", char_array.size(), char_array.front(), char_array.back());
+    LOG_OK("char_array iterated values -> {}", char_array);
+
+    std::u16string_view const u16str_view = u"Hello, ArrayW!";
+    ArrayW<char16_t> u16char_array = ArrayW<char16_t>(u16str_view);
+    LOG_OK("u16char_array size -> {}", u16char_array.size());
 
     // Test operator[]
     LOG_OK("a[1] -> {}", a[1]);
@@ -166,11 +189,30 @@ TEST(arrayw) {
     ArrayW<int> h(span_src);
     LOG_OK("Constructed ArrayW<int> h from std::span -> {}", h);
 
+    // Test construction from a const std::span, const std::vector, and const i2c::view -- ArrayW's converting
+    // constructors only ever read from the source, so none of these should require a mutable container.
+    std::span<int const> const_span_src(span_backing);
+    ArrayW<int> const_span_h(const_span_src);
+    LOG_OK("Constructed ArrayW<int> const_span_h from std::span<const> -> {}", const_span_h);
+
+    std::vector<int> const const_vec_src = {14, 15, 16};
+    ArrayW<int> const_vec_h(const_vec_src);
+    LOG_OK("Constructed ArrayW<int> const_vec_h from std::vector<int> const -> {}", const_vec_h);
+
+    // i2c::view<T> is already read-only (it wraps std::span<T const>), so it's the "const view" type -- there's
+    // no separate view<T const> for this purpose (its value_type must match T exactly, so it can't be built
+    // from an ordinary container like this).
+    i2c::view<int> const_view_src(const_vec_src);
+    ArrayW<int> const_view_h(const_view_src);
+    LOG_OK("Constructed ArrayW<int> const_view_h from i2c::view<int> -> {}", const_view_h);
+
     // Test implicit conversion from std::vector when passed as ArrayW parameter.
     // Note: this only works for std::vector, not std::span -- ArrayW's dedicated std::vector<U> constructor
     // is a single user-defined conversion, whereas std::span would need two (span -> i2c::view -> ArrayW),
     // and implicit conversions only ever apply one.
-    auto take_arrayw = [](ArrayW<int> arr) { return arr.size(); };
+    auto take_arrayw = [](ArrayW<int> arr) {
+        return arr.size();
+    };
     LOG_OK("Implicit std::vector -> ArrayW size -> {}", take_arrayw(vec_src));
 
     // Test converting ArrayW to std::span implicitly

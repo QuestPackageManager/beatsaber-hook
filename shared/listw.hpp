@@ -72,7 +72,7 @@ struct ListW {
     ListW(i2c::view<T> vals) : ListW(vals.size()) { std::copy(vals.begin(), vals.end(), begin()); }
     template <typename U>
     requires(i2c::abi_convertible_to<U, T>)
-    ListW(std::vector<U> vals) : ListW(i2c::view<U>{vals}) {}
+    ListW(std::vector<U> const& vals) : ListW(i2c::view<U>{vals}) {}
 
     constexpr ListW(ListW const&) noexcept = default;
     constexpr ListW(ListW&&) noexcept = default;
