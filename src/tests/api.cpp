@@ -2,6 +2,45 @@
 
 #include "tests.hpp"
 
+TEST(global_metadata_resolution) {
+    using namespace i2c::functions;
+    initialize();
+    CheckS_GlobalMetadata();
+
+    if (!s_GlobalMetadata || !s_GlobalMetadataHeader || !s_Il2CppMetadataRegistration) {
+        LOG_FAIL("Global metadata roots contain a null pointer");
+        return;
+    }
+    if (static_cast<uint32_t>(s_GlobalMetadataHeader->sanity) != 0xFAB11BAF) {
+        LOG_FAIL("Resolved global metadata header has invalid sanity value");
+        return;
+    }
+    if (s_Il2CppMetadataRegistration->typesCount <= 0 || !s_Il2CppMetadataRegistration->types ||
+        s_Il2CppMetadataRegistration->typeDefinitionsSizesCount <= 0 || !s_Il2CppMetadataRegistration->typeDefinitionsSizes) {
+        LOG_FAIL("Resolved metadata registration has no type or type-size table");
+        return;
+    }
+    LOG_OK(
+        "Global metadata roots resolved (metadata version {}, {} registered types)",
+        s_GlobalMetadataHeader->version,
+        s_Il2CppMetadataRegistration->typesCount
+    );
+
+    // Type::GetClass accepts an Il2CppType*, whereas the function being resolved accepts an index.
+    // A valid index and the invalid-index sentinel exercise both paths of the actual index function.
+    auto* first = GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex(0);
+    if (!first || type_get_class(const_cast<Il2CppType*>(class_get_type_const(first))) != first) {
+        LOG_FAIL("Type-definition index 0 did not round-trip through Type::GetClass");
+    } else {
+        LOG_OK("Type-definition index 0 round-tripped through Type::GetClass");
+    }
+    if (GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex(kTypeDefinitionIndexInvalid) != nullptr) {
+        LOG_FAIL("Invalid type-definition index did not return null");
+    } else {
+        LOG_OK("Invalid type-definition index returned null");
+    }
+}
+
 // Assembly enumeration and presence checks
 TEST(assembly_enumeration) {
     LOG_OK("Starting assembly enumeration test");
@@ -23,9 +62,12 @@ TEST(assembly_enumeration) {
     LOG_OK("Found {} assemblies", asm_count);
     std::vector<std::string> names;
     names.reserve(asm_count);
+    auto* corlib = i2c::functions::get_corlib();
+    bool found_corlib = false;
     for (size_t i = 0; i < asm_count; ++i) {
         auto* asm_ptr = assemblies[i];
         if (!asm_ptr) {
+            LOG_FAIL("Assembly[{}] was null", i);
             continue;
         }
         auto* img = i2c::functions::assembly_get_image(asm_ptr);
@@ -33,26 +75,26 @@ TEST(assembly_enumeration) {
         if (a_name) {
             names.emplace_back(a_name);
             LOG_OK("Assembly[{}] -> {}", i, a_name);
+            if (i2c::functions::domain_assembly_open(domain, a_name) != asm_ptr) {
+                LOG_FAIL("Assembly[{}] did not round-trip by its image name: {}", i, a_name);
+            }
+            found_corlib |= img == corlib;
         } else {
             LOG_FAIL("Assembly[{}] had null image/name", i);
         }
     }
 
-    // Common assemblies to look for (these are best-effort; some runtimes differ)
-    char const* common[] = {"Assembly-CSharp", "mscorlib", "System", "UnityEngine.CoreModule", "Assembly-CSharp-firstpass"};
-    for (auto const& want : common) {
-        bool found = false;
-        for (auto const& n : names) {
-            if (n == want) {
-                found = true;
-                break;
-            }
-        }
-        if (found) {
-            LOG_OK("Found expected assembly: {}", want);
-        } else {
-            LOG_FAIL("Expected assembly not found (may be okay): {}", want);
-        }
+    // Assembly names vary by game and may include .dll. Check the runtime's actual corlib
+    // and lookup results instead of assuming Assembly-CSharp or firstpass exists.
+    if (!corlib || !found_corlib) {
+        LOG_FAIL("The runtime's corlib image was missing from assembly enumeration");
+    } else {
+        LOG_OK("Assembly enumeration includes the runtime's corlib image");
+    }
+    if (i2c::functions::domain_assembly_open(domain, "BSHook.Nonexistent.Assembly.For.Tests.dll")) {
+        LOG_FAIL("Assembly lookup unexpectedly resolved a nonexistent assembly");
+    } else {
+        LOG_OK("Assembly lookup returned null for a nonexistent assembly");
     }
 
     // Ensure we found at least one assembly (sanity)

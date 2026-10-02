@@ -606,12 +606,17 @@ static void find__type_get_name_(Paper::LoggerContext const& logger) {
 /*
  * XREF for GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex
  * - mono_type_get_class (symbol)
- *   - 1st B instruction -> GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex
+ *   - 1st B instruction -> Type::GetClass (converts a metadata handle to an index)
+ *     - 1st B instruction -> GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex
  */
 static void find_get_type_info_from_type_definition_index() {
     using namespace i2c::functions;
 #ifdef UNITY_6
-    auto get_type_info_from_type_definition_index = cs::find_nth_b<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(type_get_class));
+    auto type_get_class_impl = cs::find_nth_b<1, false, 0, 64>(reinterpret_cast<uint32_t const*>(type_get_class));
+    if (!type_get_class_impl) {
+        SAFE_ABORT("Failed to find Type::GetClass!");
+    }
+    auto get_type_info_from_type_definition_index = cs::find_nth_b<1, false, 0, 256>(*type_get_class_impl);
     if (!get_type_info_from_type_definition_index) {
         SAFE_ABORT("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
     }
@@ -1080,13 +1085,6 @@ void i2c::functions::initialize() noexcept {
     find_class_get_ptr_class(logger);
     find_s_Assemblies(logger);
 
-    auto get_type_info_from_type_definition_index = cs::find_nth_b<1, false, -1, 1024>(reinterpret_cast<uint32_t*>(type_get_class));
-    if (!get_type_info_from_type_definition_index) {
-        SAFE_ABORT("Failed to find GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex!");
-    }
-    GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex =
-        reinterpret_cast<decltype(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)>(*get_type_info_from_type_definition_index);
-
 #if defined(UNITY_2019) || defined(UNITY_2021)
     {
         // Assembly::GetAllAssemblies
@@ -1124,21 +1122,24 @@ void i2c::functions::initialize() noexcept {
         // FIELDS
         // Extract locations of s_GlobalMetadataHeader, s_Il2CppMetadataRegistration, & s_GlobalMetadata
 
-        auto tmp = cs::getpcaddr<3, 1>(reinterpret_cast<uint32_t const*>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex));
+        // Unity 6000.3: the first two ADRPs access the type-info table and metadata lock.
+        // The next two load the metadata header and blob. A fifth addresses the type-definition
+        // conversion state; the sixth loads the registration used for typeDefinitionsSizes.
+        auto tmp = cs::getpcaddr<3, 1, 256>(reinterpret_cast<uint32_t const*>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex));
         if (!tmp) {
             SAFE_ABORT("Failed to find 3rd pcaddr for s_GlobalMetadataHeaderPtr!");
         }
         s_GlobalMetadataHeaderPtr = reinterpret_cast<decltype(s_GlobalMetadataHeaderPtr)>(std::get<2>(*tmp));
 
-        tmp = cs::getpcaddr<5, 1>(reinterpret_cast<uint32_t const*>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex));
+        tmp = cs::getpcaddr<6, 1, 256>(reinterpret_cast<uint32_t const*>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex));
         if (!tmp) {
-            SAFE_ABORT("Failed to find 4th pcaddr for s_Il2CppMetadataRegistrationPtr!");
+            SAFE_ABORT("Failed to find 6th pcaddr for s_Il2CppMetadataRegistrationPtr!");
         }
         s_Il2CppMetadataRegistrationPtr = reinterpret_cast<decltype(s_Il2CppMetadataRegistrationPtr)>(std::get<2>(*tmp));
 
-        tmp = cs::getpcaddr<4, 1>(reinterpret_cast<uint32_t const*>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex));
+        tmp = cs::getpcaddr<4, 1, 256>(reinterpret_cast<uint32_t const*>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex));
         if (!tmp) {
-            SAFE_ABORT("Failed to find 5th pcaddr for s_GlobalMetadataPtr!");
+            SAFE_ABORT("Failed to find 4th pcaddr for s_GlobalMetadataPtr!");
         }
         s_GlobalMetadataPtr = reinterpret_cast<decltype(s_GlobalMetadataPtr)>(std::get<2>(*tmp));
 
