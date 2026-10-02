@@ -15,14 +15,16 @@ void i2c::detail::add_count(void* addr) {
     }
 }
 
-void i2c::detail::remove_count(void* addr) {
+bool i2c::detail::remove_count(void* addr) {
     std::unique_lock lock(mutex);
     auto itr = addr_ref_count.find(addr);
     if (itr != addr_ref_count.end() && itr->second > 1) {
         --itr->second;
     } else if (itr != addr_ref_count.end()) {
         addr_ref_count.erase(itr);
+        return true;
     }
+    return false;
 }
 
 size_t i2c::detail::get_count(void* addr) {
