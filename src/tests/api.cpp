@@ -25,14 +25,28 @@ TEST(global_metadata_resolution) {
         s_GlobalMetadataHeader->version,
         s_Il2CppMetadataRegistration->typesCount
     );
+}
+
+TEST(global_metadata_type_definition_lookup) {
+    using namespace i2c::functions;
+    initialize();
+    CheckS_GlobalMetadata();
+
+    if (!GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex || !s_Il2CppMetadataRegistration ||
+        s_Il2CppMetadataRegistration->typeDefinitionsSizesCount <= 0) {
+        LOG_FAIL("Type-definition lookup or its metadata registration is unavailable");
+        return;
+    }
 
     // Type::GetClass accepts an Il2CppType*, whereas the function being resolved accepts an index.
-    // A valid index and the invalid-index sentinel exercise both paths of the actual index function.
-    auto* first = GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex(0);
-    if (!first || type_get_class(const_cast<Il2CppType*>(class_get_type_const(first))) != first) {
-        LOG_FAIL("Type-definition index 0 did not round-trip through Type::GetClass");
-    } else {
-        LOG_OK("Type-definition index 0 round-tripped through Type::GetClass");
+    // Exercise both ends of the table and the invalid-index sentinel with either Unity 6 resolver.
+    for (TypeDefinitionIndex index : {0, s_Il2CppMetadataRegistration->typeDefinitionsSizesCount - 1}) {
+        auto* klass = GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex(index);
+        if (!klass || type_get_class(const_cast<Il2CppType*>(class_get_type_const(klass))) != klass) {
+            LOG_FAIL("Type-definition index {} did not round-trip through Type::GetClass", index);
+        } else {
+            LOG_OK("Type-definition index {} round-tripped through Type::GetClass", index);
+        }
     }
     if (GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex(kTypeDefinitionIndexInvalid) != nullptr) {
         LOG_FAIL("Invalid type-definition index did not return null");
