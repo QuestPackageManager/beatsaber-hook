@@ -77,6 +77,7 @@ It also includes [rapidjson](https://github.com/Tencent/rapidjson).
 There are a few defines that can control the built code:
 
 - `UNITY_2019`/`UNITY_2021`/`UNITY_6`: Sets the target unity version. Exactly one should be defined; currently set in `CMakeLists.txt`.
+- `UNITY_6_3`: Also define alongside `UNITY_6` for Unity 6000.3 metadata resolution; currently enabled in `CMakeLists.txt`. Omit it for earlier Unity 6 versions.
 - `HAS_CODEGEN`: Assumes a codegen-like library is present that provides headers for all C# types.
 - `BS_HOOK_MATCH_UNSAFE`: Disables checks for method size and existence in `MAKE_HOOK_MATCH`.
 - `SUPPRESS_MACRO_LOGS`: Disables a number of primarily error log messages.

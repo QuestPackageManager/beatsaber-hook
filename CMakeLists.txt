@@ -25,7 +25,7 @@ add_compile_definitions(VERSION="${MOD_VERSION}")
 add_compile_definitions(MOD_ID="${MOD_ID}")
 
 add_compile_definitions(VERSION_NUMBER=300150000)
-add_compile_definitions(UNITY_6)
+add_compile_definitions(UNITY_6 UNITY_6_3)
 
 # Trim source folder in logcat messages
 string(LENGTH "${CMAKE_CURRENT_SOURCE_DIR}/" FOLDER_LENGTH)
