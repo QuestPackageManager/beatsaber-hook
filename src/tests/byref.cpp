@@ -23,6 +23,47 @@ static_assert(std::is_same_v<decltype(*std::declval<by_ref<int const>&>()), int 
 static_assert(!std::is_assignable_v<decltype(*std::declval<by_ref<int const>&>()), int>);
 static_assert(std::is_same_v<decltype(*std::declval<by_ref<Il2CppObject* const>&>()), Il2CppObject* const&>);
 
+static_assert(std::is_same_v<decltype(std::declval<by_ref<int> const&>().as_const()), by_ref<int const>>);
+static_assert(std::is_same_v<decltype(std::declval<by_ref<int const> const&>().as_const()), by_ref<int const>>);
+static_assert(std::is_same_v<decltype(std::declval<by_ref<int> const&>().as_mutable()), by_ref<int>>);
+static_assert(std::is_same_v<decltype(std::declval<by_ref<int const> const&>().as_mutable()), by_ref<int>>);
+static_assert(std::is_same_v<decltype(std::declval<by_ref<int const* const>>().as_mutable()), by_ref<int const*>>);
+static_assert(std::is_same_v<decltype(std::declval<by_ref<int const volatile>>().as_mutable()), by_ref<int volatile>>);
+static_assert(noexcept(std::declval<by_ref<int> const&>().as_const()));
+static_assert(noexcept(std::declval<by_ref<int const> const&>().as_mutable()));
+static_assert([] {
+    int value = 1;
+    by_ref<int> writable(value);
+    auto readonly = writable.as_const();
+    *readonly.as_mutable() = 2;
+    return value == 2 && readonly.ref == &value && readonly.as_mutable().ref == &value;
+}());
+
+TEST(byref_constness_helpers) {
+    int value = 123;
+    by_ref<int> const writable(value);
+    auto const readonly = writable.as_const();
+    auto mutable_view = readonly.as_mutable();
+    *mutable_view = 456;
+    if (value != 456 || *readonly != 456 || mutable_view.ref != &value || readonly.ref != &value || writable.as_mutable().ref != &value ||
+        readonly.as_const().ref != &value) {
+        LOG_FAIL("Byref constness helpers did not preserve shared storage");
+        return;
+    }
+
+    // Removing const from the pointer slot must preserve const on its pointee.
+    int const first = 1;
+    int const second = 2;
+    int const* pointer = &first;
+    by_ref<int const* const> readonly_pointer(pointer);
+    *readonly_pointer.as_mutable() = &second;
+    if (pointer != &second || *readonly_pointer != &second || first != 1 || second != 2) {
+        LOG_FAIL("Mutable byref view did not preserve nested pointer constness");
+        return;
+    }
+    LOG_OK("Explicit byref constness helpers share storage and preserve nested constness");
+}
+
 TEST(byref_readonly) {
     int const value = 123;
     by_ref<int const> readonly(value);

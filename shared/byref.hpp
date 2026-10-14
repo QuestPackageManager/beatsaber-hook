@@ -18,6 +18,13 @@ struct by_ref {
     // runtime_invoke uses void* for both mutable and readonly argument storage.
     constexpr void* convert() const noexcept { return const_cast<void*>(static_cast<void const*>(ref)); }
 
+    /// @brief Returns a readonly view of the same referent.
+    constexpr by_ref<T const> as_const() const noexcept { return *this; }
+
+    /// @brief Removes only the referent's top-level constness, like const_cast.
+    /// The referent must be valid; writing through this view requires an originally mutable object.
+    constexpr by_ref<std::remove_const_t<T>> as_mutable() const noexcept { return const_cast<std::remove_const_t<T>&>(*ref); }
+
     constexpr T& operator*() noexcept { return *ref; }
     constexpr T const& operator*() const noexcept { return *ref; }
     constexpr T* operator->() noexcept { return ref; }
