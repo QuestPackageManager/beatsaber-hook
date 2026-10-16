@@ -144,10 +144,17 @@ API_INIT(void, gc_free_fixed, (void* addr));
 API_INIT(void, stop_gc_world, ());
 API_INIT(void, start_gc_world, ());
 #endif
+#if defined(UNITY_6)
+API_INIT(Il2CppGCHandle, gchandle_new, (Il2CppObject * obj, bool pinned));
+API_INIT(Il2CppGCHandle, gchandle_new_weakref, (Il2CppObject * obj, bool track_resurrection));
+API_INIT(Il2CppObject*, gchandle_get_target, (Il2CppGCHandle gchandle));
+API_INIT(void, gchandle_free, (Il2CppGCHandle gchandle));
+#else
 API_INIT(uint32_t, gchandle_new, (Il2CppObject * obj, bool pinned));
 API_INIT(uint32_t, gchandle_new_weakref, (Il2CppObject * obj, bool track_resurrection));
 API_INIT(Il2CppObject*, gchandle_get_target, (uint32_t gchandle));
 API_INIT(void, gchandle_free, (uint32_t gchandle));
+#endif
 #if defined(UNITY_2019) || defined(UNITY_2021) || defined(UNITY_6)
 API_INIT(void, gchandle_foreach_get_target, (void (*func)(void* data, void* userData), void* userData));
 API_INIT(uint32_t, object_header_size, ());
