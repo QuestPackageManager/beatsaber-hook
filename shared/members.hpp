@@ -23,7 +23,14 @@ namespace i2c {
             if (!method_info) {
                 return result_or_throw<T>("Method cannot be null");
             }
-            if (!method_info->methodPointer) {
+            bool has_method_pointer = method_info->methodPointer != nullptr;
+#ifdef UNITY_6
+            // Fully shared value-type generics may have no direct-call entry
+            // point. runtime_invoke uses their shared entry point and invoker.
+            has_method_pointer |= method_info->has_full_generic_sharing_signature &&
+                                  method_info->virtualMethodPointer && method_info->invoker_method;
+#endif
+            if (!has_method_pointer) {
                 return result_or_throw<T>("Method pointer cannot be null (did you call an abstract method directly?)");
             }
             if (!types_checked) {
