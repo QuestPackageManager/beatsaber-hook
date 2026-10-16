@@ -162,10 +162,17 @@ namespace i2c::functions {
     API_FUNC(void, stop_gc_world, ());
     API_FUNC(void, start_gc_world, ());
 #endif
+#if defined(UNITY_6)
+    API_FUNC(Il2CppGCHandle, gchandle_new, (Il2CppObject * obj, bool pinned));
+    API_FUNC(Il2CppGCHandle, gchandle_new_weakref, (Il2CppObject * obj, bool track_resurrection));
+    API_FUNC(Il2CppObject*, gchandle_get_target, (Il2CppGCHandle gchandle));
+    API_FUNC(void, gchandle_free, (Il2CppGCHandle gchandle));
+#else
     API_FUNC(uint32_t, gchandle_new, (Il2CppObject * obj, bool pinned));
     API_FUNC(uint32_t, gchandle_new_weakref, (Il2CppObject * obj, bool track_resurrection));
     API_FUNC(Il2CppObject*, gchandle_get_target, (uint32_t gchandle));
     API_FUNC(void, gchandle_free, (uint32_t gchandle));
+#endif
 #if defined(UNITY_2019) || defined(UNITY_2021) || defined(UNITY_6)
     API_FUNC(void, gchandle_foreach_get_target, (void (*func)(void* data, void* userData), void* userData));
     API_FUNC(uint32_t, object_header_size, ());
