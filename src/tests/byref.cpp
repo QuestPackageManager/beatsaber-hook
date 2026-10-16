@@ -94,6 +94,75 @@ TEST(byref_readonly) {
     }
 }
 
+TEST(byref_readonly_overload_resolution) {
+    using Quaternion = ValueW<16, "UnityEngine", "Quaternion">;
+    auto* klass = i2c::class_of<Quaternion>();
+    auto* value_type = i2c::type_of<Quaternion>();
+    auto* readonly_type = i2c::type_of<by_ref<Quaternion const>>();
+    auto* mutable_type = i2c::type_of<by_ref<Quaternion>>();
+    auto* readonly_method = i2c::find_method(klass, {"Equals", {}, {readonly_type}});
+    auto* value_method = i2c::find_method(klass, {"Equals", {}, {value_type}});
+    if (!readonly_method || !value_method || readonly_method == value_method ||
+        !readonly_method->parameters[0]->byref || value_method->parameters[0]->byref ||
+        i2c::functions::class_from_il2cpp_type(readonly_method->parameters[0]) != klass ||
+        i2c::functions::class_from_il2cpp_type(value_method->parameters[0]) != klass) {
+        LOG_FAIL("Quaternion.Equals by-value and readonly lookups did not select distinct matching overloads");
+        return;
+    }
+    if (i2c::find_method(klass, {"Equals", {}, {mutable_type}}) != readonly_method ||
+        i2c::find_method(klass, {"Equals", {}, {readonly_type}}) != readonly_method ||
+        i2c::find_method(klass, {"Equals", {}, {value_type}}) != value_method) {
+        LOG_FAIL("Quaternion.Equals cached lookup did not preserve byref status");
+        return;
+    }
+    if (i2c::param_match(value_method, {}, {readonly_type}) != i2c::match::convertible ||
+        i2c::param_match(readonly_method, {}, {value_type}) != i2c::match::none ||
+        i2c::param_match(value_method, {}, {value_type}) != i2c::match::exact ||
+        i2c::param_match(readonly_method, {}, {readonly_type}) != i2c::match::exact ||
+        i2c::param_match(readonly_method, {}, {mutable_type}) != i2c::match::exact) {
+        LOG_FAIL("Argument matching did not distinguish exact signatures from byref-to-value conversions");
+        return;
+    }
+    auto value_type_copy = *value_method->parameters[0];
+    auto readonly_type_copy = *readonly_method->parameters[0];
+    if (i2c::param_match(value_method, {}, {&value_type_copy}) != i2c::match::exact ||
+        i2c::param_match(readonly_method, {}, {&readonly_type_copy}) != i2c::match::exact) {
+        LOG_FAIL("Equivalent type metadata at different addresses did not match exactly");
+        return;
+    }
+    if (!i2c::is_convertible_from(value_type, readonly_type) || !i2c::is_convertible_from(readonly_type, value_type)) {
+        LOG_FAIL("Non-argument type conversion unexpectedly requires matching byref status");
+        return;
+    }
+
+    Quaternion const a(std::bit_cast<std::array<std::byte, 16>>(std::array{1.0f, 2.0f, 3.0f, 4.0f}));
+    Quaternion const same = a;
+    Quaternion const different(std::bit_cast<std::array<std::byte, 16>>(std::array{1.0f, 2.0f, 3.0f, 5.0f}));
+    auto const before = a.instance;
+    if (!i2c::run_method<bool>(a, "Equals", same) || i2c::run_method<bool>(a, "Equals", different) ||
+        !i2c::run_method<bool>(a, "Equals", by_ref<Quaternion const>(same)) ||
+        i2c::run_method<bool>(a, "Equals", by_ref<Quaternion const>(different)) || a.instance != before) {
+        LOG_FAIL("Quaternion.Equals overload invocation returned a wrong result or changed its input");
+        return;
+    }
+    LOG_OK("Quaternion.Equals resolves, caches and invokes distinct by-value and readonly overloads");
+}
+
+TEST(byref_value_fallback) {
+    int value = -7;
+    auto* method = i2c::find_method({"System", "Math"}, {"Abs", {}, {i2c::type_of<by_ref<int>>()}});
+    if (!method || method->parameters[0]->byref ||
+        i2c::param_match(method, {}, {i2c::type_of<by_ref<int>>()}) != i2c::match::convertible) {
+        LOG_FAIL("Byref argument did not fall back to the by-value Math.Abs overload");
+        return;
+    }
+    if (i2c::run_method<int>({"System", "Math"}, "Abs", by_ref<int>(value)) != 7 || value != -7) {
+        LOG_FAIL("Byref-to-value invocation returned a wrong result or changed its input");
+        return;
+    }
+    LOG_OK("Byref-to-value fallback resolves and invokes Math.Abs without changing its input");
+}
+
 // Unity 6.3 exposes these Quaternion parameters as readonly byrefs.
 TEST(byref_readonly_quaternion_invocation) {
     using Quaternion = ValueW<16, "UnityEngine", "Quaternion">;

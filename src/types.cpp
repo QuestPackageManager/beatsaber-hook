@@ -217,17 +217,8 @@ char const* i2c::type_simple_name(Il2CppType const* type) {
 bool i2c::is_convertible_from(Il2CppType const* to, Il2CppType const* from, bool args) {
     RET_DEF_UNLESS(logger, to);
     RET_DEF_UNLESS(logger, from);
-    if (args) {
-        if (to->byref && !from->byref) {
-            // logger.debug(
-            //     "to ({}, {}) is ref/out while from ({}, {}) is not. Not convertible.",
-            //     type_simple_name(to),
-            //     fmt::ptr(to),
-            //     type_simple_name(from),
-            //     fmt::ptr(from)
-            // );
-            return false;
-        }
+    if (args && to->byref && !from->byref) {
+        return false;
     }
     functions::initialize();
     auto class_to = functions::class_from_il2cpp_type(to);
@@ -278,6 +269,7 @@ i2c::match i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass cons
         // logger.warn("is generic {} is inflated {}", method->is_generic, method->is_inflated);
         return match::none;
     }
+    functions::initialize();
     bool identical = true;
     // TODO: supply boolStrictMatch and use type_equals instead of is_convertible_from if supplied?
     for (decltype(method->parameters_count) i = 0; i < method->parameters_count; i++) {
@@ -292,7 +284,6 @@ i2c::match i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass cons
                 logger.warn("No generic args to extract paramIdx {}", i);
                 continue;
             }
-            functions::initialize();
             auto gen_idx = functions::MetadataCache_GetGenericParameterIndexFromParameter(param_type->data.genericParameterHandle) -
                            container->genericParameterStart;
             if (gen_idx < 0) {
@@ -314,7 +305,7 @@ i2c::match i2c::param_match(MethodInfo const* method, i2c::view<Il2CppClass cons
             param_type = (param_type->byref) ? &klass->this_arg : &klass->byval_arg;
         }
         // parameters are identical if every param matches exactly!
-        identical &= param_type == arg_types[i];
+        identical &= functions::type_equals(param_type, arg_types[i]);
 
         // TODO: just because two parameter lists match doesn't necessarily mean this is the best match...
         if (!is_convertible_from(param_type, arg_types[i], true)) {
