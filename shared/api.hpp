@@ -335,7 +335,11 @@ namespace i2c::functions {
     API_FUNC(Il2CppClass*, type_get_class, (Il2CppType * type));
 
     // SELECT NON-API LIBIL2CPP FUNCTIONS:
+    // Callable compatibility API. Use Class_InitNative when installing a native hook.
     API_FUNC(bool, Class_Init, (Il2CppClass * klass));
+#ifdef UNITY_6
+    API_FUNC(void, Class_InitNative, (Il2CppClass * klass));
+#endif
 
     API_FUNC(Il2CppClass*, MetadataCache_GetTypeInfoFromHandle, (Il2CppMetadataTypeHandle index));
     API_FUNC(Il2CppClass*, MetadataCache_GetTypeInfoFromTypeIndex, (TypeIndex index));
@@ -353,7 +357,12 @@ namespace i2c::functions {
     API_FUNC(void, GarbageCollector_SetWriteBarrier, (void** ptr));
     API_FUNC(void*, GarbageCollector_AllocateFixed, (size_t sz, void* descr));
 
+    // Callable compatibility API; supplies throwOnError=true on Unity 6.
+    // Native hooks must target Class_FromIl2CppTypeNative with its full signature.
     API_FUNC(Il2CppClass*, Class_FromIl2CppType, (Il2CppType * typ));
+#ifdef UNITY_6
+    API_FUNC(Il2CppClass*, Class_FromIl2CppTypeNative, (const Il2CppType* typ, bool throwOnError));
+#endif
     API_FUNC(Il2CppClass*, Class_GetPtrClass, (Il2CppClass * elementClass));
     API_FUNC(Il2CppClass*, GenericClass_GetClass, (Il2CppGenericClass * gclass));
     API_FUNC(Il2CppClass*, GenericClass_CreateClass, (Il2CppGenericClass * gclass, bool throwOnError));
