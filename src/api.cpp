@@ -317,6 +317,9 @@ API_INIT(Il2CppClass*, type_get_class, (Il2CppType * type));
 
 // SELECT NON-API LIBIL2CPP FUNCTIONS:
 API_INIT(bool, Class_Init, (Il2CppClass * klass));
+#ifdef UNITY_6
+API_INIT(void, Class_InitNative, (Il2CppClass * klass));
+#endif
 #if defined(UNITY_2021) || defined(UNITY_6)
 API_INIT(Il2CppClass*, MetadataCache_GetTypeInfoFromHandle, (Il2CppMetadataTypeHandle index));
 #endif
@@ -338,6 +341,9 @@ API_INIT(void, GarbageCollector_SetWriteBarrier, (void** ptr));
 API_INIT(void*, GarbageCollector_AllocateFixed, (size_t sz, void* descr));
 
 API_INIT(Il2CppClass*, Class_FromIl2CppType, (Il2CppType * typ));
+#ifdef UNITY_6
+API_INIT(Il2CppClass*, Class_FromIl2CppTypeNative, (const Il2CppType* typ, bool throwOnError));
+#endif
 API_INIT(Il2CppClass*, Class_GetPtrClass, (Il2CppClass * elementClass));
 API_INIT(Il2CppClass*, GenericClass_GetClass, (Il2CppGenericClass * gclass));
 API_INIT(Il2CppClass*, GenericClass_CreateClass, (Il2CppGenericClass * gclass, bool throwOnError));
@@ -527,6 +533,20 @@ static void find_GC_free(Paper::LoggerContext const& logger) {
 //     return true;
 // }
 
+#ifdef UNITY_6
+static void* allocate_fixed_via_export(size_t size, [[maybe_unused]] void* descriptor) {
+    // Unity 6's Domain::GetCurrent calls GC_generic_malloc_uncollectable
+    // directly with kind 2. Following its BL loses that argument and treats
+    // our null descriptor as kind 0 (collectible, pointer-free memory).
+    // The exported API preserves Unity's allocation kind.
+    return i2c::functions::gc_alloc_fixed(size);
+}
+
+static bool find_GC_AllocFixed() {
+    i2c::functions::GarbageCollector_AllocateFixed = &allocate_fixed_via_export;
+    return true;
+}
+#else
 void* (*wrapped_gc_malloc_uncollectable)(size_t sz, long long type);
 
 void* __wrapper_gc_malloc_uncollectable(size_t sz, [[maybe_unused]] void* desc) {
@@ -571,12 +591,24 @@ static bool find_GC_AllocFixed() {
     }
     return true;
 }
+#endif
 
 /*
  * XREF for Class::Init
  * - class_from_system_type (symbol)
  *   - 2nd bl instruction -> Class::Init
  */
+#ifdef UNITY_6
+static bool class_init_compat(Il2CppClass* klass) {
+    i2c::functions::Class_InitNative(klass);
+    return klass->initialized_and_no_error;
+}
+
+static Il2CppClass* class_from_il2cpp_type_compat(Il2CppType* type) {
+    return i2c::functions::Class_FromIl2CppTypeNative(type, true);
+}
+#endif
+
 static void find_class_init(Paper::LoggerContext const& logger) {
     using namespace i2c::functions;
 #ifdef UNITY_6
@@ -584,8 +616,9 @@ static void find_class_init(Paper::LoggerContext const& logger) {
     if (!class_init) {
         SAFE_ABORT("Failed to find Class::Init!");
     }
-    Class_Init = reinterpret_cast<decltype(Class_Init)>(*class_init);
-    logger.debug("Class::Init found? offset: {:X}", reinterpret_cast<uintptr_t>(Class_Init) - i2c::binary::get_real_offset(0));
+    Class_InitNative = reinterpret_cast<decltype(Class_InitNative)>(*class_init);
+    Class_Init = class_init_compat;
+    logger.debug("Class::Init found? offset: {:X}", reinterpret_cast<uintptr_t>(Class_InitNative) - i2c::binary::get_real_offset(0));
 #else
 #error "XREF for Class::Init needs to be updated for this Unity version!"
 #endif
@@ -650,8 +683,9 @@ static void find_class_from_il2cpp_type(Paper::LoggerContext const& logger) {
     if (!result) {
         SAFE_ABORT("Failed to find Class::FromIl2CppType!");
     }
-    Class_FromIl2CppType = reinterpret_cast<decltype(Class_FromIl2CppType)>(*result);
-    logger.debug("Class::FromIl2CppType found? offset: {:X}", reinterpret_cast<uintptr_t>(Class_FromIl2CppType) - i2c::binary::get_real_offset(0));
+    Class_FromIl2CppTypeNative = reinterpret_cast<decltype(Class_FromIl2CppTypeNative)>(*result);
+    Class_FromIl2CppType = class_from_il2cpp_type_compat;
+    logger.debug("Class::FromIl2CppType found? offset: {:X}", reinterpret_cast<uintptr_t>(Class_FromIl2CppTypeNative) - i2c::binary::get_real_offset(0));
 #else
 #error "XREF for Class::FromIl2CppType needs to be updated for this Unity version!"
 #endif
@@ -672,7 +706,7 @@ static Il2CppClass* type_info_from_handle(Il2CppMetadataTypeHandle handle) {
 static void find_generic_class_create_class(Paper::LoggerContext const& logger) {
     using namespace i2c::functions;
 #ifdef UNITY_6
-    const auto GenericClass_CreateClass_ptr = cs::find_nth_b<18, false, -1, 1024>(reinterpret_cast<uint32_t*>(Class_FromIl2CppType));
+    const auto GenericClass_CreateClass_ptr = cs::find_nth_b<18, false, -1, 1024>(reinterpret_cast<uint32_t*>(Class_FromIl2CppTypeNative));
     if (!GenericClass_CreateClass_ptr) {
         SAFE_ABORT("Failed to find GenericClass::CreateClass!");
     }
@@ -708,7 +742,7 @@ static Il2CppClass* generic_class_get_class(Il2CppGenericClass* gclass) {
 static void find_class_get_ptr_class(Paper::LoggerContext const& logger) {
     using namespace i2c::functions;
 #ifdef UNITY_6
-    const auto Class_GetPtrClass_addr = cs::find_nth_b<17, false>(reinterpret_cast<uint32_t*>(Class_FromIl2CppType));
+    const auto Class_GetPtrClass_addr = cs::find_nth_b<17, false>(reinterpret_cast<uint32_t*>(Class_FromIl2CppTypeNative));
     if (!Class_GetPtrClass_addr) {
         SAFE_ABORT("Failed to find Class::GetPtrClass!");
     }
@@ -1179,12 +1213,12 @@ void i2c::functions::initialize() noexcept {
     }
 
     logger.debug("i2c::functions: Printing offsets");
-    log_offset(logger, "Class::Init", reinterpret_cast<uintptr_t>(Class_Init));
+    log_offset(logger, "Class::Init (native)", reinterpret_cast<uintptr_t>(Class_InitNative));
     log_offset(
         logger, "GlobalMetadata::GetTypeInfoFromTypeDefinitionIndex", reinterpret_cast<uintptr_t>(GlobalMetadata_GetTypeInfoFromTypeDefinitionIndex)
     );
     log_offset(logger, "Type::GetName", reinterpret_cast<uintptr_t>(_Type_GetName_));
-    log_offset(logger, "Class::FromIl2cppType", reinterpret_cast<uintptr_t>(Class_FromIl2CppType));
+    log_offset(logger, "Class::FromIl2cppType (native)", reinterpret_cast<uintptr_t>(Class_FromIl2CppTypeNative));
     log_offset(logger, "GenericClass::GetClass", reinterpret_cast<uintptr_t>(GenericClass_GetClass));
     log_offset(logger, "Class::GetPtrClass", reinterpret_cast<uintptr_t>(Class_GetPtrClass));
     log_offset(logger, "s_GlobalMetadataHeaderPtr", reinterpret_cast<uintptr_t>(s_GlobalMetadataHeaderPtr));
