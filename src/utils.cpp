@@ -61,7 +61,7 @@ bool direxists(std::string_view dirname) {
     if (stat(dirname.data(), &info) != 0) {
         return false;
     }
-    return (bool) info.st_mode & S_IFDIR;
+    return S_ISDIR(info.st_mode);
 }
 
 static std::optional<std::string> data_dir;
