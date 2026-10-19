@@ -10,7 +10,8 @@ namespace i2c::detail {
     void add_count(void* addr);
     /// @brief Decreases the reference count of an address. If the address has 1 or fewer references, erases it.
     /// @param addr The address to decrease.
-    void remove_count(void* addr);
+    /// @return True only when this call removes the final reference, decided under the same lock as the decrement.
+    bool remove_count(void* addr);
     /// @brief Gets the reference count of an address, or 0 if no such address exists.
     /// @param addr The address to get the count of.
     /// @return The reference count of the provided address.
@@ -89,6 +90,14 @@ namespace i2c::detail {
         /// @return The raw pointer saved by this instance.
         constexpr T* const get() const noexcept { return ptr; }
 
+        /// @brief Releases this reference, returning the pointer only if it was the last owner.
+        /// The caller is responsible for destroying that pointer. Other owners keep it alive.
+        T* release_last() {
+            auto* released = ptr;
+            ptr = nullptr;
+            return released && remove_count(released) ? released : nullptr;
+        }
+
         count_ptr& operator=(T* val) {
             emplace(val);
             return *this;
@@ -151,17 +160,15 @@ struct safe_ptr {
         if (!handle) {
             return;
         }
-        // If our internal handle has 1 instance, we need to clean up the instance it points to.
-        // Otherwise, some other safe_ptr is currently holding a reference to this instance, so keep it around.
-        if (handle.count() <= 1) {
+        // The decrement and last-owner decision must happen under the same lock. Separate
+        // count()/remove_count() calls let concurrent owners both skip freeing the wrapper.
+        if (auto* released = handle.release_last()) {
             i2c::functions::initialize();
             if (!i2c::functions::has_gc_funcs) {
                 throw i2c::trace_exception("A safe_ptr<T> instance was created too early or a necessary GC function was not found!");
             }
-            i2c::functions::gc_free_fixed(handle.get());
+            i2c::functions::gc_free_fixed(released);
         }
-        // ensure we don't try to clear the same handle twice
-        handle = nullptr;
     }
 
     /// @brief Emplace a new value into this safe_ptr, freeing an existing one, if it exists.
@@ -176,11 +183,14 @@ struct safe_ptr {
         return *this;
     }
     inline safe_ptr& operator=(safe_ptr const& other) {
-        handle = other.handle;
+        if (handle.get() != other.handle.get()) {
+            clear();
+            handle = other.handle;
+        }
         return *this;
     }
 
-    constexpr void* convert() const noexcept { return const_cast<void*>(handle->inst); }
+    constexpr void* convert() const noexcept { return handle ? const_cast<void*>(handle->inst) : nullptr; }
 
     /// @brief Performs an il2cpp type checked cast from T to U.
     /// This function will throw an exception if the cast fails. i2c::result<T2> can be used to capture errors instead.
