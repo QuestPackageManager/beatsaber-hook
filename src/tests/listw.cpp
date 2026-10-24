@@ -2,6 +2,7 @@
 #include "stringw.hpp"
 
 #include "tests.hpp"
+#include "listw-construction-regression.hpp"
 
 static_assert(i2c::type_check::full_class<System::Collections::Generic::List_1<int>*>);
 static_assert(i2c::type_check::ptr_ref_type<System::Collections::Generic::List_1<int>*>);
@@ -28,6 +29,23 @@ static_assert(std::is_constructible_v<ListW<int>, i2c::view<int const>>);
 // ...but ABI-equivalent wrapper conversions (opted into via i2c::abi_convertible) are still allowed
 static_assert(std::is_constructible_v<ListW<StringW>, std::vector<StringW::ptr>>);
 static_assert(std::is_constructible_v<ListW<ArrayW<int>>, std::vector<Array<int>*>>);
+
+TEST(listw_collection_constructors) {
+    int checks = 0;
+    int failures = 0;
+    try {
+        listw_construction_regression::run([&](bool pass, char const* name) {
+            ++checks;
+            if (!pass) {
+                ++failures;
+                LOG_FAIL("ListW construction: {}", name);
+            }
+        });
+        if (!failures) LOG_OK("ListW construction: {} checks passed", checks);
+    } catch (std::exception const& e) {
+        LOG_FAIL("ListW construction regression failed: {}", e.what());
+    }
+}
 
 TEST(listw) {
     LOG_OK("Starting ListW tests");
