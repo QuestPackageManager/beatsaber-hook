@@ -2,7 +2,8 @@
 #include "stringw.hpp"
 
 #include "tests.hpp"
-#include "listw-construction-regression.hpp"
+
+#include <ranges>
 
 static_assert(i2c::type_check::full_class<System::Collections::Generic::List_1<int>*>);
 static_assert(i2c::type_check::ptr_ref_type<System::Collections::Generic::List_1<int>*>);
@@ -31,20 +32,26 @@ static_assert(std::is_constructible_v<ListW<StringW>, std::vector<StringW::ptr>>
 static_assert(std::is_constructible_v<ListW<ArrayW<int>>, std::vector<Array<int>*>>);
 
 TEST(listw_collection_constructors) {
-    int checks = 0;
-    int failures = 0;
-    try {
-        listw_construction_regression::run([&](bool pass, char const* name) {
-            ++checks;
-            if (!pass) {
-                ++failures;
-                LOG_FAIL("ListW construction: {}", name);
-            }
-        });
-        if (!failures) LOG_OK("ListW construction: {} checks passed", checks);
-    } catch (std::exception const& e) {
-        LOG_FAIL("ListW construction regression failed: {}", e.what());
+    std::vector<int> const values{7, 13, 29};
+    for (auto list : {ListW<int>({7, 13, 29}), ListW<int>(values), ListW<int>(std::span<int const>(values))}) {
+        if (list.size() != values.size() || !std::ranges::equal(list, values)) {
+            LOG_FAIL("ListW collection constructor did not preserve size and contents");
+            return;
+        }
     }
+
+    StringW text("ListW");
+    auto wrapped = ListW<StringW>(std::vector<StringW::ptr>{text});
+    if (wrapped.size() != 1 || wrapped.front().convert() != text.convert()) {
+        LOG_FAIL("ListW converting constructor did not preserve size and contents");
+        return;
+    }
+
+    if (!ListW<int>(std::vector<int>{}).empty() || !ListW<int>::New(8).empty()) {
+        LOG_FAIL("ListW empty and capacity-only construction must have size zero");
+        return;
+    }
+    LOG_OK("ListW collection constructors preserve size and contents");
 }
 
 TEST(listw) {
