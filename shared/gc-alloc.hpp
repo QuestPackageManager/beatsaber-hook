@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <memory>
 #include <new>
 #include <type_traits>
 
@@ -35,6 +36,15 @@ namespace i2c {
             auto* memory = static_cast<T*>(functions::gc_alloc_fixed(count * sizeof(T)));
             if (!memory) throw std::bad_alloc();
             return memory;
+        }
+
+        template <typename U>
+        void destroy(U* object) const noexcept(std::is_nothrow_destructible_v<U>) {
+            std::destroy_at(object);
+            // GC scans unused capacity too. Volatile keeps these stores from
+            // being removed after the element's lifetime has ended.
+            auto* bytes = reinterpret_cast<volatile unsigned char*>(object);
+            for (std::size_t i = 0; i < sizeof(U); ++i) bytes[i] = 0;
         }
 
         void deallocate(T* memory, std::size_t) const noexcept {
