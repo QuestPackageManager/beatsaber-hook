@@ -3,6 +3,8 @@
 
 #include "tests.hpp"
 
+#include <ranges>
+
 static_assert(i2c::type_check::full_class<System::Collections::Generic::List_1<int>*>);
 static_assert(i2c::type_check::ptr_ref_type<System::Collections::Generic::List_1<int>*>);
 
@@ -28,6 +30,29 @@ static_assert(std::is_constructible_v<ListW<int>, i2c::view<int const>>);
 // ...but ABI-equivalent wrapper conversions (opted into via i2c::abi_convertible) are still allowed
 static_assert(std::is_constructible_v<ListW<StringW>, std::vector<StringW::ptr>>);
 static_assert(std::is_constructible_v<ListW<ArrayW<int>>, std::vector<Array<int>*>>);
+
+TEST(listw_collection_constructors) {
+    std::vector<int> const values{7, 13, 29};
+    for (auto list : {ListW<int>({7, 13, 29}), ListW<int>(values), ListW<int>(std::span<int const>(values))}) {
+        if (list.size() != values.size() || !std::ranges::equal(list, values)) {
+            LOG_FAIL("ListW collection constructor did not preserve size and contents");
+            return;
+        }
+    }
+
+    StringW text("ListW");
+    auto wrapped = ListW<StringW>(std::vector<StringW::ptr>{text});
+    if (wrapped.size() != 1 || wrapped.front().convert() != text.convert()) {
+        LOG_FAIL("ListW converting constructor did not preserve size and contents");
+        return;
+    }
+
+    if (!ListW<int>(std::vector<int>{}).empty() || !ListW<int>::New(8).empty()) {
+        LOG_FAIL("ListW empty and capacity-only construction must have size zero");
+        return;
+    }
+    LOG_OK("ListW collection constructors preserve size and contents");
+}
 
 TEST(listw) {
     LOG_OK("Starting ListW tests");
