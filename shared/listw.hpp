@@ -59,6 +59,7 @@ struct ListW {
     requires(std::is_convertible_v<U, T>)
     ListW(std::initializer_list<U> vals) : ListW(vals.size()) {
         std::copy(vals.begin(), vals.end(), begin());
+        val->_size = vals.size();
     }
     // From container. Restricted to i2c::abi_convertible_to (not is_convertible_v), so this cannot be used to
     // silently narrow/reinterpret elements (e.g. constructing a ListW<float> from a std::vector<int>), while
@@ -67,9 +68,13 @@ struct ListW {
     requires(i2c::abi_convertible_to<U, T>)
     ListW(i2c::view<U> vals) : ListW(vals.size()) {
         std::copy(vals.begin(), vals.end(), begin());
+        val->_size = vals.size();
     }
     // Required because C++ cannot deduce the type inside a parameter if it also has to construct that parameter
-    ListW(i2c::view<T> vals) : ListW(vals.size()) { std::copy(vals.begin(), vals.end(), begin()); }
+    ListW(i2c::view<T> vals) : ListW(vals.size()) {
+        std::copy(vals.begin(), vals.end(), begin());
+        val->_size = vals.size();
+    }
     template <typename U>
     requires(i2c::abi_convertible_to<U, T>)
     ListW(std::vector<U> const& vals) : ListW(i2c::view<U>{vals}) {}
