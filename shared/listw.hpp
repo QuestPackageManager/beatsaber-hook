@@ -291,13 +291,11 @@ struct ListW {
             throw i2c::trace_exception("Erased index is greater than size");
         }
         val->_version++;
-        if (index < size()) {
-            std::copy(begin() + index + 1, end(), begin() + index);
-        }
-        if constexpr (i2c::type_check::ref_type<T>) {
-            *end() = T{};
-        }
+        std::copy(begin() + index + 1, end(), begin() + index);
         val->_size--;
+        if constexpr (i2c::type_check::ref_type<T>) {
+            val->_items[val->_size] = T{};
+        }
     }
 
     void erase_range(int index, int count) {
