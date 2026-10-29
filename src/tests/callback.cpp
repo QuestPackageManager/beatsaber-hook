@@ -2,6 +2,7 @@
 
 #include "tests.hpp"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -298,5 +299,100 @@ TEST(unordered_event_callback_test) {
         LOG_OK("unordered_event_callback worked correctly");
     } else {
         LOG_FAIL("unordered_event_callback failed: free={}, lambda={}", free_func_call_count, lambda_call_count);
+    }
+}
+
+// Subscriber identity: distinct lambdas and one member function on several instances
+// must all be kept, and removal must only affect the matching subscription.
+struct IdentityTarget {
+    int id;
+    std::vector<int>* log;
+    void record(int value) { log->push_back(id * 100 + value); }
+};
+
+template <template <typename...> typename C>
+static void subscribe_lambda(basic_event_callback<C, int>& cb, std::vector<int>& log, int id) {
+    // Each call's lambda is a new local at the same stack depth.
+    cb += [&log, id](int value) { log.push_back(id * 100 + value); };
+}
+
+template <template <typename...> typename C>
+static bool check_callback_identity(char const* container) {
+    std::vector<int> log;
+    auto sorted_log = [&log]() {
+        auto copy = log;
+        std::sort(copy.begin(), copy.end());
+        return copy;
+    };
+
+    // Distinct rvalue lambdas, including ones created at the same stack address.
+    {
+        basic_event_callback<C, int> cb;
+        cb += [&log](int value) { log.push_back(100 + value); };
+        cb += [&log](int value) { log.push_back(200 + value); };
+        for (int id = 3; id <= 5; id++) {
+            subscribe_lambda(cb, log, id);
+        }
+        cb.invoke(1);
+        if (cb.size() != 5 || sorted_log() != std::vector<int>{101, 201, 301, 401, 501}) {
+            LOG_FAIL("{}: distinct lambdas were merged: size={}, calls={}", container, cb.size(), log.size());
+            return false;
+        }
+    }
+
+    // One member function on two instances; -= removes only the named instance.
+    {
+        log.clear();
+        basic_event_callback<C, int> cb;
+        IdentityTarget a{1, &log};
+        IdentityTarget b{2, &log};
+        cb.add(&IdentityTarget::record, &a);
+        cb += {&IdentityTarget::record, &b};
+        cb.add(&IdentityTarget::record, &a);  // duplicate subscription stays single
+        cb.invoke(7);
+        if (cb.size() != 2 || sorted_log() != std::vector<int>{107, 207}) {
+            LOG_FAIL("{}: member function on two instances: size={}, calls={}", container, cb.size(), log.size());
+            return false;
+        }
+        log.clear();
+        cb -= {&IdentityTarget::record, &a};
+        cb.invoke(8);
+        if (cb.size() != 1 || log != std::vector<int>{208}) {
+            LOG_FAIL("{}: removing one instance's member callback affected the other: size={}", container, cb.size());
+            return false;
+        }
+        cb.add(&IdentityTarget::record, &a);
+        cb.remove(&IdentityTarget::record);  // removes the method for every instance
+        if (cb.size() != 0) {
+            LOG_FAIL("{}: remove(member) left {} callbacks", container, cb.size());
+            return false;
+        }
+    }
+
+    // A lambda is removed through the callback it was added as, not by a different lambda.
+    {
+        log.clear();
+        basic_event_callback<C, int> cb;
+        typename basic_event_callback<C, int>::callback_t kept = [&log](int value) { log.push_back(100 + value); };
+        cb += kept;
+        cb += [&log](int value) { log.push_back(200 + value); };
+        cb -= [&log](int value) { log.push_back(100 + value); };
+        if (cb.size() != 2) {
+            LOG_FAIL("{}: removing a never-added lambda changed size to {}", container, cb.size());
+            return false;
+        }
+        cb -= kept;
+        cb.invoke(9);
+        if (cb.size() != 1 || log != std::vector<int>{209}) {
+            LOG_FAIL("{}: removing a retained lambda failed: size={}", container, cb.size());
+            return false;
+        }
+    }
+    return true;
+}
+
+TEST(event_callback_subscriber_identity) {
+    if (check_callback_identity<std::set>("event_callback") && check_callback_identity<std::unordered_set>("unordered_event_callback")) {
+        LOG_OK("event_callback keeps distinct lambdas and per-instance member callbacks, and removes only the matching one");
     }
 }

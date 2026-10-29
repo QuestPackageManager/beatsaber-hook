@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <set>
 #include <unordered_set>
 
@@ -75,12 +76,15 @@ namespace detail {
         T* _instance;
     };
 
+    // Arbitrary callables cannot be compared, so each wrapper is its own identity.
+    // Copies of the owning thin_virtual_layer share the wrapper and so compare equal,
+    // which lets a retained callback be removed later.
     template <typename R, typename... TArgs>
     struct func_wrapper<std::function<R(TArgs...)>> : abstract_func<R(TArgs...)> {
-        func_wrapper(std::function<R(TArgs...)> const& f) : held(f), handle(const_cast<void*>(reinterpret_cast<void const*>(&f))) {}
+        func_wrapper(std::function<R(TArgs...)> f) : held(std::move(f)) {}
 
         void* instance() const override { return nullptr; }
-        void* ptr() const override { return handle; }
+        void* ptr() const override { return const_cast<void*>(static_cast<void const*>(this)); }
 
         R operator()(TArgs... args) const noexcept override {
             if constexpr (std::is_void_v<R>) {
@@ -91,7 +95,6 @@ namespace detail {
         }
 
         std::function<R(TArgs...)> const held;
-        void* handle;
     };
 
     template <typename R, typename... TArgs>
@@ -99,9 +102,15 @@ namespace detail {
         return a.instance() == b.instance() && a.ptr() == b.ptr();
     }
 
+    // Must order by everything operator== compares, so std::set keeps one member
+    // function subscribed on several instances.
     template <typename R, typename... TArgs>
     bool operator<(abstract_func<R(TArgs...)> const& a, abstract_func<R(TArgs...)> const& b) {
-        return a.ptr() < b.ptr();
+        std::less<void*> less;
+        if (a.ptr() != b.ptr()) {
+            return less(a.ptr(), b.ptr());
+        }
+        return less(a.instance(), b.instance());
     }
 
     template <typename T>
