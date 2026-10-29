@@ -245,7 +245,7 @@ static inline bool strend_impl(Il2CppString const* lhs, auto const& rhs) noexcep
     auto const* second = second_begin + rhs.size();
 
     while (second != second_begin) {
-        if (*first == *second) {
+        if (*first != *second) {
             return false;
         }
         first--;
